@@ -1,0 +1,3 @@
+# Barkonomics project work
+## Active
+- **GitHub workflow integration** — [concept and proposed setup](docs/active-spikes/github-workflow-integration.md) · [tasks and verification](docs/active-spikes/github-workflow-integration.todo.md). The Project Workflows adaptation and GitHub starter-pack setup are checkpointed locally; offline validation passed. Issue/branch/PR visibility and pre-merge discussion/review are explicit in the project guidance. Live GitHub changes are held while the Agent Hands collaboration owner finishes testing; board/profile selection, runner credentials and native settings remain pending. This is collaboration setup, not analysis implementation.

@@ -1,0 +1,23 @@
+# Agent Instructions
+This is Barkonomics, a shared Data Wrangling project exploring NYC dog names and neighborhood income. Read [README.md](README.md), [proposal.md](proposal.md) and [TODO.md](TODO.md). The proposal is an initial tracked snapshot; its shared Drive draft remains the place for proposal discussion. Workflow setup does not approve open research or implementation decisions.
+
+## Project workflows
+Use the complete adopted [Project Workflows](project-workflows/README.md) collection before global workflow seeds. Read [workflow.toml](project-workflows/workflow.toml); resolve its project root relative to the collection. The child uses `project/barkonomics`, based on shared `main`; the parent branch and exact gitlink are separate. Project instructions override shared defaults. Actual project documents stay here, outside the collection. Use [Update Project Workflows](project-workflows/update-project-workflows/SKILL.md) for future updates that preserve adaptations.
+
+Use [Run Project Spike](project-workflows/run-project-spike/SKILL.md) for bounded work, with one conceptual/task pair per agent-owned thread under `docs/active-spikes/`. [TODO.md](TODO.md) is the short index. New captured or parked ideas use [Capture For Later](project-workflows/capture-for-later/SKILL.md) and `docs/scratch/` when needed. Create archive or policy folders only when there is content. Keep source evidence and human decisions distinguishable from agent proposals.
+
+## Contribution and GitHub setup
+Use [Coordinate Project Contribution](project-workflows/coordinate-project-contribution/SKILL.md) to start contribution/review work under the humans' direction. Independent agents keep separate spikes; a branch may contain several spikes/issues and lead to several contributions. Preserve original atomic commits and suitable project documents rather than imposing one issue per branch or spike.
+
+For GitHub-tracked contributions, reuse a relevant existing issue or prepare a new issue for the shared outcome. Work on an appropriate existing contribution branch or create one without disturbing another person’s active checkout. Link the issue, agent-owned spikes and commits. Prepare or update a pull request early enough for collaborators to see the scope, dependencies and integration plan, discuss it and review the changes before an authorized merge. A draft pull request can make work visible while it is in progress. One branch may still carry multiple spikes/issues and several eventual pull requests. Prepare publication and issue/PR updates for a human when live writes are outside the current scope; do not treat this workflow as GitHub-enforced branch protection.
+
+GitHub coordination targets `Barkonomics-DataWrangling/pet-names`. Agent Hands supplies optional agent-facing GitHub tools; its tested source revision and selected installation are pending the integration handoff. Do not install unrelated services or add the entire Agent Hands repository merely to use these workflows. Agent credentials stay with their provider; CI secrets belong in GitHub settings. Core workflow use requires no service credentials or local language runtime.
+
+The [GitHub workflow integration spike](docs/active-spikes/github-workflow-integration.md) owns the current setup and proposed lifecycle. Stage meanings and board mappings remain proposals until selected with the project owners. Its task record owns the live-testing hold and remaining setup checks. Template availability and this routing do not authorize external writes or enable automation.
+
+## Validation and Git
+For workflow changes, check TOML, local links/resources, child ancestry, exact gitlinks, copied starter files and private-state ignores. The optional existing-Node check is `node --test project-workflows/setup-project-workflows/tests/test-github-lifecycle.cjs`; ordinary use does not require installing Node. No analysis build/test process has been established yet.
+
+Use [Commit Work](project-workflows/commit-work/SKILL.md) for explicitly authorized local checkpoints. Workflow adoption alone grants no standing agent commit permission. Preserve unrelated changes, use explicit paths for authorized checkpoints, never force-add or rewrite history, and never add co-author trailers. Publishing and GitHub mutations require their actual authorized scope.
+
+This repository is shared: keep credentials, private course/meeting material, personal workspace paths and private service recovery records out of commits. Do not copy private context into public project records. Keep prose paragraphs on single lines and avoid unrelated reformatting.

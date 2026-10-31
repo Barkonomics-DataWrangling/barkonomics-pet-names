@@ -1,0 +1,16 @@
+# Local OS, agent and editor files
+.DS_Store
+Thumbs.db
+/.codex/
+/.claude/
+
+# Private local configuration and credentials
+.env
+.env.*
+!.env.example
+*.local.json
+*.pem
+*.key
+
+# Agent Hands' private GitHub operation journal; shared .github files stay tracked.
+/.github/project-collaboration/
