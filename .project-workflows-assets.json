@@ -1,0 +1,21 @@
+{
+  "files": {
+    ".github/ISSUE_TEMPLATE/contribution.md": {
+      "revision": "9b5d885ae13a1113bcdcb98a6cc6b3801a0a7153",
+      "source": "setup-project-workflows/assets/templates/github/ISSUE_TEMPLATE/contribution.md.template"
+    },
+    ".github/PULL_REQUEST_TEMPLATE.md": {
+      "revision": "9b5d885ae13a1113bcdcb98a6cc6b3801a0a7153",
+      "source": "setup-project-workflows/assets/templates/github/PULL_REQUEST_TEMPLATE.md.template"
+    },
+    ".github/project-workflows/lifecycle.cjs": {
+      "revision": "465287073d579f662ec21d87fa0504304c86ccbd",
+      "source": "setup-project-workflows/assets/templates/github/lifecycle.cjs"
+    },
+    ".github/workflows/project-lifecycle.yml": {
+      "revision": "465287073d579f662ec21d87fa0504304c86ccbd",
+      "source": "setup-project-workflows/assets/templates/github/project-lifecycle.yml.template"
+    }
+  },
+  "schema_version": 1
+}
