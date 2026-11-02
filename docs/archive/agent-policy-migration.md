@@ -1,8 +1,9 @@
 ---
-attention: live
+attention: historical
 reviewed: 2026-11-02
 ---
 # Agent policy migration — Barkonomics
+Historical record. Closed 2026-11-02; stable slug: `agent-policy-migration`. Current obligations live in [AGENTS](../../AGENTS.md) and the [project-owned policy index](../agent-policies/policy.index.md). Verification evidence below is retained at closure; ordinary-task client observation is tracked in [TODO](../../TODO.md).
 Opened 2026-11-02. Stable slug: `agent-policy-migration`. [Tasks](agent-policy-migration.todo.md). This is a bounded receiving-project handoff; preparation changes no package, routing, policy status, tool, remote or design artifact.
 
 ## Ownership and current state
@@ -13,7 +14,7 @@ No files were found under docs/policies or docs/agent-policies. The existing wor
 Current policy inventory:
 - None found in the configured/current policy folders; inspect AGENTS and durable docs before concluding there are no standing instructions.
 
-Related owners: [github workflow integration](github-workflow-integration.md). Those completed/adoption/design scopes retain their own remaining QA and closure decisions; this new receiving phase does not reopen or silently close them. Central coordination lives in Project Workflows, `docs/active-spikes/agent-policy-rollout.md` (prepared locally, not published). [Project instructions](../../AGENTS.md) remain authoritative.
+Related owners: [github workflow integration](../active-spikes/github-workflow-integration.md). Those completed/adoption/design scopes retain their own remaining QA and closure decisions; this new receiving phase does not reopen or silently close them. Central coordination lives in Project Workflows, `docs/active-spikes/agent-policy-rollout.md` (prepared locally, not published). [Project instructions](../../AGENTS.md) remain authoritative.
 
 ## Project boundaries
 Prepare this local receiving phase on the existing codex/barkonomics-github-integration branch, linked to the existing workflow outcome issue #3. Reconcile issue scope before a new GitHub-tracked contribution; prepare any live updates for the human. Preserve project/barkonomics configuration, forge coordination, selected Agent Hands release/tooling pointer, copied starter customizations and baseline. Do not change board stages/automation, run hosted/live fixtures, publish PRs, onboard teammates or start dog-name analysis.
@@ -68,3 +69,6 @@ Three proposed kernel copies match the selected source exactly: ADOPT-POLICIES, 
 Aslan explicitly approved the nine exact indexed candidates and AGENTS routing, after separately approving the reviewed local merge and scoped checkpoints. All nine project-owned records are adopted with that decision in YAML metadata. The six operational bodies preserve every migrated AGENTS paragraph exactly once after relative-link normalization; the original remains in parent Git history at `2cd7cc9b075e62f47e529a68694ea9652b8c0bb7:AGENTS.md`. The three kernel bodies match provider `79dddf9742c282d184c65d5c5ef87a142900897f`; only adoption metadata differs. No old policy IDs or files need retirement.
 
 Semantic review found no new operational permissions or contradictions: independent operational rules have no invented prerequisites, and kernel edges express the actual adoption/identity prerequisites. The role of Shweta, human-directed scope, issue-before-branch-before-spike sequence, multiple spikes/issues per branch, visible PR review, preserved commits, existing tool selection, private context and actual publication authority are retained. Edit review established identity continuity; Retire was reviewed and is inapplicable. No artificial edit or retirement was performed solely to exercise a skill.
+
+## Closure — 2026-11-02
+Aslan authorized closure, archival, commit and publication. Parent migration checkpoint `98bc081a9dba7db220d2f83c4af64ebc8367fd07` records adopted policies and exact workflow pin `076b8b4e9935229bb6ff3d43cb740b51e9559973`. All original evidence above is retained. The maintained index and AGENTS own current guidance; no successor migration is needed. Ordinary-task client observation remains an explicitly separate QA item in TODO, without a synthetic service write or claimed client acceptance.

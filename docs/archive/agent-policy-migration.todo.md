@@ -1,8 +1,9 @@
 ---
-attention: live
+attention: historical
 reviewed: 2026-11-02
 ---
 # Agent policy migration — Barkonomics work
+Historical record. Closed 2026-11-02; stable slug: `agent-policy-migration`. Current obligations live in [AGENTS](../../AGENTS.md) and the [project-owned policy index](../agent-policies/policy.index.md). Verification evidence below is retained at closure; ordinary-task client observation is tracked in [TODO](../../TODO.md).
 Opened 2026-11-02. Stable slug: `agent-policy-migration`. [Concept and scope](agent-policy-migration.md).
 
 ## To Do
@@ -36,3 +37,6 @@ Actual adopted-set checks pass for all nine records. Selected RESOLVE-DEPENDENCI
 Coverage comparison against original committed AGENTS proves all 11 mapped paragraphs occur exactly once in the operational bodies after relative-link normalization. Three kernel bodies match the selected source, with only approved adoption metadata changed. All original TOML values survive, and the distinct agent_policies locator is present. Copied automation, stage map, asset receipt, README, proposal and tooling guide are unchanged. The source child is clean at 076b8b4e9935229bb6ff3d43cb740b51e9559973; the parent checkpoint records that exact pin.
 
 The bounded receiving migration is complete; the ordinary-task/client observation remains explicitly separate Human QA above. This spike is kept active pending its normal closure decision; no archival approval is inferred from policy adoption. No push, remote update, teammate notification or service permission change occurred.
+
+## Closure — 2026-11-02
+Aslan authorized closure, archival, commit and publication. Parent migration checkpoint `98bc081a9dba7db220d2f83c4af64ebc8367fd07` records adopted policies and exact workflow pin `076b8b4e9935229bb6ff3d43cb740b51e9559973`. All original evidence above is retained. The maintained index and AGENTS own current guidance; no successor migration is needed. Ordinary-task client observation remains an explicitly separate QA item in TODO, without a synthetic service write or claimed client acceptance.
