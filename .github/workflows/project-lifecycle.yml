@@ -4,7 +4,7 @@ on:
   issues:
     types: [opened, closed, reopened, labeled, unlabeled]
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '12,27,42,57 * * * *'
   workflow_dispatch:
     inputs:
       dry_run:
