@@ -1,0 +1,35 @@
+# GitHub tooling for Barkonomics
+The selected Agent Hands source is [d119a914acb0826a0b3e320d811369e59b077d55](https://github.com/jcklpe/agent-hands/commit/d119a914acb0826a0b3e320d811369e59b077d55), the published provider closeout. Its selected runtime/test files match reviewed release `4b6e7ae5324345cdb39406ad7f58636efb5d8e86`. The [integration spike](active-spikes/github-workflow-integration.md) owns project choices; [its test plan](active-spikes/github-workflow-integration.todo.md#prepared-end-to-end-test-plan) owns receiving acceptance. Pushes and live GitHub changes remain held by the user.
+
+## Resolve the selected installation
+Read the optional ignored root `.reference-paths.local.json` as JSON data. Its `github_tooling` value points to this project's external versioned bundle; resolve relative values from the pointer file. Read that bundle's `installation-manifest.json`, verify its source revision and source-file hashes, then read the selected setup/use skills directly. Preserve the old installation, other projects' tool choices and existing account settings. A missing pointer is not permission to use a different global version: retrieve the exact selected folders into a contributor-chosen external location through Setup Agent Hands, then record the paths-only local pointer if wanted.
+
+The tracked `.reference-paths.example.json` shows the shape. Private context is optional; a collaborator needs neither LifeOS nor the maintainer's filesystem paths. Do not execute pointer values or store credentials in them. Named global discovery is optional and is not part of this installation.
+
+## Selected files and capabilities
+Keep these complete folders as siblings outside this repository and any synchronized Drive folder. Their supporting references, scripts, manifests, locks and tests are dependencies; SKILL.md alone is insufficient.
+
+| Folder | Selected purpose |
+| --- | --- |
+| `setup-github/` | Shared provider configuration, effective identity/target checks, rendering and guarded collaboration runtime. Required by each use skill. |
+| `use-github-issues/` | Exact issue reads/exports and authorized issue creation, edits, comments and close/reopen. |
+| `use-github-pull-requests/` | PR code/discussion/review inspection, draft/update operations, formal feedback and deliberately authorized integration. |
+| `use-github-projects/` | Exact project/view/schema/item reads, selected project/field/view/repository-link provisioning, explicit item addition/Status moves, disabled lifecycle-ID generation and read-only recovery. |
+
+Retain root `LICENSE`. Optional client-link support also needs `setup-agent-hands/scripts/skill_links.py` and `setup-agent-hands/references/global-skill-links.md` at their original relative paths; the service linker is in `setup-github/scripts/link-skills.py`. This complete selection contains 54 tracked source files and 369,578 bytes before the local installation manifest. Other providers, Discussions, the general setup dialogue, Agent Hands Git history and its Project Workflows submodule are not dependencies. No Agent Hands implementation is vendored here.
+
+## Runtime, account and recovery
+Use existing Bash 3.2+, Git, gh, jq and Python 3.11+. Set `GITHUB_PYTHON` to an existing compatible interpreter or use only the selected capability's locked environment when needed. This installation uses the Python standard library and creates no environment, package tree or background process. Local Mac execution is verified; fresh Linux/WSL onboarding and native Windows are not established.
+
+Reuse existing gh authentication. Verify effective actor, host and repository through the native command; do not switch accounts, broaden grants, copy credentials or assume the Actions runner uses that login. Exact commands support `--repo Barkonomics-DataWrangling/barkonomics-pet-names` without a configured alias. Projects additionally select `--owner Barkonomics-DataWrangling --project-number 1` or its verified project ID. Legacy configured-board export has its separate alias contract. No new account profile or alias is needed for this project's native setup/read operations.
+
+The operated checkout owns ignored `.github/project-collaboration/`, selected with `--project CHECKOUT`; the tool bundle does not own these recovery records. Preserve existing journals and their permissions. Writes preview and require their actual authorization, matching actor/target, fingerprint and operation ID, then independent readback. An uncertain send requires read-only recovery before any retry; a nonzero exit does not prove zero remote effects. The owner has authorized setup publication/integration and board/runner configuration/testing, followed by automation enablement after passing results. Preserve the actual operation scope and test gates; credential entry or a new security-sensitive access grant can require an owner step.
+
+Full native automation conditions, grouping/sorting, Insights, access invitations, repository auto-close settings, runner secrets/variables and workflow dispatch are manual or separately selected setup work. The provider does not supply a second lifecycle engine. Use the existing Project Workflows helper/workflow and inspect actual native settings before enabling it.
+
+## Local verification — 2026-11-01
+The standalone selected bundle passes its local dependency check and all three native entrypoints. All 54 source hashes match the exact revision; the old bundle is preserved. Its 62 shared issue/PR/runtime and 45 Projects tests pass, as do legacy provider export/failure-preservation and renderer checks. All 24 Project Workflows lifecycle tests pass; copied helper/workflow bytes match their recorded source baselines.
+
+Real read-only commands using the selected bundle and existing `jcklpe` identity verified the existing public/open Project Management Kanban, five selected Status options, 13 fields, both views/visible columns, six native enabled flags, complete/stable item coverage with zero items, open issues #1–#3 and zero open PRs. `automation-config` generated verified nonsecret IDs with zero writes and both enablement flags false. These reads do not attest full native conditions, collaborator sign-in, hosted Actions execution or live lifecycle behavior. No credentials, global links, live settings, issues, cards, refs or workflows were changed.
+
+The exact project adaptation and parent setup branch are published in [draft PR #4](https://github.com/Barkonomics-DataWrangling/barkonomics-pet-names/pull/4), with a fresh anonymous recursive clone verified against the parent and child pins. Main is unchanged. This publication/readback does not prove another person’s client discovery, installation or account access. Aslan and his agent complete baseline preparation/testing first; Shweta’s own onboarding follows when the baseline is ready. The earlier one-time publication exception is complete. The November 2 authorization separately covers the local follow-up publication, history-preserving setup merge and board/runner rollout after testing.

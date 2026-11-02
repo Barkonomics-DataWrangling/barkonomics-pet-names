@@ -1,0 +1,4 @@
+{
+  "context": "/absolute/path/to/private/project-context.md",
+  "github_tooling": "/absolute/path/to/external/github-only-bundle"
+}
