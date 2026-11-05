@@ -12,5 +12,8 @@ Thumbs.db
 *.pem
 *.key
 
+# Downloaded and generated data; re-create with the R scripts.
+/data/
+
 # Agent Hands' private GitHub operation journal; shared .github files stay tracked.
 /.github/project-collaboration/
