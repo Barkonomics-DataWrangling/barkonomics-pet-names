@@ -1,0 +1,15 @@
+unit,flag,count
+named_license_record,breed_unknown,8287
+named_license_record,birth_year_suspect,45
+named_license_record,sex_unknown,0
+named_license_record,zipcode_padded,40
+named_license_record,zipcode_invalid,0
+named_license_record,identity_uncertain,8329
+named_license_record,compound_name,299
+estimated_dog,breed_unknown,7732
+estimated_dog,birth_year_suspect,42
+estimated_dog,sex_unknown,0
+estimated_dog,zipcode_padded,40
+estimated_dog,zipcode_invalid,0
+estimated_dog,identity_uncertain,7771
+estimated_dog,compound_name,275

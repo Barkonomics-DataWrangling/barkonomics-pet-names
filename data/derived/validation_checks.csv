@@ -1,0 +1,22 @@
+check,passed
+105974 source rows,TRUE
+audit covers every source row exactly once,TRUE
+dog IDs unique,TRUE
+five-field dog keys unique,TRUE
+source names classified before normalization,TRUE
+5810 missing-name records excluded only from name analysis,TRUE
+all named rows assigned,TRUE
+one retained row per estimated dog,TRUE
+retained IDs agree with dog CSV,TRUE
+group sizes reconcile,TRUE
+latest license and deterministic ties,TRUE
+all five key fields agree,TRUE
+ZIP codes are five-character text,TRUE
+source missingness reconciles by ZIP,TRUE
+reference names unique,TRUE
+100 names in each selected decade,TRUE
+dog/reference flags agree,TRUE
+unmatched and recognized dogs retained,TRUE
+BABY source records retained,TRUE
+uncertain records retained,TRUE
+uncertainty flags are complete and consistent,TRUE
