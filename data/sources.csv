@@ -1,0 +1,3 @@
+dataset,file,source_url,retrieved_at_utc,selection,rows,bytes,sha256
+NYC Dog Licensing Dataset,raw/nyc-dogs-2024.csv,https://data.cityofnewyork.us/resource/nu7n-tubp.csv?%24where=extract_year%3D%272024%27&%24limit=200000&%24order=%3Aid,2026-11-05T06:13:04.833946+00:00,extract_year = 2024; all eight published columns,105974,11139556,b4f05b3b04a18d3c9765590ab3a75c08f7e23990c7462619d7e735a3b83538ce
+SSA national baby names,raw/ssa-names.zip,https://www.ssa.gov/oact/babynames/names.zip,2026-11-05T14:58:55.985862+00:00,"Full official national archive, 1880–2025; pipeline uses 1920–1929, 1970–1979, 2010–2019",2181032,7860026,cd78e975ed7bb358e018dd62fbe14ced89295e9581c49172ca4eedcb011b3724
