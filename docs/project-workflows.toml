@@ -32,3 +32,27 @@ tooling = "Agent Hands d119a914acb0826a0b3e320d811369e59b077d55: setup-github, u
 # Optional documented checks; inspect them and project instructions before running commands.
 [validation]
 commands = []
+
+# Optional shared lookup paths, relative to this file. Keep private values in the ignored sibling.
+[references]
+# context = "project-context.md"
+# github_tooling = "/absolute/path/to/external/github-only-bundle"
+
+# project-workflows-assets:start
+[assets.".github/ISSUE_TEMPLATE/contribution.md"]
+source = "setup-project-workflows/assets/templates/github/ISSUE_TEMPLATE/contribution.md.template"
+revision = "9b5d885ae13a1113bcdcb98a6cc6b3801a0a7153"
+
+[assets.".github/PULL_REQUEST_TEMPLATE.md"]
+source = "setup-project-workflows/assets/templates/github/PULL_REQUEST_TEMPLATE.md.template"
+revision = "9b5d885ae13a1113bcdcb98a6cc6b3801a0a7153"
+
+[assets.".github/project-workflows/lifecycle.cjs"]
+source = "setup-project-workflows/assets/templates/github/lifecycle.cjs"
+revision = "465287073d579f662ec21d87fa0504304c86ccbd"
+
+[assets.".github/workflows/project-lifecycle.yml"]
+source = "setup-project-workflows/assets/templates/github/project-lifecycle.yml.template"
+revision = "465287073d579f662ec21d87fa0504304c86ccbd"
+
+# project-workflows-assets:end
