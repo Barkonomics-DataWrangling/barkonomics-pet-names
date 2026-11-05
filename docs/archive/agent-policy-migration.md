@@ -7,7 +7,7 @@ Historical record. Closed 2026-11-02; stable slug: `agent-policy-migration`. Cur
 Opened 2026-11-02. Stable slug: `agent-policy-migration`. [Tasks](agent-policy-migration.todo.md). This is a bounded receiving-project handoff; preparation changes no package, routing, policy status, tool, remote or design artifact.
 
 ## Ownership and current state
-Preparation snapshot: repository `https://github.com/Barkonomics-DataWrangling/barkonomics-pet-names.git`; parent branch `codex/barkonomics-github-integration` at `2cd7cc9b075e62f47e529a68694ea9652b8c0bb7`. Selected child `project-workflows/` is `project/barkonomics` at `a362492eecb646ea06eb22b4caa830d045f4ce25`, clean at inspection, with the same recorded parent gitlink. Recheck this snapshot before acting; it is not a lock or a claim the checkout stays clean.
+Preparation snapshot: repository `https://github.com/Barkonomics-DataWrangling/barkonomics-pet-names.git`; parent branch `aslan/barkonomics-github-integration` at `2cd7cc9b075e62f47e529a68694ea9652b8c0bb7`. Selected child `project-workflows/` is `project/barkonomics` at `a362492eecb646ea06eb22b4caa830d045f4ce25`, clean at inspection, with the same recorded parent gitlink. Recheck this snapshot before acting; it is not a lock or a claim the checkout stays clean.
 
 No files were found under docs/policies or docs/agent-policies. The existing workflow branch, issue #3 and github-workflow-integration own the current contribution setup and user-held live testing. The copied-asset baseline exists; selected Agent Hands release is d119a914acb0826a0b3e320d811369e59b077d55.
 
@@ -17,7 +17,7 @@ Current policy inventory:
 Related owners: [github workflow integration](../active-spikes/github-workflow-integration.md). Those completed/adoption/design scopes retain their own remaining QA and closure decisions; this new receiving phase does not reopen or silently close them. Central coordination lives in Project Workflows, `docs/active-spikes/agent-policy-rollout.md` (prepared locally, not published). [Project instructions](../../AGENTS.md) remain authoritative.
 
 ## Project boundaries
-Prepare this local receiving phase on the existing codex/barkonomics-github-integration branch, linked to the existing workflow outcome issue #3. Reconcile issue scope before a new GitHub-tracked contribution; prepare any live updates for the human. Preserve project/barkonomics configuration, forge coordination, selected Agent Hands release/tooling pointer, copied starter customizations and baseline. Do not change board stages/automation, run hosted/live fixtures, publish PRs, onboard teammates or start dog-name analysis.
+Prepare this local receiving phase on the existing aslan/barkonomics-github-integration branch, linked to the existing workflow outcome issue #3. Reconcile issue scope before a new GitHub-tracked contribution; prepare any live updates for the human. Preserve project/barkonomics configuration, forge coordination, selected Agent Hands release/tooling pointer, copied starter customizations and baseline. Do not change board stages/automation, run hosted/live fixtures, publish PRs, onboard teammates or start dog-name analysis.
 
 AGENTS grants no standing agent commit permission from workflow adoption. Obtain explicit scope for local checkpoints, including a merge the updater would create, unless the launch instruction already provides it. Existing human-held live-test/publication boundaries stay in force. No push or external issue/PR write.
 

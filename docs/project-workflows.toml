@@ -10,6 +10,7 @@ root = ".."
 readme = "README.md"
 instructions = "AGENTS.md"
 index = "TODO.md"
+catalog = "docs/docs.index.md"
 active_spikes = "docs/active-spikes"
 scratch = "docs/scratch"
 archive = "docs/archive"
@@ -27,7 +28,16 @@ mode = "forge"
 repository = "https://github.com/Barkonomics-DataWrangling/barkonomics-pet-names"
 # Optional project-owned reference naming setup/use skills and source/version. Empty allows human platform steps.
 # Never store a command or secret here.
-tooling = "Agent Hands d119a914acb0826a0b3e320d811369e59b077d55: setup-github, use-github-issues, use-github-pull-requests, use-github-projects; project guide docs/github-tooling.md"
+tooling = "Agent Hands"
+
+[coordination.tooling_source]
+repository = "https://github.com/jcklpe/agent-hands"
+revision = "d119a914acb0826a0b3e320d811369e59b077d55"
+skills = ["setup-github", "use-github-issues", "use-github-pull-requests", "use-github-projects"]
+guide = "docs/github-tooling.md"
+
+[coordination.branch_prefixes]
+aslan = "aslan/"
 
 # Optional documented checks; inspect them and project instructions before running commands.
 [validation]
