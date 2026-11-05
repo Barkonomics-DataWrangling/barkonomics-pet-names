@@ -4,6 +4,8 @@
 
 Use the existing `codex/barkonomics-github-integration` branch and `project/barkonomics` adaptation, preserving their original commits and the exact parent pin. The [tooling guide](docs/github-tooling.md) owns current source selection; the spike owns the future live scope. Keep #3 open through usable publication, onboarding and sharing.
 
+- **Income and ZIP–ZCTA data** — [issue #2](https://github.com/Barkonomics-DataWrangling/barkonomics-pet-names/issues/2) · [concept](docs/active-spikes/income-zcta-data.md) · [tasks](docs/active-spikes/income-zcta-data.todo.md). Shweta's R portion on branch `shweta/income-zcta-data`; Aslan's dog and baby-name portion is issue #1.
+
 ## Completed
 - **Agent policy migration** — [archived scope and evidence](docs/archive/agent-policy-migration.md) · [archived tasks](docs/archive/agent-policy-migration.todo.md). Closed 2026-11-02 after explicit adoption, preserved instruction coverage and verified dependency/link/repeatability checks. Current guidance: [agent policies](docs/agent-policies/policy.index.md).
 
