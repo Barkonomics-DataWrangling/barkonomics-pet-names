@@ -12,7 +12,6 @@ Work for [issue #2](https://github.com/Barkonomics-DataWrangling/barkonomics-pet
 ## To Do
 - Draft the integration table shape for Aslan's review (columns, keys, one row per ZIP or per ZCTA).
 - Bring progress and questions to the November 5 review.
-- Prepare a draft PR so Aslan can see scope and the integration plan.
 - Decide with Aslan which ACS release matches the license extract, then rerun with that release.
 - Decide how top-coded, bottom-coded and not-available incomes are treated in income groupings.
 
@@ -24,3 +23,4 @@ Work for [issue #2](https://github.com/Barkonomics-DataWrangling/barkonomics-pet
 - Write an R script that gets ACS B19013 estimate and margin of error for the relevant ZCTAs, once the release and API-key handling are settled. — The Census API rejects keyless requests (redirects to missing_key), so the script reads the keyless table-based summary file `acsdt5y<release>-b19013.dat` instead; no key handling needed. 33,772 ZCTAs. Census codes become NA plus a status: 3,225 `not_available` (-666666666), 118 top-coded at 250001, 15 bottom-coded at 2499 (MOE -333333333).
 - Join crosswalk to income and report ZCTAs with missing or suppressed income estimates. — Many-to-one left join; row count asserted unchanged. NY 2024: 1,826 distinct ZCTAs; ZIP rows 1,918 estimate, 29 top_coded, 1 bottom_coded, 200 not_available, 2 zcta_not_in_acs (11717 Brentwood, 11798 Wyandanch, ZCTAs absent from the ACS file). Spot-checked 10001, 10002, 10007, 10314, 10451, 11201 against the raw ACS file.
 - Shweta: run `Rscript R/income_zcta.R` from the repo root and open `data/processed/zip_zcta_income_ny_acs2024.csv`; check that a few ZIPs you know look plausible. — QA passed 2026-11-05: Shweta ran the script locally (same 2,150 rows and status counts) and confirmed the output.
+- Prepare a draft PR so Aslan can see scope and the integration plan. — Draft PR #9 opened 2026-11-05 from `shweta/income-zcta-data`, describing #2 as partial work (no closing reference). Progress comment posted on #2 linking it.
