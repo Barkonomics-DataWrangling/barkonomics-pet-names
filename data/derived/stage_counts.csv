@@ -1,13 +1,10 @@
 stage,count
 source_license_records,105974
-after_missing_label_join,105974
 missing_name_records,5810
 named_license_records,100164
-estimated_dogs_before_ssa_join,92963
 dogs_after_ssa_join,92963
 consolidated_license_records,7201
 license_audit_rows,105974
-ssa_selected_year_rows,604568
 ssa_name_decade_rows,99681
 ssa_reference_names,74656
 ssa_recognized_dogs,73120

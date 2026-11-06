@@ -11,13 +11,14 @@ The R pipeline reads only 1920–1929, 1970–1979 and 2010–2019 from that arc
 
 The [missing-name lookup](lookups/missing_name_labels.csv) is project-owned data recording the six selected labels. It maps alternate missing-name labels to `not_recorded`; `BABY` is deliberately absent. This lookup is not an additional external source.
 ## Generate and check the handoff
-Run from the repository root:
+Render the [analysis notebook](../dog-names.qmd) from the repository root to build the dog table and its supporting tables from the saved sources. To inspect them against the sources, render the [checks notebook](../dog-names-checks.qmd) separately.
 
 ```sh
 quarto render dog-names.qmd
+quarto render dog-names-checks.qmd
 ```
 
-The [R notebook](../dog-names.qmd) needs Quarto plus the R packages `tidyverse`, `knitr` and `rmarkdown`. It reads the saved sources, writes the CSVs, then re-reads them to check the output contract and record runtime versions. The source manifest retains acquisition checksums as provenance; the R workflow does not calculate or verify them. The [data dictionary](dog-name-data-dictionary.md) defines columns and types.
+Both notebooks use Quarto and the R packages `tidyverse`, `knitr` and `rmarkdown`. The checks notebook reads the CSVs from disk and writes the counts, check results and runtime versions. The [data dictionary](dog-name-data-dictionary.md) defines the columns and their types. Aslan used Codex for assistance with implementation and checks.
 
 The generated CSVs in `derived/` are the inspectable first handoff snapshot and should travel with this contribution. They total about 31 MB; the main dog CSV is 16.10 MB. Keeping these outputs alongside the roughly 19 MB of raw sources lets a collaborator inspect the result immediately and regenerate it offline. Temporary SSA extraction and R session files do not belong in Git. A new processing result must regenerate the saved validation results too.
 

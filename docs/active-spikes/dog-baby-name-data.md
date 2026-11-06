@@ -1,6 +1,6 @@
 ---
 attention: live
-reviewed: 2026-11-05
+reviewed: 2026-11-06
 tags: [barkonomics, dog-data, baby-names, r]
 ---
 # Dog and baby-name data
@@ -35,7 +35,7 @@ Aslan selected keeping reasonably sized fixed source snapshots in Git on Novembe
 
 Use 2024 as the starting dog extract, following Aslan's November 5 direction. This is the initial working choice, not a decision to pool years or claim unique dogs. For SSA, the national bulk download offers the reference source; preserve its readme and derive the chosen time window explicitly. Initial profiling should report schema, row counts, missingness and duplicate-looking records before adopting irreversible cleaning assumptions.
 ## Implementation approach
-The [R notebook](../../dog-names.qmd) uses named tidyverse transformations with inspectable intermediate tables. The [course R introduction](https://howisonlab.github.io/datawrangling/current/rtidyverse/tidyverse_intro.html) supplies filtering/selecting, new columns, lookup joins, grouped aggregation and ranking/windowing. The [grouping material](https://howisonlab.github.io/datawrangling/current/data_transforms/group_aggregate.html) explains how a group is reduced to a summary or a selected set of rows. Comments explain the purpose of each step, and the [saved-file check section](../../dog-names.qmd#check-the-saved-outputs) re-reads the saved outputs. Walk through the input grain, transformation and output grain so Aslan can explain each step.
+The [R notebook](../../dog-names.qmd) uses named tidyverse transformations with inspectable intermediate tables. The [course R introduction](https://howisonlab.github.io/datawrangling/current/rtidyverse/tidyverse_intro.html) supplies filtering/selecting, new columns, lookup joins, grouped aggregation and ranking/windowing. The [grouping material](https://howisonlab.github.io/datawrangling/current/data_transforms/group_aggregate.html) explains how a group is reduced to a summary or a selected set of rows. Comments explain the purpose of each step, and the [separate checks notebook](../../dog-names-checks.qmd) re-reads the saved outputs. Walk through the input grain, transformation and output grain so Aslan can explain each step.
 
 Use descriptive names and direct pipelines in this contribution. String transformations read in order through pipes, and lookup tables are named before joins. Use explicit five-field grouping and keep validation descriptions beside their calculations. Avoid single-letter iteration variables, generated column-name indexing and deeply nested transformations. The small package metadata table uses `rowwise()` because package version lookup takes one package at a time; the dog and SSA transformations operate on columns and groups.
 
@@ -47,7 +47,7 @@ Aslan approved formatting normalization, complete-name matching and compound-nam
 
 The observed patterns include apparent double names, character names, repeated syllables and an apparent alias. Do not add automatic first-word selection, inferred surname/title stripping, nickname expansion or other punctuation removal under this formatting rule. Any individual exception needs a documented basis.
 ## Selected missing-name rule
-Aslan approved treating the six exact values below as missing names for name-based analysis on November 5, preserving all source rows and reporting missingness separately, including by geography when available. The implementation detects these labels through a lookup before name-key normalization and preserves literal source strings such as `NA` during input. Raw sources remain unchanged.
+Aslan approved treating the six exact values below as missing names for name-based analysis on November 5, preserving all source rows and reporting missingness separately, including by geography when available. The implementation detects these labels through a lookup before name-key normalization and reads the two letters `NA` as text before classifying them as a missing name. Raw sources remain unchanged.
 
 | Missing-name marker | License records |
 | --- | ---: |
@@ -145,15 +145,15 @@ Examples and frequencies:
 Pattern descriptions are interpretations of the recorded text, not verified owner intent. The [complete inspection inventory](dog-baby-name-data.name-format-inspection.csv) retains all 242 distinct strings in these groups, their frequencies and structural categories, covering 1,987 records including the missing-name label and trailing-hyphen cases. Reproduce the inventory by grouping the unmodified `animalname` column, counting license rows and applying the detection rules above. Overall rarity does not establish that the affected records are evenly distributed across neighborhoods; no geographic sensitivity result is claimed.
 
 ## R readability
-Load `tidyverse` as a suite. Use descriptive names and readable sequential transformations. Define shared objects with `<-`; use `->` for self-contained pipeline results, and pipe directly from single-use reads unless a meaningful named object supports inspection or expected reuse. Split long transformations into inspectable named stages; straightforward loops remain acceptable. The preparation script separates `dogs_labeled`, `dogs_formatted` and `dogs_clean` before filtering and grouping. These are Aslan’s implementation instructions for this contribution. A proposed READABLE-R policy (maintained in the separate local policy contribution) records the candidate durable obligation; it is not yet adopted. No existing policy owns R coding style, and review found no conflicting obligation or incoming dependency for the new ID.
+Load `tidyverse` as a suite. Use descriptive names and readable sequential transformations. Define shared objects with `<-`; use `->` for self-contained pipeline results, and pipe directly from single-use reads unless a meaningful named object supports inspection or expected reuse. Split long transformations into inspectable named stages; straightforward loops remain acceptable. The analysis gives the NYC columns consistent names in `dogs_original` and uses `preview()` to display six example rows. These are Aslan’s implementation instructions for this contribution. A proposed READABLE-R policy (maintained in the separate local policy contribution) records the candidate durable obligation; it is not yet adopted. No existing policy owns R coding style, and review found no conflicting obligation or incoming dependency for the new ID.
 
 The R policy proposal is a separate contribution with its own commit and eventual issue-linked PR. Prepare its issue and PR from the policy diff and commits when publication is requested. The dog/name PR remains focused on issue #1 and the implementation/data handoff.
 
 ## Verification scope
-Keep validation focused on data correctness: parsing, row counts, key uniqueness, join cardinality, missingness, representative selection and name matching. The R notebook does not calculate source or output checksums and does not depend on `digest`. Acquisition checksums remain in the source inventory as provenance. Keep `sources <- read_csv(...)` as the named inventory for inspection and expected reuse. The handoff has twelve output CSVs; output checksum generation is outside its scope.
+Use the separate checks notebook to compare the saved dog table with the source licenses, missing-name lookup and SSA reference. The R notebook does not calculate source or output checksums and does not depend on `digest`. Acquisition checksums remain in the source inventory as provenance. Keep `sources <- read_csv(...)` as the named inventory for inspection and expected reuse. The handoff has twelve output CSVs; output checksum generation is outside its scope.
 
 ## Quarto implementation
-Use [dog-names.qmd](../../dog-names.qmd) as the sole R implementation, with sequential runnable chunks, methodological explanations and intermediate table previews. Render from the repository root. Durable output definitions live beside the data. Issue #1 owns shared coordination and acceptance; its PR will own change review. Documentation placement is project-specific, not a universal ban on code documentation under docs. Consumer workflow pins stay unchanged until the shared workflow guidance is settled.
+Use [dog-names.qmd](../../dog-names.qmd) for the analysis and [dog-names-checks.qmd](../../dog-names-checks.qmd) for independent checks on the saved files. Render from the repository root. Durable output definitions live beside the data. Issue #1 owns shared coordination and acceptance; its PR will own change review. Documentation placement is project-specific, not a universal ban on code documentation under docs. Consumer workflow pins stay unchanged until the shared workflow guidance is settled.
 
 ## Prepared issue update
 Unpublished preparation for issue #1; this is not a second shared acceptance record.
@@ -169,7 +169,7 @@ Unpublished preparation for the eventual data PR.
 
 Contributes to #1. Prepares one row per named estimated dog from NYC's 2024 license extract, with original names, quality flags, broad SSA recognition and overlapping top-100 decade memberships. The saved handoff contains 92,963 estimated dogs; all 105,974 source records are accounted for in the lineage and missingness outputs.
 
-Includes the fixed NYC and official SSA source snapshots with checksums, the six-label missing-name lookup, a runnable Quarto notebook with preparation and saved-file checks, generated CSVs, and `dog-names.qmd`, `data/dog-name-data-dictionary.md` and `docs/active-spikes/dog-baby-name-data.md`. The official SSA archive was acquired through the browser after command-line downloads returned 403.
+Includes the fixed NYC and official SSA source snapshots with checksums, the six-label missing-name lookup, separate Quarto notebooks for preparation and saved-file checks, generated CSVs, and `dog-names.qmd`, `data/dog-name-data-dictionary.md` and `docs/active-spikes/dog-baby-name-data.md`. The official SSA archive was acquired through the browser after command-line downloads returned 403.
 
 All 21 saved-file checks pass, covering latest-license selection and deterministic ties, unique five-field dog keys, complete source-to-dog lineage, unchanged dog count through the SSA join, exactly 100 names per decade, retained uncertain records and matching flags. An independent calculation from both raw sources agrees with every dog representative and SSA flag. A fresh preparation/check run reproduces all 12 output CSVs byte for byte. Runtime versions, per-stage counts and quality summaries are included.
 

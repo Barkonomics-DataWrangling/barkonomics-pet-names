@@ -1,0 +1,296 @@
+---
+title: "Check the dog and baby-name tables"
+format:
+  html:
+    embed-resources: true
+    toc: true
+    df-print: paged
+execute:
+  echo: true
+  message: false
+---
+
+Run this notebook to compare the saved dog table with the city licenses and the SSA name reference.
+
+```{r}
+library(tidyverse)
+```
+
+## Read the saved files
+```{r}
+#| label: read-the-saved-files
+source_licenses <- read_csv(
+  "data/raw/nyc-dogs-2024.csv",
+  col_types = cols(.default = col_character()),
+  na = character(), trim_ws = FALSE
+) |>
+  mutate(source_row_id = row_number()) |>
+  rename(zipcode_source = zipcode)
+
+missing_labels <- read_csv(
+  "data/lookups/missing_name_labels.csv",
+  col_types = cols(.default = col_character()), na = character()
+)
+
+dog_handoff <- read_csv(
+  "data/derived/dogs_2024.csv", na = "",
+  col_types = cols(
+    birth_year = col_character(),
+    original_zipcode = col_character(),
+    zipcode = col_character(),
+    license_issue_date = col_date(),
+    license_expiry_date = col_date(),
+    .default = col_guess()
+  )
+)
+
+license_audit <- read_csv("data/derived/license_to_dog.csv", na = "", show_col_types = FALSE)
+ssa_reference <- read_csv("data/derived/ssa_name_reference.csv", na = "", show_col_types = FALSE)
+ssa_decades <- read_csv("data/derived/ssa_name_decades.csv", na = "", show_col_types = FALSE)
+missing_by_zip <- read_csv(
+  "data/derived/missing_names_by_zip.csv", na = "",
+  col_types = cols(zipcode = col_character(), .default = col_guess())
+)
+```
+
+## Prepare the identity lookup
+Give each lookup a name so its columns and row unit can be inspected before joining.
+
+```{r}
+#| label: prepare-the-identity-lookup
+dog_handoff |>
+  select(
+    estimated_dog_id, name_key, sex, birth_year, breed, zipcode,
+    license_issue_date, license_expiry_date
+  ) ->
+  dog_identity_lookup
+```
+
+## Compare source and saved identities
+Trace every source license to its representative and compare the five identifying fields.
+
+```{r}
+#| label: compare-source-and-saved-identities
+source_licenses |>
+  left_join(license_audit, by = "source_row_id", relationship = "one-to-one") |>
+  left_join(
+    dog_identity_lookup,
+    by = "estimated_dog_id", relationship = "many-to-one", na_matches = "never"
+  ) |>
+  mutate(
+    source_name_missing = animalname %in% missing_labels$recorded_name,
+    normalized_source_name = str_to_upper(animalname, locale = "en"),
+    normalized_source_zip = str_pad(zipcode_source, width = 5, pad = "0"),
+    source_issue_date = str_sub(licenseissueddate, 1, 10),
+    source_expiry_date = str_sub(licenseexpireddate, 1, 10)
+  ) |>
+  mutate(
+    normalized_source_name = str_remove_all(normalized_source_name, "[\\s-]"),
+    source_issue_date = as.Date(source_issue_date),
+    source_expiry_date = as.Date(source_expiry_date),
+    five_fields_agree = name_key == normalized_source_name & sex == animalgender &
+      birth_year == animalbirth & breed == breedname & zipcode == normalized_source_zip
+  ) ->
+  mapped_licenses
+
+mapped_licenses |>
+  filter(!source_name_missing) ->
+  named_licenses
+
+mapped_licenses |>
+  filter(source_name_missing) ->
+  missing_licenses
+
+mapped_licenses |>
+  filter(record_status == "retained") ->
+  retained_licenses
+```
+
+## Check representative selection and group sizes
+No source license should outrank its retained representative under the documented tie rule.
+
+```{r}
+#| label: check-representative-selection-and-group-sizes
+named_licenses |>
+  mutate(
+    later_issue = source_issue_date > license_issue_date,
+    same_issue = source_issue_date == license_issue_date,
+    later_expiry = source_expiry_date > license_expiry_date,
+    same_expiry = source_expiry_date == license_expiry_date,
+    earlier_source_row = source_row_id < retained_source_row_id,
+    outranks_retained = later_issue | (same_issue & later_expiry) |
+      (same_issue & same_expiry & earlier_source_row)
+  ) ->
+  license_selection
+
+dog_handoff |>
+  select(estimated_dog_id, license_record_count) ->
+  dog_group_sizes
+
+license_audit |>
+  filter(!is.na(estimated_dog_id)) |>
+  count(estimated_dog_id, name = "actual_license_count") |>
+  left_join(dog_group_sizes, by = "estimated_dog_id", relationship = "one-to-one") |>
+  mutate(counts_agree = actual_license_count == license_record_count) ->
+  group_counts
+```
+
+## Compare saved name flags
+Compare each saved matching flag with the reference, keeping the four comparisons visible.
+
+```{r}
+#| label: compare-saved-name-flags
+flag_names <- c("ssa_recognized", "top100_1920", "top100_1970", "top100_2010")
+ssa_reference |>
+  select(name_key, all_of(flag_names)) ->
+  reference_flags
+
+dog_handoff |>
+  select(estimated_dog_id, name_key, all_of(flag_names)) |>
+  left_join(
+    reference_flags, by = "name_key",
+    relationship = "many-to-one", suffix = c("_dog", "_reference")
+  ) |>
+  mutate(
+    recognition_agrees = ssa_recognized_dog == replace_na(ssa_recognized_reference, FALSE),
+    decade_1920_agrees = top100_1920_dog == replace_na(top100_1920_reference, FALSE),
+    decade_1970_agrees = top100_1970_dog == replace_na(top100_1970_reference, FALSE),
+    decade_2010_agrees = top100_2010_dog == replace_na(top100_2010_reference, FALSE),
+    all_flags_agree = recognition_agrees & decade_1920_agrees &
+      decade_1970_agrees & decade_2010_agrees
+  ) ->
+  flag_checks
+
+ssa_decades |>
+  filter(top100) |>
+  count(decade, name = "name_count") ->
+  top100_counts
+
+named_licenses |>
+  filter(animalname == "BABY") ->
+  baby_licenses
+
+named_licenses |>
+  filter(breedname == "Unknown") ->
+  unknown_breed_licenses
+
+dog_handoff |>
+  select(breed_unknown, birth_year_suspect, sex_unknown, zipcode_invalid, identity_uncertain) |>
+  mutate(
+    expected_uncertainty = breed_unknown | birth_year_suspect | sex_unknown | zipcode_invalid,
+    flag_agrees = identity_uncertain == expected_uncertainty
+  ) ->
+  uncertainty_flags
+
+dog_handoff |>
+  select(all_of(flag_names)) ->
+  saved_name_flags
+```
+
+## Count records in the saved tables
+```{r}
+#| label: reconcile-stage-counts
+stage_counts <- tribble(
+  ~stage, ~count,
+  "source_license_records", nrow(source_licenses),
+  "missing_name_records", nrow(missing_licenses),
+  "named_license_records", nrow(named_licenses),
+  "dogs_after_ssa_join", nrow(dog_handoff),
+  "consolidated_license_records", nrow(named_licenses) - nrow(dog_handoff),
+  "license_audit_rows", nrow(license_audit),
+  "ssa_name_decade_rows", nrow(ssa_decades),
+  "ssa_reference_names", nrow(ssa_reference),
+  "ssa_recognized_dogs", sum(dog_handoff$ssa_recognized),
+  "top100_1920_dogs", sum(dog_handoff$top100_1920),
+  "top100_1970_dogs", sum(dog_handoff$top100_1970),
+  "top100_2010_dogs", sum(dog_handoff$top100_2010),
+  "identity_uncertain_dogs", sum(dog_handoff$identity_uncertain),
+  "compound_name_dogs", sum(dog_handoff$compound_name),
+  "baby_source_records", sum(named_licenses$animalname == "BABY"),
+  "baby_estimated_dogs", sum(dog_handoff$original_name == "BABY")
+)
+write_csv(stage_counts, "data/derived/stage_counts.csv")
+```
+
+## Run the saved-file checks
+Each row gives a check and its result.
+
+```{r}
+#| label: run-the-saved-file-checks
+checks <- tribble(
+  ~check, ~passed,
+  "105974 source rows",
+  nrow(source_licenses) == 105974,
+  "audit covers every source row exactly once",
+  nrow(license_audit) == nrow(source_licenses) &&
+    setequal(license_audit$source_row_id, source_licenses$source_row_id) &&
+    !anyDuplicated(license_audit$source_row_id),
+  "dog IDs unique",
+  !anyDuplicated(dog_handoff$estimated_dog_id),
+  "five-field dog keys unique",
+  !anyDuplicated(dog_handoff[c("name_key", "sex", "birth_year", "breed", "zipcode")]),
+  "source names classified before normalization",
+  all(is.na(mapped_licenses$estimated_dog_id) == mapped_licenses$source_name_missing),
+  "5810 missing-name records excluded only from name analysis",
+  nrow(missing_licenses) == 5810 && all(missing_licenses$record_status == "missing_name"),
+  "all named rows assigned",
+  !anyNA(named_licenses$estimated_dog_id),
+  "one retained row per estimated dog",
+  nrow(retained_licenses) == nrow(dog_handoff) && !anyDuplicated(retained_licenses$estimated_dog_id),
+  "retained IDs agree with dog CSV",
+  setequal(retained_licenses$source_row_id, dog_handoff$source_row_id),
+  "group sizes reconcile",
+  all(group_counts$counts_agree) && sum(dog_handoff$license_record_count) == nrow(named_licenses),
+  "latest license and deterministic ties",
+  !any(license_selection$outranks_retained),
+  "all five key fields agree",
+  all(named_licenses$five_fields_agree),
+  "ZIP codes are five-character text",
+  is.character(dog_handoff$zipcode) && all(str_detect(dog_handoff$zipcode, "^[0-9]{5}$")),
+  "source missingness reconciles by ZIP",
+  sum(missing_by_zip$source_license_records) == nrow(source_licenses) &&
+    sum(missing_by_zip$missing_name_records) == nrow(missing_licenses),
+  "reference names unique",
+  !anyDuplicated(ssa_reference$name_key),
+  "100 names in each selected decade",
+  setequal(top100_counts$decade, c(1920, 1970, 2010)) && all(top100_counts$name_count == 100),
+  "dog/reference flags agree",
+  all(flag_checks$all_flags_agree),
+  "unmatched and recognized dogs retained",
+  any(dog_handoff$ssa_recognized) && any(!dog_handoff$ssa_recognized) && !anyNA(saved_name_flags),
+  "BABY source records retained",
+  nrow(baby_licenses) == 120 && !anyNA(baby_licenses$estimated_dog_id),
+  "uncertain records retained",
+  nrow(unknown_breed_licenses) == 8287 && !anyNA(unknown_breed_licenses$estimated_dog_id),
+  "uncertainty flags are complete and consistent",
+  !anyNA(uncertainty_flags) && all(uncertainty_flags$flag_agrees)
+)
+write_csv(checks, "data/derived/validation_checks.csv")
+print(checks, n = Inf)
+checks |>
+  pull(passed) |>
+  all() -> all_checks_passed
+stopifnot(all_checks_passed)
+```
+
+## Record runtime versions
+Record the R and package versions used for this run.
+
+```{r}
+#| label: record-runtime-versions
+getRversion() |>
+  as.character() ->
+  r_version
+
+tibble(package = "R", version = r_version) -> r_runtime
+tibble(package = c("tidyverse", "dplyr", "readr", "stringr", "tidyr")) |>
+  rowwise() |>
+  mutate(version = as.character(packageVersion(package))) |>
+  ungroup() ->
+  package_versions
+
+r_runtime |>
+  bind_rows(package_versions) ->
+  runtime
+write_csv(runtime, "data/derived/runtime_versions.csv")
+```

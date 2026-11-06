@@ -1,17 +1,17 @@
 # Dog-name data dictionary
-The primary file is [dogs_2024.csv](derived/dogs_2024.csv), one row per named estimated dog under the five-field rule. CSV does not store types: explicitly import ZIP codes and birth years as text. Empty fields in the reference/audit outputs represent missing values; read with `na = ""` to preserve literal name keys such as `NA`.
+The primary file is [dogs_2024.csv](derived/dogs_2024.csv), one row per named estimated dog under the five-field rule. Read ZIP codes and birth years as text. In the reference and audit files, an empty field means a missing value. Use `na = ""` to keep a name written with the two letters `NA` as text.
 ## Dog columns
 | Column | Type | Meaning |
 | --- | --- | --- |
 | `estimated_dog_id` | Text | `dog2024-` plus the retained source row number, padded to six digits. Stable within this snapshot and rule, not an official ID or a cross-year identity. |
 | `source_row_id` | Integer | One-based data row of the retained license in the raw CSV, excluding its header. |
 | `extract_year` | Integer | Selected NYC extract, 2024; not necessarily the license issue year. |
-| `name_original` | Text | Name on the retained license, unchanged. |
+| `original_name` | Text | Name on the retained license, unchanged. |
 | `name_key` | Text | Full name uppercased with spaces and hyphens removed; no first-token, nickname or title substitution. |
 | `sex` | Text | Recorded dog sex (`F` or `M` in this snapshot). Dog sex does not constrain SSA name matching. |
 | `birth_year` | Text | Recorded birth year, including malformed values; never guessed or repaired. |
 | `breed` | Text | Recorded breed, including `Unknown`; no breed-alias consolidation. |
-| `zipcode_original` | Text | ZIP as published on the retained license. |
+| `original_zipcode` | Text | ZIP as published on the retained license. |
 | `zipcode` | Text | Five-character ZIP representation: digit-only source values of up to five digits are left-padded with zeros. This is not confirmation of valid NYC geography. |
 | `license_issue_date` | Date | Issue date of the retained license, `YYYY-MM-DD`. |
 | `license_expiry_date` | Date | Expiry date of the retained license, `YYYY-MM-DD`. |
@@ -43,14 +43,14 @@ The five-field group key is `name_key`, `sex`, `birth_year`, `breed`, `zipcode`.
 | [quality_flags.csv](derived/quality_flags.csv) | One unit/flag | Compares flagged counts among named license records and estimated dogs. |
 | [matching_by_counting_unit.csv](derived/matching_by_counting_unit.csv) | One unit/measure | Recognition and decade shares when weighting estimated dogs equally versus weighting by their license-record counts. |
 | [ssa_top100_cutoffs.csv](derived/ssa_top100_cutoffs.csv) | One decade | Names and counts at ranks 100/101 and whether the cutoff is tied. |
-| [stage_counts.csv](derived/stage_counts.csv) | One processing stage/measure | Count reconciliation from source to handoff. |
+| [stage_counts.csv](derived/stage_counts.csv) | One processing stage/measure | Counts measured from the source and saved tables in the checks notebook. |
 | [validation_checks.csv](derived/validation_checks.csv) | One check | Pass/fail results from independently re-reading saved files. |
 | [runtime_versions.csv](derived/runtime_versions.csv) | One package/runtime | Versions used for validation. |
 
 In the SSA tables, `births` sums published counts across sex and all ten years in that decade. `share` divides by the decade's total published counts; suppressed names are not part of that denominator. `rank` orders descending counts and then alphabetically in C locale. `top100` is `rank <= 100`. The wide table uses suffixes `_1920`, `_1970`, `_2010`; an absent decade has zero births/share, false membership and an empty rank. Every reference row has `ssa_recognized = TRUE`.
 
 ## Import the dog table in R
-Read ZIP codes and recorded birth years as text. Use an empty string as the missing-value marker so a literal name such as `NA` survives import.
+Read ZIP codes and recorded birth years as text. Treat empty fields as missing values.
 
 ```r
 library(tidyverse)
@@ -59,7 +59,7 @@ dogs <- read_csv(
   "data/derived/dogs_2024.csv", na = "",
   col_types = cols(
     zipcode = col_character(),
-    zipcode_original = col_character(),
+    original_zipcode = col_character(),
     birth_year = col_character()
   )
 )
