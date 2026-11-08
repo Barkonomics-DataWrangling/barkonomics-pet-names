@@ -230,7 +230,7 @@ dogs_estimated |>
     sex, birth_year, breed, zipcode,
     license_issue_date, license_expiry_date, license_record_count,
     original_name_variants, latest_issue_ties, compound_name, any_compound_name,
-    breed_unknown, birth_year_suspect, sex_unknown, zipcode_invalid,
+    breed_unknown, birth_year_suspect, sex_unknown,
     identity_uncertain
   ) ->
   dogs
@@ -277,7 +277,7 @@ missing_by_zip |>
 ```
 
 ### Corrections and unresolved fields
-The padded-ZIP count records corrections already made. Count it from the preparation tables; the exported dog tables need only the formatted ZIP. Unknown breeds and suspect birth years remain unresolved because the source does not provide a reliable replacement. Compound names follow the full-name matching rule. These counts describe the named licenses and estimated dogs.
+The padded-ZIP count records corrections already made. The invalid-ZIP count records values that are not five digits after formatting; it does not establish whether a ZIP belongs to NYC. Count both from the preparation tables; the exported dog tables need only the formatted ZIP. Unknown breeds and suspect birth years remain unresolved because the source does not provide a reliable replacement. Compound names follow the full-name matching rule. These counts describe the named licenses and estimated dogs.
 
 ```{r}
 #| label: summarize-quality-flags

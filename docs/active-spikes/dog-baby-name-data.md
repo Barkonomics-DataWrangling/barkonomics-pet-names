@@ -189,4 +189,4 @@ Give all publisher fields an original_ prefix in dogs_original. Select short wor
 Execute preparation and checking chunks directly while developing. Render analysis.qmd when the final HTML deliverable is needed.
 
 ## Quality-flag review
-Keep zipcode_padded in the preparation tables and cleaning report, but omit it from both exported dog tables. The formatted zipcode is the field used downstream. Review the remaining flags individually before changing their treatment.
+Keep zipcode_padded and zipcode_invalid in the preparation tables and cleaning report, but omit them from both exported dog tables. The formatted zipcode is the field used downstream. Whether zero-count diagnostics need report entries remains under discussion. Review the remaining flags individually before changing their treatment.

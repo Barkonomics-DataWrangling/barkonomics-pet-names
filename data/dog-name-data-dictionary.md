@@ -22,8 +22,7 @@ The notebook keeps a source-stage table, dogs_original, with consistent original
 | `breed_unknown` | Boolean | Recorded breed is `Unknown` or blank, ignoring case and outer whitespace for this flag only. |
 | `birth_year_suspect` | Boolean | Birth year is not four digits or lies outside 1990–2024. This is a screening flag, not an age exclusion or a correction. |
 | `sex_unknown` | Boolean | Recorded sex is neither `F` nor `M`. |
-| `zipcode_invalid` | Boolean | The resulting ZIP is not exactly five digits. Valid syntax does not imply a geographic match. |
-| `identity_uncertain` | Boolean | Any of `breed_unknown`, `birth_year_suspect`, `sex_unknown` or `zipcode_invalid` is true. Records remain in the output. All other identities are still estimates. |
+| `identity_uncertain` | Boolean | The breed or sex is unknown, the birth year is suspect, or the formatted ZIP is not five digits. Records remain in the output. All other identities are still estimates. |
 | `ssa_recognized` | Boolean | Full normalized name appears in a published SSA record in any selected year: 1880–2019. |
 | `top100_1880` … `top100_2010` | Boolean | One column per complete decade. True when the name is among its 100 largest combined-sex birth counts. |
 
@@ -44,7 +43,7 @@ The five-field group key is `name`, `sex`, `birth_year`, `breed`, `zipcode`. Sel
 | [validation_checks.csv](derived/validation_checks.csv) | One check | Pass/fail results from independently re-reading saved files. |
 | [runtime_versions.csv](derived/runtime_versions.csv) | One package/runtime | Versions used for validation. |
 
-`zipcode_padded` appears only in the cleaning report: it counts records whose ZIP gained leading zeros during preparation. The dog tables contain the formatted `zipcode` without that flag.
+The cleaning report includes `zipcode_padded`, counting records whose ZIP gained leading zeros, and `zipcode_invalid`, counting ZIPs that are not five digits after formatting. Five digits do not establish a geographic match. The dog tables contain the formatted `zipcode` without either flag.
 
 In the SSA tables, `births` sums published counts across sex and all ten years in that decade. `share` divides by the decade's total published counts; suppressed names are not part of that denominator. `rank` orders descending counts and then alphabetically in C locale. `top100` is `rank <= 100`. The wide table uses decade suffixes from `_1880` through `_2010`; an absent decade has zero births/share, false membership and an empty rank. Every reference row has `ssa_recognized = TRUE`.
 
