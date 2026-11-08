@@ -27,10 +27,11 @@ source_licenses <- read_csv(
   mutate(source_row_id = row_number()) |>
   rename(zipcode_source = zipcode)
 
-missing_labels <- read_csv(
+missing_name_labels <- read_csv(
   "data/lookups/missing_name_labels.csv",
   col_types = cols(.default = col_character()), na = character()
-)
+) |>
+  pull(recorded_name)
 
 dog_handoff <- read_csv(
   "data/derived/dogs_2024.csv", na = "",
@@ -78,7 +79,7 @@ source_licenses |>
     by = "estimated_dog_id", relationship = "many-to-one", na_matches = "never"
   ) |>
   mutate(
-    source_name_missing = animalname %in% missing_labels$recorded_name,
+    source_name_missing = animalname %in% missing_name_labels,
     normalized_source_name = str_to_upper(animalname, locale = "en"),
     normalized_source_zip = str_pad(zipcode_source, width = 5, pad = "0"),
     source_issue_date = str_sub(licenseissueddate, 1, 10),

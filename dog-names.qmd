@@ -29,10 +29,11 @@ dogs_raw <- read_csv(
   col_types = cols(.default = col_character()),
   na = character(), trim_ws = FALSE
 )
-missing_labels <- read_csv(
+missing_name_labels <- read_csv(
   "data/lookups/missing_name_labels.csv",
   col_types = cols(.default = col_character()), na = character()
-)
+) |>
+  pull(recorded_name)
 ```
 
 ### Give the original license fields clear names
@@ -59,41 +60,67 @@ dogs_original |>
   preview()
 ```
 
-### Identify missing names
-Our lookup lists six ways the city recorded a missing name, including `UNKNOWN` and `NA`. We match them before changing any spelling. We keep `BABY` as a name.
+### Report missing names
+The list `missing_name_labels` contains the six labels we already agreed mean no name was recorded. `pull(recorded_name)` takes that column from the CSV and gives us its values. `%in%` checks whether each license’s name is in that list. `BABY` remains a name.
 ```{r}
-#| label: label-missing-names
+#| label: report-missing-names
 dogs_original |>
-  left_join(missing_labels, by = c("original_name" = "recorded_name")) |>
-  mutate(
-    name_status = replace_na(name_status, "recorded"),
-    name_missing = name_status == "not_recorded"
-  ) ->
-  dogs_with_name_status
+  filter(original_name %in% missing_name_labels) |>
+  count(original_name, name = "source_license_records", sort = TRUE) ->
+  missing_name_counts
+
+missing_name_counts
+```
+
+For each ZIP, count all licenses and how many lack a name. `format_zipcodes()` supplies leading zeros for digit-only ZIPs up to five digits, using the same rule as the named dogs later. `sum()` counts TRUE results. Dividing that count by all licenses gives the missing-name share.
+```{r}
+#| label: summarize-missingness-by-zip
+dogs_original |>
+  group_by(extract_year, zipcode = format_zipcodes(original_zipcode)) |>
+  summarise(
+    source_license_records = n(),
+    missing_name_records = sum(original_name %in% missing_name_labels),
+    named_license_records = source_license_records - missing_name_records,
+    missing_name_share = missing_name_records / source_license_records,
+    .groups = "drop"
+  ) |>
+  mutate(extract_year = as.integer(extract_year)) |>
+  arrange(zipcode) ->
+  missing_by_zip
+
+missing_by_zip |>
+  summarise(
+    source_license_records = sum(source_license_records),
+    missing_name_records = sum(missing_name_records),
+    missing_name_share = missing_name_records / source_license_records
+  )
+```
+
+### Keep the named licenses
+`filter()` keeps rows whose condition is TRUE. The `!` reverses the membership result, so this keeps names outside the six-label list. Only these licenses continue through name formatting, dates, quality flags and grouping.
+```{r}
+#| label: keep-named-licenses
+dogs_original |>
+  filter(!(original_name %in% missing_name_labels)) ->
+  named_licenses
 ```
 
 ### Format names for matching
 Uppercase the whole name, then remove spaces and hyphens. These are the spelling differences we agreed to ignore when matching. For example, `WALL-E` becomes `WALLE`. Preserve the recorded name so compounds can still be identified.
 ```{r}
 #| label: format-names
-dogs_with_name_status |>
+named_licenses |>
   mutate(name = str_to_upper(original_name, locale = "en")) |>
   mutate(name = str_remove_all(name, "[\\s-]")) ->
   dogs_with_matching_names
 ```
 
 ### Format ZIP codes
-If a ZIP contains one to five digits, pad it to five digits with leading zeros. `str_detect()` checks the digits and `str_pad()` supplies the zeros. This prepares the ZIP for the geography join.
+Use the same ZIP formatting function as the missingness summary, preserving the recorded ZIP alongside the formatted value.
 ```{r}
 #| label: format-zipcodes
 dogs_with_matching_names |>
-  mutate(
-    zipcode_contains_one_to_five_digits = str_detect(original_zipcode, "^[0-9]{1,5}$"),
-    zipcode_with_leading_zeros = str_pad(original_zipcode, width = 5, pad = "0")
-  ) |>
-  mutate(
-    zipcode = if_else(zipcode_contains_one_to_five_digits, zipcode_with_leading_zeros, original_zipcode)
-  ) ->
+  mutate(zipcode = format_zipcodes(original_zipcode)) ->
   dogs_with_zipcodes
 ```
 
@@ -130,8 +157,7 @@ dogs_with_dates |>
   ) |>
   mutate(breed_label = str_to_upper(breed_label)) |>
   mutate(
-    name = if_else(name_missing, NA_character_, name),
-    compound_name = !name_missing & str_detect(original_name, "\\S\\s+\\S|[^\\s-]-[^\\s-]"),
+    compound_name = str_detect(original_name, "\\S\\s+\\S|[^\\s-]-[^\\s-]"),
     zipcode_padded = zipcode != original_zipcode,
     zipcode_invalid = !str_detect(zipcode, "^[0-9]{5}$"),
     breed_unknown = breed_label %in% c("", "UNKNOWN"),
@@ -147,23 +173,13 @@ dogs_with_dates |>
   dogs_with_quality_flags
 ```
 
-### Select named records
-We use named licenses to estimate individual dogs. We report missing names separately by ZIP using all licenses.
-
-```{r}
-#| label: select-named-records
-dogs_with_quality_flags |>
-  filter(!name_missing) ->
-  named_licenses
-```
-
 ### Estimate individual dogs
 We treat licenses with the same full name after formatting, sex, birth year, breed and ZIP as one estimated dog. Within each group, we sort the newest issue date first. A tie goes to the later expiry date, then to the earlier row in the source file. `slice_head(n = 1)` keeps the first license in each sorted group. `license_record_count` records how many licenses that row represents. For example, the two matching TOTORO licenses were issued in 2019 and 2024. The 2024 row represents both.
 
 ```{r}
 #| label: estimate-individual-dogs
 dog_key <- c("name", "sex", "birth_year", "breed", "zipcode")
-named_licenses |>
+dogs_with_quality_flags |>
   group_by(name, sex, birth_year, breed, zipcode) |>
   mutate(
     license_record_count = n(),
@@ -206,7 +222,7 @@ dogs_estimated |>
 ```
 
 ### Trace source records to dogs
-Keep a row-by-row explanation of which source records were consolidated or lacked a name.
+Map the named licenses to their retained dog row. List every original row in the audit, including the excluded licenses, so the result can be traced back to the source.
 ```{r}
 #| label: trace-source-records-to-dogs
 dogs |>
@@ -215,40 +231,20 @@ dogs |>
 
 dogs_with_quality_flags |>
   left_join(dog_identity_lookup, by = dog_key) |>
+  select(source_row_id, estimated_dog_id, retained_source_row_id) ->
+  named_license_mapping
+
+dogs_original |>
+  select(source_row_id) |>
+  left_join(named_license_mapping, by = "source_row_id") |>
   mutate(
     record_status = case_when(
-      name_missing ~ "missing_name",
+      is.na(estimated_dog_id) ~ "missing_name",
       source_row_id == retained_source_row_id ~ "retained",
       TRUE ~ "consolidated"
     )
-  ) |>
-  select(source_row_id, estimated_dog_id, retained_source_row_id, record_status) ->
+  ) ->
   license_to_dog
-```
-
-### Summarize source missingness
-Each license contributes once to the missing-name share for its ZIP.
-```{r}
-#| label: summarize-source-missingness
-dogs_with_quality_flags |>
-  group_by(extract_year, zipcode) |>
-  summarise(
-    source_license_records = n(), missing_name_records = sum(name_missing),
-    named_license_records = sum(!name_missing),
-    missing_name_share = mean(name_missing), .groups = "drop"
-  ) |>
-  arrange(zipcode) ->
-  missing_by_zip
-
-dogs_with_quality_flags |>
-  filter(name_missing) |>
-  count(original_name, name = "source_license_records", sort = TRUE) ->
-  missing_name_counts
-```
-
-```{r}
-#| label: summarize-source-missingness-preview
-missing_name_counts
 ```
 
 ### Summarize quality flags
@@ -256,7 +252,7 @@ missing_name_counts
 #| label: summarize-quality-flags
 quality_flags <- c("breed_unknown", "birth_year_suspect", "sex_unknown",
   "zipcode_padded", "zipcode_invalid", "identity_uncertain", "compound_name")
-named_licenses |>
+dogs_with_quality_flags |>
   summarise(across(all_of(quality_flags), sum)) |>
   mutate(unit = "named_license_record") ->
   license_quality_counts

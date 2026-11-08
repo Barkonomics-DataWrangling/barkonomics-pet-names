@@ -51,7 +51,7 @@ Aslan approved formatting normalization, complete-name matching and compound-nam
 
 The observed patterns include apparent double names, character names, repeated syllables and an apparent alias. Do not add automatic first-word selection, inferred surname/title stripping, nickname expansion or other punctuation removal under this formatting rule. Any individual exception needs a documented basis.
 ## Selected missing-name rule
-Aslan approved treating the six exact values below as missing names for name-based analysis on November 5, preserving all source rows and reporting missingness separately, including by geography when available. The implementation detects these labels through a lookup before name-key normalization and reads the two letters `NA` as text before classifying them as a missing name. Raw sources remain unchanged.
+Aslan approved treating the six exact values below as missing names for name-based analysis on November 5, preserving all source rows and reporting missingness separately, including by geography when available. The implementation applies the agreed list with %in%, reports missingness, then filters out those licenses before name formatting and reads the two letters `NA` as text before classifying them as a missing name. Raw sources remain unchanged.
 
 | Missing-name marker | License records |
 | --- | ---: |
@@ -67,7 +67,7 @@ These six values account for 5.48% of the 105,974 records, leaving 100,164 named
 
 For the overall share matching the selected name reference, use named, eligible estimated dogs after the selected five-field grouping as the denominator; a present name that fails to match remains in that denominator. Missing names should have no match classification. Report source missingness separately using all source license records as its denominator; do not combine that record count with the estimated-dog denominator. This does not settle the separate denominator for any later distribution among matched generations.
 
-Aslan explicitly selected keeping `BABY` (120 records) as a name. Titles such as `MR.` (89), `MRS.` (5), `MS.` (5) and `DR.` (9), and the four once-occurring strings `UNKNOWNMOR`, `UNKNOWNMS`, `UNKNOWNCOCK` and `UNKNOWNSHIBA`, remain review cases; an exact lookup avoids turning a substring guess into an exclusion rule. The selected list does not establish that every remaining name has been verified.
+Aslan explicitly selected keeping `BABY` (120 records) as a name. Titles such as `MR.` (89), `MRS.` (5), `MS.` (5) and `DR.` (9), and the four once-occurring strings `UNKNOWNMOR`, `UNKNOWNMS`, `UNKNOWNCOCK` and `UNKNOWNSHIBA`, remain review cases; exact membership keeps the exclusions limited to the six agreed labels. The selected list does not establish that every remaining name has been verified.
 ## Selected estimated-dog rule
 Aslan approved the five-field rule and retaining the latest license on November 5: group named records by normalized full name, sex, birth year, breed and ZIP, count each group as one estimated dog, and retain its latest license record as the representative. The implementation selects greatest issue date, then greatest expiry date, then smallest source row number. The public fields lack a stable dog identifier: the rule can merge different dogs with matching attributes and can miss repeat records when attributes change. Describe the resulting 92,963 units as estimated dogs, not verified individual identities. All named source records map to exactly one of them in the lineage output.
 
@@ -164,7 +164,7 @@ Unpublished preparation for issue #1; this is not a second shared acceptance rec
 
 1. **Shweta's interface:** confirm her ZIP–ZCTA and income filenames and column names. Recommended joins are dog `zipcode` → unique crosswalk ZIP → unique income ZCTA, using left joins with many-to-one checks. Keep unmatched dogs visible and aggregate by ZCTA after mapping. No geography or income availability has been assumed in this CSV.
 2. **Shared review:** inspect the five-field identity approximation and flag summaries before interpreting neighborhood patterns. The retained source records and lineage permit a different consolidation rule without reacquiring data. No rule change is necessary to inspect this handoff.
-3. **Course synonym coverage:** the six missing-name labels now map through an explicit lookup to one `not_recorded` status, following the course's lookup pattern. Confirm whether that meets the intended synonym requirement alongside the geographic crosswalk. ZIPs and ZCTAs are related geographies rather than interchangeable names, and case normalization alone is not synonym handling. If another example is required, use an evidenced alias lookup; do not invent dog-name equivalences to satisfy the rubric.
+3. **Course synonym coverage:** the six missing-name labels are applied through exact list membership. Confirm the course synonym requirement alongside the geographic crosswalk. ZIPs and ZCTAs are related geographies rather than interchangeable names, and case normalization alone is not synonym handling. If another example is required, use an evidenced alias lookup; do not invent dog-name equivalences to satisfy the rubric.
 
 These questions concern integration, shared interpretation and course acceptance; the dog-level CSV is usable independently. Income grouping, plots, rarity/diversity extensions and equivalent pandas/SQL/Power Query workflows remain later work. Issue #1 stays open through the agreed review and acceptance; this first contribution does not claim completion of the full project.
 
@@ -181,5 +181,5 @@ Review the documented identity approximation and the CSV interface for Shweta's 
 
 The R style policy requires a separate issue and PR. Keep the policy commit out of this PR’s change set; integrate the policy PR first and compare this contribution against the updated target before publication.
 
-## Missing-name implementation decision
-The six agreed labels and retention of BABY are settled. Aslan requested a side-by-side comparison of list membership with %in% versus joining the status lookup and using replace_na(). The existing lookup remains in the running pipeline pending that selection. Use one approach for this classification after the decision.
+## Missing-name implementation
+Use the six-label list directly. Read its recorded_name column into missing_name_labels with pull(). Count the excluded labels overall and by ZIP, then filter with !(original_name %in% missing_name_labels). The named licenses proceed through name formatting, ZIPs, dates and quality flags. Keep the recorded values and a source-row audit. A shared format_zipcodes() function applies the same leading-zero rule to the missingness summary and named licenses. Name-status and name-missing columns are unnecessary in dog preparation.

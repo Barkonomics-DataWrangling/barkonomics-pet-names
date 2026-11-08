@@ -11,7 +11,7 @@ The files were extracted byte for byte from the official national archive downlo
 
 The baby-name notebook reads the 140 annual files for 1880–2019 directly. All rankings and overall name recognition use those 14 complete decades.
 
-The [missing-name lookup](lookups/missing_name_labels.csv) is project-owned data recording the six selected labels. It maps alternate missing-name labels to `not_recorded`; `BABY` is deliberately absent. This lookup is not an additional external source.
+The [missing-name list](lookups/missing_name_labels.csv) contains the six agreed labels in one column. Count their occurrences overall and by ZIP, then exclude those licenses before formatting names and dates or adding quality flags. `BABY` remains a name.
 ## Generate and check the handoff
 Render the notebooks from the repository root in this order. Dog and baby-name preparation are independent. The analysis reads their saved CSVs.
 
@@ -27,6 +27,6 @@ quarto render dog-names-checks.qmd
 - [Analysis](../analysis.qmd) writes dogs_2024.csv with all 14 decade flags and the comparison of dog and license counts. Geography and income joins belong in this notebook once the agreed tables are available.
 - [Checks](../dog-names-checks.qmd) independently reads the sources and outputs to check the saved result.
 
-The notebooks need Quarto and the R packages tidyverse, knitr and rmarkdown. Their shared preview function lives in [R/helpers.R](../R/helpers.R). The [data dictionary](dog-name-data-dictionary.md) defines the output fields. Aslan used Codex for assistance with implementation and checks.
+The notebooks need Quarto and the R packages tidyverse, knitr and rmarkdown. Their shared preview and ZIP-formatting functions live in [R/helpers.R](../R/helpers.R). The [data dictionary](dog-name-data-dictionary.md) defines the output fields. Aslan used Codex for assistance with implementation and checks.
 
 Keep the generated CSVs with this contribution for review and offline use. Regenerate the checks after changing a processing result. The [spike](../docs/active-spikes/dog-baby-name-data.md) records decisions and work history.
