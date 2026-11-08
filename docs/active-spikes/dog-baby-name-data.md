@@ -182,3 +182,6 @@ The R style policy requires a separate issue and PR. Keep the policy commit out 
 
 ## Missing-name implementation
 Use the six-label list directly. Define missing_name_labels with c() at the top of dog-names.qmd so the exclusion rules are visible during the walkthrough. The checks notebook declares its expected six labels independently. Count the excluded labels overall and by ZIP, Calculate name_missing from dogs_original$original_name %in% missing_name_labels and use filter(!name_missing) on that same table and row order. The named licenses proceed through name formatting, ZIPs, dates and quality flags. Keep the recorded values and a source-row audit. A shared format_zipcodes() function applies the same leading-zero rule to the missingness summary and named licenses. Name-status and name-missing columns are unnecessary in dog preparation.
+
+## Source and working columns
+Give all publisher fields an original_ prefix in dogs_original. Select short working names after missing-name exclusion. Keep original_name and original_zipcode for the comparisons that use them, with source_row_id providing access to all other original values. Display missing-name exclusions and quality summaries together in the cleaning report. Additional use of uncertainty flags to select income-analysis records or compare alternative results remains a research decision.

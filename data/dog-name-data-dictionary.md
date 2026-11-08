@@ -1,5 +1,6 @@
 # Dog-name data dictionary
 The primary file is [dogs_2024.csv](derived/dogs_2024.csv), one row per named estimated dog under the five-field rule. Read ZIP codes and birth years as text. In the reference and audit files, an empty field means a missing value. Use `na = ""` to keep a name written with the two letters `NA` as text.
+The notebook keeps a source-stage table, dogs_original, with consistent original_ column names. The working table uses short names and retains original_name and original_zipcode for comparisons. source_row_id links every retained dog to the raw license.
 ## Dog columns
 | Column | Type | Meaning |
 | --- | --- | --- |

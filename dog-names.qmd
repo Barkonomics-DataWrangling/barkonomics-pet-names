@@ -18,18 +18,9 @@ library(tidyverse)
 source("R/helpers.R")
 ```
 
-## Missing-name labels
-These are the six recorded values we agreed mean a missing name. `c()` combines them into a character vector, a sequence of text values. `BABY` remains a name.
-```{r}
-#| label: missing-name-labels
-missing_name_labels <- c(
-  "UNKNOWN", "NAME NOT PROVIDED", "NONE", "NA", ".", "NONAME"
-)
-```
-
 ## From licenses to estimated dogs
 ### Read the license records
-NYC supplies the column headers. We read ZIP codes as text because a leading zero is part of the code and matters when joining to the income data. Reading the other fields as text also keeps names as written, including the two letters `NA` used for a missing name.
+NYC supplies the column headers. We read ZIP codes as text because a leading zero is part of the code and matters when joining to the income data. `na = character()` keeps the city’s missing-name labels as text until we count and exclude them. This includes the two letters `NA`.
 ```{r}
 #| label: read-license-records
 sources <- read_csv("data/sources.csv", show_col_types = FALSE)
@@ -41,18 +32,19 @@ dogs_raw <- read_csv(
 ```
 
 ### Give the original license fields clear names
-The city calls the dog’s name `animalname`. We call it `original_name` to keep the recorded spelling beside the matching spelling. Breed and sex get short names. The row number identifies the source license.
+Give every city field a consistent `original_` name. This source table preserves the recorded values. After excluding unnamed licenses, we select the working fields with short names. The source row number lets us find the original record later.
 ```{r}
 #| label: name-license-columns
 dogs_raw |>
   rename(
     original_name = animalname,
-    sex = animalgender,
-    birth_year = animalbirth,
-    breed = breedname,
+    original_sex = animalgender,
+    original_birth_year = animalbirth,
+    original_breed = breedname,
     original_zipcode = zipcode,
-    license_issue_date = licenseissueddate,
-    license_expiry_date = licenseexpireddate
+    original_license_issue_date = licenseissueddate,
+    original_license_expiry_date = licenseexpireddate,
+    original_extract_year = extract_year
   ) |>
   mutate(source_row_id = row_number()) ->
   dogs_original
@@ -64,7 +56,16 @@ dogs_original |>
   preview()
 ```
 
-### Report missing names
+### Missing-name labels
+These are the six recorded values we agreed mean a missing name. `c()` combines them into a character vector, a sequence of text values.
+```{r}
+#| label: missing-name-labels
+missing_name_labels <- c(
+  "UNKNOWN", "NAME NOT PROVIDED", "NONE", "NA", ".", "NONAME"
+)
+```
+
+### Count missing names
 `dogs_original$original_name` takes the recorded-name column from the license table. `%in%` checks each value against our list. The result, `name_missing`, is a TRUE/FALSE vector in the same row order as `dogs_original`. Use it to count the excluded labels.
 ```{r}
 #| label: report-missing-names
@@ -75,14 +76,13 @@ dogs_original |>
   count(original_name, name = "source_license_records", sort = TRUE) ->
   missing_name_counts
 
-missing_name_counts
 ```
 
 For each ZIP, count all licenses and how many lack a name. `format_zipcodes()` supplies leading zeros for digit-only ZIPs up to five digits, using the same rule as the named dogs later. `sum()` counts TRUE results. Dividing that count by all licenses gives the missing-name share.
 ```{r}
 #| label: summarize-missingness-by-zip
 dogs_original |>
-  group_by(extract_year, zipcode = format_zipcodes(original_zipcode)) |>
+  group_by(extract_year = original_extract_year, zipcode = format_zipcodes(original_zipcode)) |>
   summarise(
     source_license_records = n(),
     missing_name_records = sum(original_name %in% missing_name_labels),
@@ -94,20 +94,25 @@ dogs_original |>
   arrange(zipcode) ->
   missing_by_zip
 
-missing_by_zip |>
-  summarise(
-    source_license_records = sum(source_license_records),
-    missing_name_records = sum(missing_name_records),
-    missing_name_share = missing_name_records / source_license_records
-  )
 ```
 
 ### Keep the named licenses
-`filter()` keeps rows whose condition is TRUE. `!name_missing` reverses the named result above, so we keep licenses that have names. Apply this vector to the same `dogs_original` table and row order. Only the named licenses continue through formatting, dates, quality flags and grouping.
+`filter()` keeps rows whose condition is TRUE. `!name_missing` reverses the named result above, so we keep licenses that have names. Apply this vector to the same `dogs_original` table and row order. Select short working names here. Keep the original name and ZIP for the spelling and padding comparisons. Only named licenses continue through formatting, dates, quality flags and grouping.
 ```{r}
 #| label: keep-named-licenses
 dogs_original |>
-  filter(!name_missing) ->
+  filter(!name_missing) |>
+  select(
+    source_row_id,
+    original_name,
+    original_zipcode,
+    sex = original_sex,
+    birth_year = original_birth_year,
+    breed = original_breed,
+    license_issue_date = original_license_issue_date,
+    license_expiry_date = original_license_expiry_date,
+    extract_year = original_extract_year
+  ) ->
   named_licenses
 ```
 
@@ -253,7 +258,23 @@ dogs_original |>
   license_to_dog
 ```
 
-### Summarize quality flags
+## Cleaning summary
+### Excluded names
+```{r}
+#| label: report-excluded-names
+missing_name_counts
+
+missing_by_zip |>
+  summarise(
+    source_license_records = sum(source_license_records),
+    missing_name_records = sum(missing_name_records),
+    missing_name_share = missing_name_records / source_license_records
+  )
+```
+
+### Corrections and unresolved fields
+The padded-ZIP count records corrections already made. Unknown breeds and suspect birth years remain unresolved because the source does not provide a reliable replacement. Compound names follow the full-name matching rule. These counts describe the named licenses and estimated dogs.
+
 ```{r}
 #| label: summarize-quality-flags
 quality_flags <- c("breed_unknown", "birth_year_suspect", "sex_unknown",
