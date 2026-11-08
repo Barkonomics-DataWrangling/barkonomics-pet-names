@@ -11,7 +11,7 @@ Aslan authorized completing the first handoff after selecting the research and c
 ## Research frame
 Ask whether dog names differ across higher- and lower-income NYC neighborhoods, and whether their names match different baby-name decades. Diffusion between socioeconomic groups and eventually to dog names is the motivating hypothesis. The available national baby-name counts and 2024 dog licenses can describe generational associations. They do not identify a historical sequence of naming by household income.
 
-Use the top 100 names in every complete SSA decade from 1880–2019. Sum across years and sex, rank by birth count and break ties alphabetically. A name may match multiple decades. Overall recognition uses published records across those complete decades. Save the partial 2020–2025 period separately because it is incomplete and includes births after the dog snapshot. Keep one reference row per formatted name when joining to dogs.
+Use the top 100 names in every complete SSA decade from 1880–2019. Sum across years and sex, rank by birth count and break ties alphabetically. A name may match multiple decades. Overall recognition uses published records across those complete decades. Keep one reference row per formatted name when joining to dogs.
 ## Contribution context
 The local contribution branch is `aslan/dog-name-review`, created from verified remote main `992bc8b1c2b96d030da7c9c5ad63b330b8a6e53c`. The existing issue is the shared outcome and acceptance record; this spike holds the detailed reasoning and execution evidence. Keep public-source findings and project decisions here; private meeting material remains with its owner.
 
@@ -91,7 +91,7 @@ For an initial area comparison, report each decade's matching share among eligib
 ## Selected overall human-name recognition rule
 Set ssa_recognized when a formatted dog name appears in any published SSA record from 1880–2019. The fourteen top-100 flags describe popularity by decade. A name can be recognized while missing every top-100 list.
 
-Read all 146 annual files. Rank the complete decades for the dog comparison and retain 2020–2025 in the separate partial-period table. Each name has one reference row for joining to dogs.
+Read the 140 annual files for the 14 complete decades from 1880–2019. Each name has one reference row for joining to dogs.
 ## Selected first data handoff
 Aslan approved the dog-level CSV as the first deliverable on November 5, with one row per eligible named estimated dog. Retain the original name, normalized name, sex, birth year, breed, ZIP as five-character text, representative license dates and extract year. Add the SSA recognition flag, three overlapping decade flags, compound-name flag and number of source license records consolidated into that estimated dog. Keep the SSA reference separately inspectable and report source missingness in a separate quality summary with explicit license-record denominators.
 
@@ -154,7 +154,7 @@ Load `tidyverse` as a suite. Use descriptive names and readable sequential trans
 The R policy proposal is a separate contribution with its own commit and eventual issue-linked PR. Prepare its issue and PR from the policy diff and commits when publication is requested. The dog/name PR remains focused on issue #1 and the implementation/data handoff.
 
 ## Verification scope
-Use the separate checks notebook to compare the saved dog table with the source licenses, missing-name lookup and SSA reference. The R notebook does not calculate source or output checksums and does not depend on `digest`. Acquisition provenance lives in the source inventory and data README. Keep `sources <- read_csv(...)` as the named inventory for inspection and expected reuse. The handoff has fourteen output CSVs; output checksum generation is outside its scope.
+Use the separate checks notebook to compare the saved dog table with the source licenses, missing-name lookup and SSA reference. The R notebook does not calculate source or output checksums and does not depend on `digest`. Acquisition provenance lives in the source inventory and data README. Keep `sources <- read_csv(...)` as the named inventory for inspection and expected reuse. The handoff has thirteen output CSVs; output checksum generation is outside its scope.
 
 ## Quarto implementation
 Use [dog-names.qmd](../../dog-names.qmd) for dogs, [baby-names.qmd](../../baby-names.qmd) for SSA preparation, [analysis.qmd](../../analysis.qmd) for the combined analysis and [dog-names-checks.qmd](../../dog-names-checks.qmd) for independent checks on the saved files. Render from the repository root. Durable output definitions live beside the data. Issue #1 owns shared coordination and acceptance; its PR will own change review. Documentation placement is project-specific, not a universal ban on code documentation under docs. Consumer workflow pins stay unchanged until the shared workflow guidance is settled.
@@ -175,7 +175,7 @@ Contributes to #1. Prepares one row per named estimated dog from NYC's 2024 lice
 
 Includes the fixed NYC and official SSA source snapshots with checksums, the six-label missing-name lookup, three Quarto notebooks for preparation and analysis plus separate saved-file checks, generated CSVs, and `dog-names.qmd`, `data/dog-name-data-dictionary.md` and `docs/active-spikes/dog-baby-name-data.md`. The official SSA archive was acquired through the browser after command-line downloads returned 403.
 
-All 21 saved-file checks pass, covering latest-license selection and deterministic ties, unique five-field dog keys, complete source-to-dog lineage, unchanged dog count through the SSA join, exactly 100 names per decade, retained uncertain records and matching flags. An independent calculation from both raw sources agrees with every dog representative and SSA flag. The three independently rendered notebooks produce fourteen output CSVs including the check results. Runtime versions, per-stage counts and quality summaries are included.
+All 21 saved-file checks pass, covering latest-license selection and deterministic ties, unique five-field dog keys, complete source-to-dog lineage, unchanged dog count through the SSA join, exactly 100 names per decade, retained uncertain records and matching flags. An independent calculation from both raw sources agrees with every dog representative and SSA flag. The three independently rendered notebooks produce thirteen output CSVs including the check results. Runtime versions, per-stage counts and quality summaries are included.
 
 Review the documented identity approximation and the CSV interface for Shweta's ZIP–ZCTA and income work. Missingness is a license-record measure, and decade memberships can overlap. Income joins, plots, other-language implementations and shared acceptance remain separate work. Keep issue #1 open after this partial contribution; integration does not imply project acceptance.
 

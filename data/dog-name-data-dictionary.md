@@ -34,7 +34,6 @@ The five-field group key is `name`, `sex`, `birth_year`, `breed`, `zipcode`. Sel
 | File | Row unit and key | Purpose |
 | --- | --- | --- |
 | [dogs_prepared_2024.csv](derived/dogs_prepared_2024.csv) | One estimated dog | Prepared dog fields before baby-name matching. |
-| [ssa_partial_decades.csv](derived/ssa_partial_decades.csv) | One name/incomplete decade | Birth counts, ranks, first/last year and years available for 2020–2025. Kept separate from the dog comparison. |
 | [ssa_name_reference.csv](derived/ssa_name_reference.csv) | One normalized name; `name` unique | Recognition across 1880–2019 and 14 decade measures. Join many dogs to one reference row. |
 | [ssa_name_decades.csv](derived/ssa_name_decades.csv) | One observed name/decade; `(name, decade)` unique | Long version showing aggregation, ranking and the input to the wide reference. |
 | [license_to_dog.csv](derived/license_to_dog.csv) | One raw license record; `source_row_id` unique | Maps every source record to its estimated dog and retained row, or to `missing_name` with empty IDs. Other statuses are `retained` and `consolidated`. |

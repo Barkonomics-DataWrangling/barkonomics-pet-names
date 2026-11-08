@@ -10,7 +10,7 @@ execute:
   message: false
 ---
 
-Which names were popular in each generation? We use the saved U.S. birth counts for 1880–2025. The 1880s through the 2010s are complete decades. We keep 2020–2025 in a separate table because that period is still incomplete and includes births after our dog snapshot.
+Which names were popular in each generation? We use U.S. birth counts for the 14 complete decades from 1880–2019.
 
 ## Packages and helpers
 ```{r}
@@ -19,10 +19,11 @@ source("R/helpers.R")
 ```
 
 ## Read the annual files
-Each file has a name, sex and birth count. `Sys.glob()` lists the saved files whose names follow the pattern `yob*.txt`. `read_csv()` combines them and records the source file for each row.
+Each annual file has a name, sex and birth count. Build the filenames for 1880–2019, then combine those files with `read_csv()`. Keep the source filename so we can identify each row’s year.
 ```{r}
 #| label: read-baby-names
-ssa_file_paths <- Sys.glob("data/raw/ssa/yob*.txt")
+ssa_years <- 1880:2019
+ssa_file_paths <- str_c("data/raw/ssa/yob", ssa_years, ".txt")
 ssa_raw <- read_csv(
   ssa_file_paths,
   col_names = c("original_name", "sex", "births"),
@@ -57,37 +58,21 @@ Add births across all years and both sex categories. This measures how many babi
 ```{r}
 #| label: count-baby-names
 ssa_yearly |>
-  group_by(decade) |>
-  summarise(first_year = min(year), last_year = max(year), years_available = n_distinct(year)) |>
-  mutate(complete_decade = years_available == 10) ->
-  ssa_periods
-
-ssa_yearly |>
   group_by(name, decade) |>
-  summarise(births = sum(births), .groups = "drop") |>
-  left_join(ssa_periods, by = "decade") ->
-  ssa_period_counts
+  summarise(births = sum(births), .groups = "drop") ->
+  ssa_decade_counts
 ```
 
-## Rank names within each period
-Order names by birth count, breaking ties alphabetically. Each period gets exactly 100 top names. A name's share divides its birth count by the period's total published births.
+## Rank names within each decade
+Order names by birth count, breaking ties alphabetically. Each decade gets exactly 100 top names. A name’s share divides its birth count by the decade’s total published births.
 ```{r}
 #| label: rank-baby-names
-ssa_period_counts |>
+ssa_decade_counts |>
   group_by(decade) |>
   arrange(desc(births), name, .by_group = TRUE, .locale = "C") |>
   mutate(rank = row_number(), share = births / sum(births), top100 = rank <= 100) |>
   ungroup() ->
-  ssa_ranked_periods
-
-ssa_ranked_periods |>
-  filter(complete_decade) |>
-  select(name, decade, births, rank, share, top100) ->
   ssa_decades
-
-ssa_ranked_periods |>
-  filter(!complete_decade) ->
-  ssa_partial_decades
 
 ssa_decades |>
   filter(rank <= 5)
@@ -128,7 +113,6 @@ ssa_cutoffs
 dir.create("data/derived", showWarnings = FALSE)
 write_csv(ssa_reference, "data/derived/ssa_name_reference.csv", na = "")
 write_csv(ssa_decades, "data/derived/ssa_name_decades.csv", na = "")
-write_csv(ssa_partial_decades, "data/derived/ssa_partial_decades.csv", na = "")
 write_csv(ssa_cutoffs, "data/derived/ssa_top100_cutoffs.csv", na = "")
 ```
 

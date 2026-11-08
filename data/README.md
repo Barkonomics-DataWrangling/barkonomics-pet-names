@@ -9,7 +9,7 @@ The [SSA national baby-name source](https://www.ssa.gov/oact/babynames/limits.ht
 
 The files were extracted byte for byte from the official national archive downloaded on November 5, 2026. That acquisition was 7,860,026 bytes with SHA-256 cd78e975ed7bb358e018dd62fbe14ced89295e9581c49172ca4eedcb011b3724. The source inventory describes the extracted directory and leaves its checksum field empty. Git retains the earlier archive version in history.
 
-The baby-name notebook reads all annual files directly. It uses the 14 complete decades from 1880–2019 for the comparison and saves 2020–2025 separately in ssa_partial_decades.csv. That partial period also includes births after the 2024 dog extract. Overall SSA recognition uses 1880–2019. Both name recognition and the number of matching decades can grow when the reference period expands.
+The baby-name notebook reads the 140 annual files for 1880–2019 directly. All rankings and overall name recognition use those 14 complete decades.
 
 The [missing-name lookup](lookups/missing_name_labels.csv) is project-owned data recording the six selected labels. It maps alternate missing-name labels to `not_recorded`; `BABY` is deliberately absent. This lookup is not an additional external source.
 ## Generate and check the handoff
@@ -23,7 +23,7 @@ quarto render dog-names-checks.qmd
 ```
 
 - [Dog preparation](../dog-names.qmd) writes dogs_prepared_2024.csv, the source-to-dog mapping, missing-name summaries and quality flags.
-- [Baby-name preparation](../baby-names.qmd) writes the name reference, complete and partial decade tables, and cutoff counts.
+- [Baby-name preparation](../baby-names.qmd) writes the name reference, decade table, and cutoff counts.
 - [Analysis](../analysis.qmd) writes dogs_2024.csv with all 14 decade flags and the comparison of dog and license counts. Geography and income joins belong in this notebook once the agreed tables are available.
 - [Checks](../dog-names-checks.qmd) independently reads the sources and outputs to check the saved result.
 
