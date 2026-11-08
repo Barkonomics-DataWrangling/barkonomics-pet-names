@@ -1,5 +1,5 @@
 ---
-title: "Dog and baby-name data in R"
+title: "Prepare NYC dog names"
 format:
   html:
     embed-resources: true
@@ -10,16 +10,19 @@ execute:
   message: false
 ---
 
-How often does a dog licensed in New York City have a name that was popular among U.S. babies? We group the 2024 licenses into estimated dogs, then compare their names with the U.S. top 100 in three decades.
+Prepare one row per estimated dog from the 2024 NYC licenses. Keep the recorded name beside the spelling used for matching and report missing names separately.
+
+## Packages and helpers
+```{r}
+library(tidyverse)
+source("R/helpers.R")
+```
 
 ## From licenses to estimated dogs
 ### Read the license records
-NYC supplies the column headers. We read the fields as text to keep leading zeros in ZIP codes and to preserve names as written. For example, the city uses the two letters `NA` as one way to mark a missing name.
-
+NYC supplies the column headers. We read ZIP codes as text because a leading zero is part of the code and matters when joining to the income data. Reading the other fields as text also keeps names as written, including the two letters `NA` used for a missing name.
 ```{r}
 #| label: read-license-records
-library(tidyverse)
-
 sources <- read_csv("data/sources.csv", show_col_types = FALSE)
 dogs_raw <- read_csv(
   "data/raw/nyc-dogs-2024.csv",
@@ -32,21 +35,19 @@ missing_labels <- read_csv(
 )
 ```
 
-### Give the license fields clear names
-`rename()` changes the heading above each column. Every field in this step gets an `original_` prefix so we can see what came from the city. The row number tells us which license supplied each value.
-
+### Give the original license fields clear names
+The city calls the dog’s name `animalname`. We call it `original_name` to keep the recorded spelling beside the matching spelling. Breed and sex get short names. The row number identifies the source license.
 ```{r}
 #| label: name-license-columns
 dogs_raw |>
   rename(
     original_name = animalname,
-    original_sex = animalgender,
-    original_birth_year = animalbirth,
-    original_breed = breedname,
+    sex = animalgender,
+    birth_year = animalbirth,
+    breed = breedname,
     original_zipcode = zipcode,
-    original_issue_date = licenseissueddate,
-    original_expiry_date = licenseexpireddate,
-    original_extract_year = extract_year
+    license_issue_date = licenseissueddate,
+    license_expiry_date = licenseexpireddate
   ) |>
   mutate(source_row_id = row_number()) ->
   dogs_original
@@ -54,57 +55,66 @@ dogs_raw |>
 
 ```{r}
 #| label: preview-original-licenses
-preview <- function(records) {
-  records |>
-    slice_head(n = 6)
-}
-
 dogs_original |>
   preview()
 ```
 
 ### Identify missing names
 Our lookup lists six ways the city recorded a missing name, including `UNKNOWN` and `NA`. We match them before changing any spelling. We keep `BABY` as a name.
-
 ```{r}
 #| label: label-missing-names
 dogs_original |>
-  left_join(missing_labels, by = c("original_name" = "recorded_name")) ->
-  dogs_labeled
+  left_join(missing_labels, by = c("original_name" = "recorded_name")) |>
+  mutate(
+    name_status = replace_na(name_status, "recorded"),
+    name_missing = name_status == "not_recorded"
+  ) ->
+  dogs_with_name_status
 ```
 
-### Normalize formatting
-We give every full name the same spelling for matching by uppercasing it and removing spaces and hyphens. For example, `WALL-E` becomes `WALLE`. We keep the original name and ZIP alongside their matching forms. Sex, birth year and breed carry over as recorded. We also turn the license dates into dates we can sort.
-
+### Format names for matching
+Uppercase the whole name, then remove spaces and hyphens. These are the spelling differences we agreed to ignore when matching. For example, `WALL-E` becomes `WALLE`. Preserve the recorded name so compounds can still be identified.
 ```{r}
-#| label: normalize-formatting
-dogs_labeled |>
+#| label: format-names
+dogs_with_name_status |>
+  mutate(name = str_to_upper(original_name, locale = "en")) |>
+  mutate(name = str_remove_all(name, "[\\s-]")) ->
+  dogs_with_matching_names
+```
+
+### Format ZIP codes
+If a ZIP contains one to five digits, pad it to five digits with leading zeros. `str_detect()` checks the digits and `str_pad()` supplies the zeros. This prepares the ZIP for the geography join.
+```{r}
+#| label: format-zipcodes
+dogs_with_matching_names |>
   mutate(
-    sex = original_sex, birth_year = original_birth_year, breed = original_breed,
-    name_status = replace_na(name_status, "recorded"),
-    name_missing = name_status == "not_recorded",
-    name_key = str_to_upper(original_name, locale = "en"),
     zipcode_contains_one_to_five_digits = str_detect(original_zipcode, "^[0-9]{1,5}$"),
-    zipcode_with_leading_zeros = str_pad(original_zipcode, width = 5, pad = "0"),
-    license_issue_date = str_sub(original_issue_date, 1, 10),
-    license_expiry_date = str_sub(original_expiry_date, 1, 10),
-    extract_year = as.integer(original_extract_year),
-    breed_label = str_trim(breed),
-    birth_year_number = as.integer(birth_year)
+    zipcode_with_leading_zeros = str_pad(original_zipcode, width = 5, pad = "0")
   ) |>
   mutate(
-    name_key = str_remove_all(name_key, "[\\s-]"),
-    license_issue_date = parse_date(license_issue_date),
-    license_expiry_date = parse_date(license_expiry_date),
-    breed_label = str_to_upper(breed_label)
+    zipcode = if_else(zipcode_contains_one_to_five_digits, zipcode_with_leading_zeros, original_zipcode)
   ) ->
-  dogs_formatted
+  dogs_with_zipcodes
 ```
 
+### Read license dates
+The source dates include a time. Take the first ten characters, such as `2024-05-30`, and read them as dates so we can sort the licenses.
 ```{r}
-#| label: normalize-formatting-preview
-dogs_formatted |>
-  select(original_name, name_key, original_zipcode, license_issue_date) |>
+#| label: read-license-dates
+dogs_with_zipcodes |>
+  mutate(
+    license_issue_date = str_sub(license_issue_date, 1, 10),
+    license_expiry_date = str_sub(license_expiry_date, 1, 10)
+  ) |>
+  mutate(
+    license_issue_date = parse_date(license_issue_date),
+    license_expiry_date = parse_date(license_expiry_date),
+    extract_year = as.integer(extract_year)
+  ) ->
+  dogs_with_dates
+
+dogs_with_dates |>
+  select(original_name, name, original_zipcode, zipcode, license_issue_date) |>
   preview()
 ```
 
@@ -113,11 +123,15 @@ We flag compounds using the spelling on the license. We also mark records with a
 
 ```{r}
 #| label: flag-uncertain-fields
-dogs_formatted |>
+dogs_with_dates |>
   mutate(
-    name_key = if_else(name_missing, NA_character_, name_key),
+    breed_label = str_trim(breed),
+    birth_year_number = as.integer(birth_year)
+  ) |>
+  mutate(breed_label = str_to_upper(breed_label)) |>
+  mutate(
+    name = if_else(name_missing, NA_character_, name),
     compound_name = !name_missing & str_detect(original_name, "\\S\\s+\\S|[^\\s-]-[^\\s-]"),
-    zipcode = if_else(zipcode_contains_one_to_five_digits, zipcode_with_leading_zeros, original_zipcode),
     zipcode_padded = zipcode != original_zipcode,
     zipcode_invalid = !str_detect(zipcode, "^[0-9]{5}$"),
     breed_unknown = breed_label %in% c("", "UNKNOWN"),
@@ -130,7 +144,7 @@ dogs_formatted |>
   mutate(
     identity_uncertain = breed_unknown | birth_year_suspect | sex_unknown | zipcode_invalid
   ) ->
-  dogs_clean
+  dogs_with_quality_flags
 ```
 
 ### Select named records
@@ -138,9 +152,9 @@ We use named licenses to estimate individual dogs. We report missing names separ
 
 ```{r}
 #| label: select-named-records
-dogs_clean |>
+dogs_with_quality_flags |>
   filter(!name_missing) ->
-  dogs_named
+  named_licenses
 ```
 
 ### Estimate individual dogs
@@ -148,9 +162,9 @@ We treat licenses with the same full name after formatting, sex, birth year, bre
 
 ```{r}
 #| label: estimate-individual-dogs
-dog_key <- c("name_key", "sex", "birth_year", "breed", "zipcode")
-dogs_named |>
-  group_by(name_key, sex, birth_year, breed, zipcode) |>
+dog_key <- c("name", "sex", "birth_year", "breed", "zipcode")
+named_licenses |>
+  group_by(name, sex, birth_year, breed, zipcode) |>
   mutate(
     license_record_count = n(),
     original_name_variants = n_distinct(original_name),
@@ -176,124 +190,30 @@ dogs_estimated |>
   preview()
 ```
 
-## Which baby names were popular?
-### Read the selected SSA years
-The Social Security Administration (SSA) publishes one file per birth year with a name, sex and national birth count. We read the ten files for each of the 1920s, 1970s and 2010s and give names the same spelling rules we used for the dogs.
-
+### Keep the dog fields
 ```{r}
-#| label: read-the-selected-ssa-years
-ssa_years <- c(1920:1929, 1970:1979, 2010:2019)
-ssa_archive_files <- paste0("yob", ssa_years, ".txt")
-ssa_extract_directory <- tempfile("barkonomics-ssa-")
-dir.create(ssa_extract_directory)
-unzip("data/raw/ssa-names.zip", files = ssa_archive_files, exdir = ssa_extract_directory)
-ssa_file_paths <- file.path(ssa_extract_directory, ssa_archive_files)
-ssa_raw <- read_csv(
-  ssa_file_paths,
-  col_names = c("name", "sex", "births"),
-  col_types = cols(name = col_character(), sex = col_character(), births = col_integer()),
-  id = "source_file", na = character()
-)
-ssa_raw |>
-  mutate(
-    source_filename = basename(source_file),
-    name_key = str_to_upper(name, locale = "en")
-  ) |>
-  mutate(
-    year = str_extract(source_filename, "[0-9]{4}"),
-    name_key = str_remove_all(name_key, "[\\s-]")
-  ) |>
-  mutate(
-    year = as.integer(year),
-    decade = (year %/% 10L) * 10L
-  ) |>
-  select(name_key, sex, year, decade, births) ->
-  ssa_yearly
-```
-
-### Rank names within decades
-For each name, add births across years and both sex categories. Order the names by that total within each decade and take the first 100. Alphabetical order breaks ties. The share for each name uses the total number of births in the published counts.
-
-```{r}
-#| label: rank-names-within-decades
-ssa_yearly |>
-  group_by(name_key, decade) |>
-  summarise(births = sum(births), .groups = "drop") |>
-  group_by(decade) |>
-  arrange(desc(births), name_key, .by_group = TRUE, .locale = "C") |>
-  mutate(rank = row_number(), share = births / sum(births), top100 = rank <= 100L) |>
-  ungroup() ->
-  ssa_decades
-```
-
-```{r}
-#| label: rank-names-within-decades-preview
-ssa_decades |>
-  filter(rank <= 5)
-```
-
-### Make one reference row per name
-Give each name one row with a column for each decade’s top-100 result. A dog can then match several decades in one row. A name absent from a decade has zero published births there and no rank.
-
-```{r}
-#| label: make-one-reference-row-per-name
-ssa_decades |>
-  pivot_wider(
-    names_from = decade, values_from = c(births, share, rank, top100),
-    values_fill = list(births = 0L, share = 0, top100 = FALSE)
-  ) |>
-  mutate(ssa_recognized = TRUE) |>
-  arrange(name_key, .locale = "C") ->
-  ssa_reference
-```
-
-## Compare dog names with baby names
-### Match names
-Each dog keeps its row. A name can appear in the SSA files without making a top-100 list.
-
-```{r}
-#| label: join-name-flags-onto-dogs
-name_flags <- c("ssa_recognized", "top100_1920", "top100_1970", "top100_2010")
-ssa_reference |>
-  select(name_key, all_of(name_flags)) ->
-  ssa_name_flags
-
+#| label: select-dog-fields
 dogs_estimated |>
-  left_join(ssa_name_flags, by = "name_key") |>
-  mutate(
-    ssa_recognized = replace_na(ssa_recognized, FALSE),
-    top100_1920 = replace_na(top100_1920, FALSE),
-    top100_1970 = replace_na(top100_1970, FALSE),
-    top100_2010 = replace_na(top100_2010, FALSE)
-  ) |>
   select(
-    estimated_dog_id, source_row_id, extract_year, original_name, name_key,
+    estimated_dog_id, source_row_id, extract_year, original_name, name,
     sex, birth_year, breed, original_zipcode, zipcode,
     license_issue_date, license_expiry_date, license_record_count,
     original_name_variants, latest_issue_ties, compound_name, any_compound_name,
     breed_unknown, birth_year_suspect, sex_unknown, zipcode_padded, zipcode_invalid,
-    identity_uncertain, all_of(name_flags)
+    identity_uncertain
   ) ->
   dogs
 ```
 
-```{r}
-#| label: join-name-flags-onto-dogs-preview
-dogs |>
-  select(original_name, all_of(name_flags)) |>
-  preview()
-```
-
 ### Trace source records to dogs
 Keep a row-by-row explanation of which source records were consolidated or lacked a name.
-
 ```{r}
 #| label: trace-source-records-to-dogs
 dogs |>
   select(all_of(dog_key), estimated_dog_id, retained_source_row_id = source_row_id) ->
   dog_identity_lookup
 
-dogs_clean |>
+dogs_with_quality_flags |>
   left_join(dog_identity_lookup, by = dog_key) |>
   mutate(
     record_status = case_when(
@@ -308,10 +228,9 @@ dogs_clean |>
 
 ### Summarize source missingness
 Each license contributes once to the missing-name share for its ZIP.
-
 ```{r}
 #| label: summarize-source-missingness
-dogs_clean |>
+dogs_with_quality_flags |>
   group_by(extract_year, zipcode) |>
   summarise(
     source_license_records = n(), missing_name_records = sum(name_missing),
@@ -321,7 +240,7 @@ dogs_clean |>
   arrange(zipcode) ->
   missing_by_zip
 
-dogs_clean |>
+dogs_with_quality_flags |>
   filter(name_missing) |>
   count(original_name, name = "source_license_records", sort = TRUE) ->
   missing_name_counts
@@ -337,7 +256,7 @@ missing_name_counts
 #| label: summarize-quality-flags
 quality_flags <- c("breed_unknown", "birth_year_suspect", "sex_unknown",
   "zipcode_padded", "zipcode_invalid", "identity_uncertain", "compound_name")
-dogs_named |>
+named_licenses |>
   summarise(across(all_of(quality_flags), sum)) |>
   mutate(unit = "named_license_record") ->
   license_quality_counts
@@ -359,67 +278,16 @@ license_quality_counts |>
 quality_summary
 ```
 
-### Inspect the top-100 cutoff
-Compare the birth counts for the last name inside each top 100 and the first name outside it.
-
+## Save the prepared dogs
 ```{r}
-#| label: inspect-the-top-100-cutoff
-ssa_decades |>
-  filter(rank %in% c(100L, 101L)) |>
-  select(decade, rank, name_key, births) |>
-  pivot_wider(names_from = rank, values_from = c(name_key, births)) |>
-  mutate(cutoff_tied = births_100 == births_101) ->
-  ssa_cutoffs
-
-ssa_cutoffs
-```
-
-### Compare counting units
-Compare the share of matching names when each dog counts once with the share when each license counts once.
-
-```{r}
-#| label: compare-counting-units
-dogs |>
-  summarise(across(all_of(name_flags), mean)) |>
-  mutate(unit = "estimated_dog") ->
-  dog_matching_rates
-
-dogs |>
-  summarise(
-    ssa_recognized = weighted.mean(ssa_recognized, license_record_count),
-    top100_1920 = weighted.mean(top100_1920, license_record_count),
-    top100_1970 = weighted.mean(top100_1970, license_record_count),
-    top100_2010 = weighted.mean(top100_2010, license_record_count)
-  ) |>
-  mutate(unit = "named_license_record") ->
-  license_matching_rates
-
-dog_matching_rates |>
-  bind_rows(license_matching_rates) |>
-  pivot_longer(cols = all_of(name_flags), names_to = "measure", values_to = "share") |>
-  select(unit, measure, share) ->
-  matching_comparison
-
-matching_comparison
-```
-
-### Save the derived tables
-```{r}
-#| label: save-the-derived-tables
-# Create the folder for the CSVs if needed.
+#| label: save-dogs
+# Create the folder for these tables if needed.
 dir.create("data/derived", showWarnings = FALSE)
-write_csv(dogs, "data/derived/dogs_2024.csv", na = "")
-write_csv(ssa_reference, "data/derived/ssa_name_reference.csv", na = "")
-write_csv(ssa_decades, "data/derived/ssa_name_decades.csv", na = "")
+write_csv(dogs, "data/derived/dogs_prepared_2024.csv", na = "")
 write_csv(license_to_dog, "data/derived/license_to_dog.csv", na = "")
 write_csv(missing_by_zip, "data/derived/missing_names_by_zip.csv", na = "")
 write_csv(missing_name_counts, "data/derived/missing_name_labels.csv", na = "")
 write_csv(quality_summary, "data/derived/quality_flags.csv", na = "")
-write_csv(ssa_cutoffs, "data/derived/ssa_top100_cutoffs.csv", na = "")
-write_csv(matching_comparison, "data/derived/matching_by_counting_unit.csv", na = "")
 ```
 
-## What changes when we count dogs?
-Among estimated dogs, 78.65% have a name that appears in the U.S. baby-name files for the selected years. Counting each named license separately gives 78.78%. Dogs can share all five identifying fields, and changes in a dog’s recorded details can split its licenses across groups. The two percentages show how much the grouping rule matters citywide.
-
-The SSA files omit rare names and have less complete coverage for early births. An unmatched dog name could still be a human name.
+Different dogs can share all five identifying fields. A change in a dog’s recorded details can also split its licenses into several groups. These are estimates of individual dogs.

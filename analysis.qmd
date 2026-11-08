@@ -1,0 +1,94 @@
+---
+title: "Dog names, generations and neighborhood income"
+format:
+  html:
+    embed-resources: true
+    toc: true
+    df-print: paged
+execute:
+  echo: true
+  message: false
+---
+
+Do dogs in higher- and lower-income NYC neighborhoods have different names? Do their names also differ in which baby-name decades they match?
+
+The motivating idea is that names might move between social groups and eventually become dog names. The comparisons here can describe generational and neighborhood patterns. Demonstrating that diffusion would require evidence of human naming by income and dog-name adoption over time.
+
+## Packages and helpers
+```{r}
+library(tidyverse)
+source("R/helpers.R")
+```
+
+## Read the prepared tables
+```{r}
+#| label: read-prepared-tables
+dogs_prepared <- read_csv(
+  "data/derived/dogs_prepared_2024.csv", na = "",
+  col_types = cols(
+    zipcode = col_character(), original_zipcode = col_character(),
+    birth_year = col_character(), .default = col_guess()
+  )
+)
+ssa_reference <- read_csv("data/derived/ssa_name_reference.csv", na = "", show_col_types = FALSE)
+```
+
+## Match baby names to dogs
+Use all complete decades in the reference. Keep a separate yes/no result for each decade so a name can match several generations.
+```{r}
+#| label: match-dogs-to-baby-names
+ssa_reference |>
+  select(name, ssa_recognized, starts_with("top100_")) ->
+  ssa_name_flags
+
+ssa_name_flags |>
+  select(-name) |>
+  names() ->
+  name_flags
+
+dogs_prepared |>
+  left_join(ssa_name_flags, by = "name") |>
+  mutate(across(all_of(name_flags), function(name_matches) replace_na(name_matches, FALSE))) ->
+  dogs
+
+dogs |>
+  select(original_name, ssa_recognized, starts_with("top100_")) |>
+  preview()
+```
+
+## Compare counting units
+Compare the proportion of matching names when each dog counts once with the proportion when each license counts once. `across()` repeats the same calculation for every name flag.
+```{r}
+#| label: compare-counting-units
+dogs |>
+  summarise(across(all_of(name_flags), mean)) |>
+  mutate(unit = "estimated_dog") ->
+  dog_matching_rates
+
+dogs |>
+  summarise(across(all_of(name_flags), function(name_matches) {
+    weighted.mean(name_matches, license_record_count)
+  })) |>
+  mutate(unit = "named_license_record") ->
+  license_matching_rates
+
+dog_matching_rates |>
+  bind_rows(license_matching_rates) |>
+  pivot_longer(cols = all_of(name_flags), names_to = "measure", values_to = "share") |>
+  select(unit, measure, share) ->
+  matching_comparison
+
+matching_comparison
+```
+
+## Save the matched dogs
+```{r}
+#| label: save-matched-dogs
+write_csv(dogs, "data/derived/dogs_2024.csv", na = "")
+write_csv(matching_comparison, "data/derived/matching_by_counting_unit.csv", na = "")
+```
+
+## Compare neighborhoods
+The next step is to join Shweta’s ZIP-to-ZCTA crosswalk and income table here. Match each dog's ZIP to an area, then attach that area's income group. Compare name proportions and the share of dogs matching each baby-name decade within those groups. Missing-name records have their own ZIP summary for checking whether missingness differs by area.
+
+Neighborhood income describes the area where a dog is licensed. A generational pattern could be consistent with diffusion, but this comparison alone cannot establish its direction or cause. The current results above describe NYC as a whole. The neighborhood comparison awaits the agreed geography and income tables.

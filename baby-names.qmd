@@ -1,0 +1,135 @@
+---
+title: "Prepare baby names by decade"
+format:
+  html:
+    embed-resources: true
+    toc: true
+    df-print: paged
+execute:
+  echo: true
+  message: false
+---
+
+Which names were popular in each generation? We use the saved U.S. birth counts for 1880–2025. The 1880s through the 2010s are complete decades. We keep 2020–2025 in a separate table because that period is still incomplete and includes births after our dog snapshot.
+
+## Packages and helpers
+```{r}
+library(tidyverse)
+source("R/helpers.R")
+```
+
+## Read the annual files
+Each file has a name, sex and birth count. `Sys.glob()` lists the saved files whose names follow the pattern `yob*.txt`. `read_csv()` combines them and records the source file for each row.
+```{r}
+#| label: read-baby-names
+ssa_file_paths <- Sys.glob("data/raw/ssa/yob*.txt")
+ssa_raw <- read_csv(
+  ssa_file_paths,
+  col_names = c("original_name", "sex", "births"),
+  col_types = cols(original_name = col_character(), sex = col_character(), births = col_integer()),
+  id = "source_file", na = character()
+)
+```
+
+## Give names the same matching format as the dogs
+Extract the year from the filename. For example, `yob1924.txt` supplies 1924. Integer division by ten groups years into decades, so 1924 belongs to 1920.
+```{r}
+#| label: format-baby-names
+ssa_raw |>
+  mutate(
+    source_filename = basename(source_file),
+    name = str_to_upper(original_name, locale = "en")
+  ) |>
+  mutate(
+    year = str_extract(source_filename, "[0-9]{4}"),
+    name = str_remove_all(name, "[\\s-]")
+  ) |>
+  mutate(
+    year = as.integer(year),
+    decade = (year %/% 10) * 10
+  ) |>
+  select(name, sex, year, decade, births) ->
+  ssa_yearly
+```
+
+## Count names in each decade
+Add births across all years and both sex categories. This measures how many babies received each name during the period.
+```{r}
+#| label: count-baby-names
+ssa_yearly |>
+  group_by(decade) |>
+  summarise(first_year = min(year), last_year = max(year), years_available = n_distinct(year)) |>
+  mutate(complete_decade = years_available == 10) ->
+  ssa_periods
+
+ssa_yearly |>
+  group_by(name, decade) |>
+  summarise(births = sum(births), .groups = "drop") |>
+  left_join(ssa_periods, by = "decade") ->
+  ssa_period_counts
+```
+
+## Rank names within each period
+Order names by birth count, breaking ties alphabetically. Each period gets exactly 100 top names. A name's share divides its birth count by the period's total published births.
+```{r}
+#| label: rank-baby-names
+ssa_period_counts |>
+  group_by(decade) |>
+  arrange(desc(births), name, .by_group = TRUE, .locale = "C") |>
+  mutate(rank = row_number(), share = births / sum(births), top100 = rank <= 100) |>
+  ungroup() ->
+  ssa_ranked_periods
+
+ssa_ranked_periods |>
+  filter(complete_decade) |>
+  select(name, decade, births, rank, share, top100) ->
+  ssa_decades
+
+ssa_ranked_periods |>
+  filter(!complete_decade) ->
+  ssa_partial_decades
+
+ssa_decades |>
+  filter(rank <= 5)
+```
+
+## Make one reference row per name
+A name may belong to the top 100 in several decades. Put those results in separate columns so matching that name adds one reference row to each dog. Overall recognition means the name appears in any published record during the complete decades, 1880–2019.
+```{r}
+#| label: make-baby-name-reference
+ssa_decades |>
+  pivot_wider(
+    names_from = decade, values_from = c(births, share, rank, top100),
+    values_fill = list(births = 0, share = 0, top100 = FALSE)
+  ) |>
+  mutate(ssa_recognized = TRUE) |>
+  arrange(name, .locale = "C") ->
+  ssa_reference
+```
+
+## Inspect the top-100 cutoff
+Compare the birth counts for the last name inside each top 100 and the first name outside it.
+
+```{r}
+#| label: inspect-the-top-100-cutoff
+ssa_decades |>
+  filter(rank %in% c(100L, 101L)) |>
+  select(decade, rank, name, births) |>
+  pivot_wider(names_from = rank, values_from = c(name, births)) |>
+  mutate(cutoff_tied = births_100 == births_101) ->
+  ssa_cutoffs
+
+ssa_cutoffs
+```
+
+## Save the baby-name tables
+```{r}
+#| label: save-baby-names
+dir.create("data/derived", showWarnings = FALSE)
+write_csv(ssa_reference, "data/derived/ssa_name_reference.csv", na = "")
+write_csv(ssa_decades, "data/derived/ssa_name_decades.csv", na = "")
+write_csv(ssa_partial_decades, "data/derived/ssa_partial_decades.csv", na = "")
+write_csv(ssa_cutoffs, "data/derived/ssa_top100_cutoffs.csv", na = "")
+```
+
+SSA omits names reported fewer than five times for a sex and year. Early birth years have less complete coverage because many people born before 1937 never applied for a Social Security card. These limits affect the historical comparisons.

@@ -7,7 +7,7 @@ The primary file is [dogs_2024.csv](derived/dogs_2024.csv), one row per named es
 | `source_row_id` | Integer | One-based data row of the retained license in the raw CSV, excluding its header. |
 | `extract_year` | Integer | Selected NYC extract, 2024; not necessarily the license issue year. |
 | `original_name` | Text | Name on the retained license, unchanged. |
-| `name_key` | Text | Full name uppercased with spaces and hyphens removed; no first-token, nickname or title substitution. |
+| `name` | Text | Full name uppercased with spaces and hyphens removed; no first-token, nickname or title substitution. |
 | `sex` | Text | Recorded dog sex (`F` or `M` in this snapshot). Dog sex does not constrain SSA name matching. |
 | `birth_year` | Text | Recorded birth year, including malformed values; never guessed or repaired. |
 | `breed` | Text | Recorded breed, including `Unknown`; no breed-alias consolidation. |
@@ -26,17 +26,17 @@ The primary file is [dogs_2024.csv](derived/dogs_2024.csv), one row per named es
 | `zipcode_padded` | Boolean | The five-character representation differs from the published ZIP. |
 | `zipcode_invalid` | Boolean | The resulting ZIP is not exactly five digits. Valid syntax does not imply a geographic match. |
 | `identity_uncertain` | Boolean | Any of `breed_unknown`, `birth_year_suspect`, `sex_unknown` or `zipcode_invalid` is true. Records remain in the output. All other identities are still estimates. |
-| `ssa_recognized` | Boolean | Full normalized name appears in a published SSA record in any selected year: 1920–1929, 1970–1979 or 2010–2019. |
-| `top100_1920` | Boolean | Name is among the 100 largest combined-sex SSA birth counts summed over 1920–1929. |
-| `top100_1970` | Boolean | Same definition for 1970–1979. |
-| `top100_2010` | Boolean | Same definition for 2010–2019. |
+| `ssa_recognized` | Boolean | Full normalized name appears in a published SSA record in any selected year: 1880–2019. |
+| `top100_1880` … `top100_2010` | Boolean | One column per complete decade. True when the name is among its 100 largest combined-sex birth counts. |
 
-The five-field group key is `name_key`, `sex`, `birth_year`, `breed`, `zipcode`. Select greatest issue date, then greatest expiry date, then smallest `source_row_id`. No uncertain field is imputed. The three decade flags can overlap, and percentages using them need not sum to 100%. A false recognition flag means absent from this reference, not proven non-human.
+The five-field group key is `name`, `sex`, `birth_year`, `breed`, `zipcode`. Select greatest issue date, then greatest expiry date, then smallest `source_row_id`. No uncertain field is imputed. The 14 decade flags can overlap, and percentages using them need not sum to 100%. A false recognition flag means absent from this reference, not proven non-human.
 ## Supporting tables
 | File | Row unit and key | Purpose |
 | --- | --- | --- |
-| [ssa_name_reference.csv](derived/ssa_name_reference.csv) | One normalized name; `name_key` unique | Broad recognition and three decade measures. Join many dogs to one reference row. |
-| [ssa_name_decades.csv](derived/ssa_name_decades.csv) | One observed name/decade; `(name_key, decade)` unique | Long version showing aggregation, ranking and the input to the wide reference. |
+| [dogs_prepared_2024.csv](derived/dogs_prepared_2024.csv) | One estimated dog | Prepared dog fields before baby-name matching. |
+| [ssa_partial_decades.csv](derived/ssa_partial_decades.csv) | One name/incomplete decade | Birth counts, ranks, first/last year and years available for 2020–2025. Kept separate from the dog comparison. |
+| [ssa_name_reference.csv](derived/ssa_name_reference.csv) | One normalized name; `name` unique | Recognition across 1880–2019 and 14 decade measures. Join many dogs to one reference row. |
+| [ssa_name_decades.csv](derived/ssa_name_decades.csv) | One observed name/decade; `(name, decade)` unique | Long version showing aggregation, ranking and the input to the wide reference. |
 | [license_to_dog.csv](derived/license_to_dog.csv) | One raw license record; `source_row_id` unique | Maps every source record to its estimated dog and retained row, or to `missing_name` with empty IDs. Other statuses are `retained` and `consolidated`. |
 | [missing_names_by_zip.csv](derived/missing_names_by_zip.csv) | One extract/ZIP | Counts all source license records, missing-name records, named records and missing-name share. These are record counts, not dog counts. |
 | [missing_name_labels.csv](derived/missing_name_labels.csv) | One missing label | Counts the six selected source labels. |
@@ -47,7 +47,7 @@ The five-field group key is `name_key`, `sex`, `birth_year`, `breed`, `zipcode`.
 | [validation_checks.csv](derived/validation_checks.csv) | One check | Pass/fail results from independently re-reading saved files. |
 | [runtime_versions.csv](derived/runtime_versions.csv) | One package/runtime | Versions used for validation. |
 
-In the SSA tables, `births` sums published counts across sex and all ten years in that decade. `share` divides by the decade's total published counts; suppressed names are not part of that denominator. `rank` orders descending counts and then alphabetically in C locale. `top100` is `rank <= 100`. The wide table uses suffixes `_1920`, `_1970`, `_2010`; an absent decade has zero births/share, false membership and an empty rank. Every reference row has `ssa_recognized = TRUE`.
+In the SSA tables, `births` sums published counts across sex and all ten years in that decade. `share` divides by the decade's total published counts; suppressed names are not part of that denominator. `rank` orders descending counts and then alphabetically in C locale. `top100` is `rank <= 100`. The wide table uses decade suffixes from `_1880` through `_2010`; an absent decade has zero births/share, false membership and an empty rank. Every reference row has `ssa_recognized = TRUE`.
 
 ## Import the dog table in R
 Read ZIP codes and recorded birth years as text. Treat empty fields as missing values.

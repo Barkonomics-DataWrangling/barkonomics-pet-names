@@ -5,7 +5,7 @@ A Data Wrangling project by Shweta Mayur Goradia and Aslan French, exploring whe
 - [Shared proposal draft for editing and comments](https://drive.google.com/file/d/19GjlWQL73nJTpPncZw0Kleqdaxkaq-qO/view)
 - [Shared Drive folder](https://drive.google.com/drive/folders/1VZERM9oMA1lWPSxyoajURYF7W-Jf0Xr4)
 
-The first R dog/name handoff is available: [dog-level CSV](data/derived/dogs_2024.csv), [R notebook](dog-names.qmd), and [data dictionary](data/dog-name-data-dictionary.md). It contains 92,963 estimated dogs from the 2024 extract, with quality flags and SSA name measures. Reproduce it from the saved source snapshots with `quarto render dog-names.qmd`. Income integration and shared acceptance remain pending.
+The R contribution has three notebooks, [dog preparation](dog-names.qmd), [baby-name preparation](baby-names.qmd) and [analysis](analysis.qmd). They prepare 92,963 estimated dogs from the 2024 NYC extract and compare their names with the U.S. top 100 in all 14 complete decades from 1880–2019. The [dog CSV](data/derived/dogs_2024.csv), [data dictionary](data/dog-name-data-dictionary.md) and [render instructions](data/README.md#generate-and-check-the-handoff) are available for review. The analysis asks whether names and generational associations differ across neighborhood income groups, with diffusion as a motivating hypothesis. Geography and income integration are pending.
 
 The shared Drive draft is the place for proposal discussion; `proposal.md` is the initial Git-tracked snapshot. Changes are not automatically synchronized between them.
 

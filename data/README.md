@@ -5,21 +5,28 @@ The initial snapshot is [raw/nyc-dogs-2024.csv](raw/nyc-dogs-2024.csv): 105,974 
 
 Each raw row represents a license period, not a guaranteed unique dog. The R pipeline handles names, missingness, ZIP representation and estimated-dog grouping in separate derived files. The original source remains unchanged.
 
-The [SSA national baby-name archive](https://www.ssa.gov/oact/babynames/limits.html) is preserved as [raw/ssa-names.zip](raw/ssa-names.zip). Downloaded from the official National data link in a browser on November 5, 2026 after command-line requests returned 403, it contains 146 annual files for 1880–2025 and `NationalReadMe.pdf`. The archive is 7,860,026 bytes, expands to 28,255,978 bytes, and contains 2,181,032 annual name/sex/count records. Its readme dates the underlying tabulation to March 1, 2026. The ZIP integrity check passed; its exact URL, retrieval time and SHA-256 are in the manifest. No third-party substitute was used.
+The [SSA national baby-name source](https://www.ssa.gov/oact/babynames/limits.html) is saved as the unmodified annual text files in [raw/ssa/](raw/ssa/), alongside SSA's NationalReadMe.pdf. These 146 annual files cover 1880–2025 and contain 2,181,032 name/sex/year records. Together with the readme they occupy 28,255,978 bytes. The underlying tabulation dates to March 1, 2026.
 
-The R pipeline reads only 1920–1929, 1970–1979 and 2010–2019 from that archive, extracting them into a temporary directory. The unmodified ZIP remains the source snapshot. Do not re-download a moving source to reproduce this handoff; use the saved bytes.
+The files were extracted byte for byte from the official national archive downloaded on November 5, 2026. That acquisition was 7,860,026 bytes with SHA-256 cd78e975ed7bb358e018dd62fbe14ced89295e9581c49172ca4eedcb011b3724. The source inventory describes the extracted directory and leaves its checksum field empty. Git retains the earlier archive version in history.
+
+The baby-name notebook reads all annual files directly. It uses the 14 complete decades from 1880–2019 for the comparison and saves 2020–2025 separately in ssa_partial_decades.csv. That partial period also includes births after the 2024 dog extract. Overall SSA recognition uses 1880–2019. Both name recognition and the number of matching decades can grow when the reference period expands.
 
 The [missing-name lookup](lookups/missing_name_labels.csv) is project-owned data recording the six selected labels. It maps alternate missing-name labels to `not_recorded`; `BABY` is deliberately absent. This lookup is not an additional external source.
 ## Generate and check the handoff
-Render the [analysis notebook](../dog-names.qmd) from the repository root to build the dog table and its supporting tables from the saved sources. To inspect them against the sources, render the [checks notebook](../dog-names-checks.qmd) separately.
+Render the notebooks from the repository root in this order. Dog and baby-name preparation are independent. The analysis reads their saved CSVs.
 
 ```sh
 quarto render dog-names.qmd
+quarto render baby-names.qmd
+quarto render analysis.qmd
 quarto render dog-names-checks.qmd
 ```
 
-Both notebooks use Quarto and the R packages `tidyverse`, `knitr` and `rmarkdown`. The checks notebook reads the CSVs from disk and writes the counts, check results and runtime versions. The [data dictionary](dog-name-data-dictionary.md) defines the columns and their types. Aslan used Codex for assistance with implementation and checks.
+- [Dog preparation](../dog-names.qmd) writes dogs_prepared_2024.csv, the source-to-dog mapping, missing-name summaries and quality flags.
+- [Baby-name preparation](../baby-names.qmd) writes the name reference, complete and partial decade tables, and cutoff counts.
+- [Analysis](../analysis.qmd) writes dogs_2024.csv with all 14 decade flags and the comparison of dog and license counts. Geography and income joins belong in this notebook once the agreed tables are available.
+- [Checks](../dog-names-checks.qmd) independently reads the sources and outputs to check the saved result.
 
-The generated CSVs in `derived/` are the inspectable first handoff snapshot and should travel with this contribution. They total about 31 MB; the main dog CSV is 16.10 MB. Keeping these outputs alongside the roughly 19 MB of raw sources lets a collaborator inspect the result immediately and regenerate it offline. Temporary SSA extraction and R session files do not belong in Git. A new processing result must regenerate the saved validation results too.
+The notebooks need Quarto and the R packages tidyverse, knitr and rmarkdown. Their shared preview function lives in [R/helpers.R](../R/helpers.R). The [data dictionary](dog-name-data-dictionary.md) defines the output fields. Aslan used Codex for assistance with implementation and checks.
 
-The [dog and baby-name spike](../docs/active-spikes/dog-baby-name-data.md) records the selected decisions and work history. These are estimated dogs under the documented five-field rule; income and geographic joins are later work.
+Keep the generated CSVs with this contribution for review and offline use. Regenerate the checks after changing a processing result. The [spike](../docs/active-spikes/dog-baby-name-data.md) records decisions and work history.

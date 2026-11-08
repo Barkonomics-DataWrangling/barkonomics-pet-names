@@ -60,7 +60,7 @@ Give each lookup a name so its columns and row unit can be inspected before join
 #| label: prepare-the-identity-lookup
 dog_handoff |>
   select(
-    estimated_dog_id, name_key, sex, birth_year, breed, zipcode,
+    estimated_dog_id, name, sex, birth_year, breed, zipcode,
     license_issue_date, license_expiry_date
   ) ->
   dog_identity_lookup
@@ -88,7 +88,7 @@ source_licenses |>
     normalized_source_name = str_remove_all(normalized_source_name, "[\\s-]"),
     source_issue_date = as.Date(source_issue_date),
     source_expiry_date = as.Date(source_expiry_date),
-    five_fields_agree = name_key == normalized_source_name & sex == animalgender &
+    five_fields_agree = name == normalized_source_name & sex == animalgender &
       birth_year == animalbirth & breed == breedname & zipcode == normalized_source_zip
   ) ->
   mapped_licenses
@@ -136,30 +136,34 @@ license_audit |>
 ```
 
 ## Compare saved name flags
-Compare each saved matching flag with the reference, keeping the four comparisons visible.
+Compare the saved dog flags with the independently imported reference.
 
 ```{r}
 #| label: compare-saved-name-flags
-flag_names <- c("ssa_recognized", "top100_1920", "top100_1970", "top100_2010")
 ssa_reference |>
-  select(name_key, all_of(flag_names)) ->
+  select(name, ssa_recognized, starts_with("top100_")) ->
   reference_flags
 
+reference_flags |>
+  select(-name) |>
+  names() ->
+  flag_names
+
 dog_handoff |>
-  select(estimated_dog_id, name_key, all_of(flag_names)) |>
-  left_join(
-    reference_flags, by = "name_key",
-    relationship = "many-to-one", suffix = c("_dog", "_reference")
-  ) |>
-  mutate(
-    recognition_agrees = ssa_recognized_dog == replace_na(ssa_recognized_reference, FALSE),
-    decade_1920_agrees = top100_1920_dog == replace_na(top100_1920_reference, FALSE),
-    decade_1970_agrees = top100_1970_dog == replace_na(top100_1970_reference, FALSE),
-    decade_2010_agrees = top100_2010_dog == replace_na(top100_2010_reference, FALSE),
-    all_flags_agree = recognition_agrees & decade_1920_agrees &
-      decade_1970_agrees & decade_2010_agrees
-  ) ->
-  flag_checks
+  select(estimated_dog_id, all_of(flag_names)) ->
+  saved_name_flags
+
+dog_handoff |>
+  select(estimated_dog_id, name) |>
+  left_join(reference_flags, by = "name", relationship = "many-to-one") |>
+  mutate(across(all_of(flag_names), function(name_matches) replace_na(name_matches, FALSE))) |>
+  select(-name) ->
+  expected_name_flags
+
+saved_name_flags |>
+  anti_join(expected_name_flags, by = c("estimated_dog_id", flag_names)) |>
+  nrow() ->
+  mismatched_flag_rows
 
 ssa_decades |>
   filter(top100) |>
@@ -182,9 +186,6 @@ dog_handoff |>
   ) ->
   uncertainty_flags
 
-dog_handoff |>
-  select(all_of(flag_names)) ->
-  saved_name_flags
 ```
 
 ## Count records in the saved tables
@@ -200,15 +201,21 @@ stage_counts <- tribble(
   "license_audit_rows", nrow(license_audit),
   "ssa_name_decade_rows", nrow(ssa_decades),
   "ssa_reference_names", nrow(ssa_reference),
-  "ssa_recognized_dogs", sum(dog_handoff$ssa_recognized),
-  "top100_1920_dogs", sum(dog_handoff$top100_1920),
-  "top100_1970_dogs", sum(dog_handoff$top100_1970),
-  "top100_2010_dogs", sum(dog_handoff$top100_2010),
   "identity_uncertain_dogs", sum(dog_handoff$identity_uncertain),
   "compound_name_dogs", sum(dog_handoff$compound_name),
   "baby_source_records", sum(named_licenses$animalname == "BABY"),
   "baby_estimated_dogs", sum(dog_handoff$original_name == "BABY")
 )
+dog_handoff |>
+  summarise(across(all_of(flag_names), sum)) |>
+  pivot_longer(everything(), names_to = "stage", values_to = "count") |>
+  mutate(stage = str_c(stage, "_dogs")) ->
+  name_match_counts
+
+stage_counts |>
+  bind_rows(name_match_counts) ->
+  stage_counts
+
 write_csv(stage_counts, "data/derived/stage_counts.csv")
 ```
 
@@ -228,7 +235,7 @@ checks <- tribble(
   "dog IDs unique",
   !anyDuplicated(dog_handoff$estimated_dog_id),
   "five-field dog keys unique",
-  !anyDuplicated(dog_handoff[c("name_key", "sex", "birth_year", "breed", "zipcode")]),
+  !anyDuplicated(dog_handoff[c("name", "sex", "birth_year", "breed", "zipcode")]),
   "source names classified before normalization",
   all(is.na(mapped_licenses$estimated_dog_id) == mapped_licenses$source_name_missing),
   "5810 missing-name records excluded only from name analysis",
@@ -251,11 +258,11 @@ checks <- tribble(
   sum(missing_by_zip$source_license_records) == nrow(source_licenses) &&
     sum(missing_by_zip$missing_name_records) == nrow(missing_licenses),
   "reference names unique",
-  !anyDuplicated(ssa_reference$name_key),
+  !anyDuplicated(ssa_reference$name),
   "100 names in each selected decade",
-  setequal(top100_counts$decade, c(1920, 1970, 2010)) && all(top100_counts$name_count == 100),
+  setequal(top100_counts$decade, seq(1880, 2010, by = 10)) && all(top100_counts$name_count == 100),
   "dog/reference flags agree",
-  all(flag_checks$all_flags_agree),
+  mismatched_flag_rows == 0,
   "unmatched and recognized dogs retained",
   any(dog_handoff$ssa_recognized) && any(!dog_handoff$ssa_recognized) && !anyNA(saved_name_flags),
   "BABY source records retained",
