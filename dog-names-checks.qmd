@@ -177,10 +177,9 @@ named_licenses |>
   unknown_breed_licenses
 
 dog_handoff |>
-  mutate(zipcode_invalid = !str_detect(zipcode, "^[0-9]{5}$")) |>
-  select(breed_unknown, birth_year_suspect, sex_unknown, zipcode_invalid, identity_uncertain) |>
+  select(breed_unknown, birth_year_suspect, identity_uncertain) |>
   mutate(
-    expected_uncertainty = breed_unknown | birth_year_suspect | sex_unknown | zipcode_invalid,
+    expected_uncertainty = breed_unknown | birth_year_suspect,
     flag_agrees = identity_uncertain == expected_uncertainty
   ) ->
   uncertainty_flags

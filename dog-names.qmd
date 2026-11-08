@@ -160,7 +160,7 @@ dogs_with_dates |>
 ```
 
 ### Flag uncertain fields
-We flag compounds using the spelling on the license. We also mark records with an unknown breed or sex, a questionable birth year or a ZIP that cannot be written as five digits. These licenses still count.
+We flag compounds using the spelling on the license. We also mark records with an unknown breed or a questionable birth year, and record ZIP padding for the cleaning report. These licenses still count.
 
 ```{r}
 #| label: flag-uncertain-fields
@@ -173,16 +173,14 @@ dogs_with_dates |>
   mutate(
     compound_name = str_detect(original_name, "\\S\\s+\\S|[^\\s-]-[^\\s-]"),
     zipcode_padded = zipcode != original_zipcode,
-    zipcode_invalid = !str_detect(zipcode, "^[0-9]{5}$"),
     breed_unknown = breed_label %in% c("", "UNKNOWN"),
     birth_year_has_four_digits = str_detect(birth_year, "^[0-9]{4}$"),
     birth_year_in_range = between(birth_year_number, 1990L, 2024L),
     birth_year_suspect = !birth_year_has_four_digits | !birth_year_in_range,
-    birth_year_suspect = replace_na(birth_year_suspect, TRUE),
-    sex_unknown = !sex %in% c("F", "M")
+    birth_year_suspect = replace_na(birth_year_suspect, TRUE)
   ) |>
   mutate(
-    identity_uncertain = breed_unknown | birth_year_suspect | sex_unknown | zipcode_invalid
+    identity_uncertain = breed_unknown | birth_year_suspect
   ) ->
   dogs_with_quality_flags
 ```
@@ -230,8 +228,7 @@ dogs_estimated |>
     sex, birth_year, breed, zipcode,
     license_issue_date, license_expiry_date, license_record_count,
     original_name_variants, latest_issue_ties, compound_name, any_compound_name,
-    breed_unknown, birth_year_suspect, sex_unknown,
-    identity_uncertain
+    breed_unknown, birth_year_suspect, identity_uncertain
   ) ->
   dogs
 ```
@@ -277,12 +274,12 @@ missing_by_zip |>
 ```
 
 ### Corrections and unresolved fields
-The padded-ZIP count records corrections already made. The invalid-ZIP count records values that are not five digits after formatting; it does not establish whether a ZIP belongs to NYC. Count both from the preparation tables; the exported dog tables need only the formatted ZIP. Unknown breeds and suspect birth years remain unresolved because the source does not provide a reliable replacement. Compound names follow the full-name matching rule. These counts describe the named licenses and estimated dogs.
+The padded-ZIP count records corrections already made. Count it from the preparation tables; the exported dog tables need only the formatted ZIP. Unknown breeds and suspect birth years remain unresolved because the source does not provide a reliable replacement. Compound names follow the full-name matching rule. These counts describe the named licenses and estimated dogs.
 
 ```{r}
 #| label: summarize-quality-flags
-quality_flags <- c("breed_unknown", "birth_year_suspect", "sex_unknown",
-  "zipcode_padded", "zipcode_invalid", "identity_uncertain", "compound_name")
+quality_flags <- c("breed_unknown", "birth_year_suspect",
+  "zipcode_padded", "identity_uncertain", "compound_name")
 dogs_with_quality_flags |>
   summarise(across(all_of(quality_flags), sum)) |>
   mutate(unit = "named_license_record") ->
