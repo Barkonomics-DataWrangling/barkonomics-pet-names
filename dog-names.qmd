@@ -66,10 +66,13 @@ missing_name_labels <- c(
 ```
 
 ### Count missing names
-`dogs_original$original_name` takes the recorded-name column from the license table. `%in%` checks each value against our list. The result, `name_missing`, is a TRUE/FALSE vector in the same row order as `dogs_original`. Use it to count the excluded labels.
+`pull(original_name)` takes the recorded-name column from the license table. `is.element(missing_name_labels)` checks each value against our list. The result, `name_missing`, is a TRUE/FALSE vector in the same row order as `dogs_original`. Use it to count the excluded labels.
 ```{r}
 #| label: report-missing-names
-name_missing <- dogs_original$original_name %in% missing_name_labels
+dogs_original |>
+  pull(original_name) |>
+  is.element(missing_name_labels) ->
+  name_missing
 
 dogs_original |>
   filter(name_missing) |>
@@ -85,7 +88,7 @@ dogs_original |>
   group_by(extract_year = original_extract_year, zipcode = format_zipcodes(original_zipcode)) |>
   summarise(
     source_license_records = n(),
-    missing_name_records = sum(original_name %in% missing_name_labels),
+    missing_name_records = sum(is.element(original_name, missing_name_labels)),
     named_license_records = source_license_records - missing_name_records,
     missing_name_share = missing_name_records / source_license_records,
     .groups = "drop"
@@ -117,7 +120,7 @@ dogs_original |>
 ```
 
 ### Format names for matching
-Uppercase the whole name, then remove spaces and hyphens. These are the spelling differences we agreed to ignore when matching. For example, `WALL-E` becomes `WALLE`. Preserve the recorded name so compounds can still be identified.
+Uppercase the whole name, then remove spaces and hyphens. These are the spelling differences we agreed to ignore when matching. For example, `WALL-E` becomes `WALLE`. Keep the recorded name during preparation so we can identify names containing spaces or hyphens before those characters disappear. We also count how many recorded spellings each estimated dog combines.
 ```{r}
 #| label: format-names
 named_licenses |>
@@ -127,7 +130,7 @@ named_licenses |>
 ```
 
 ### Format ZIP codes
-Use the same ZIP formatting function as the missingness summary, preserving the recorded ZIP alongside the formatted value.
+Use the same ZIP formatting function as the missingness summary. Compare the recorded ZIP with the formatted value to count how many licenses needed leading zeros in the cleaning report.
 ```{r}
 #| label: format-zipcodes
 dogs_with_matching_names |>
@@ -218,12 +221,13 @@ dogs_estimated |>
 ```
 
 ### Keep the dog fields
+Pass the working fields to analysis. The original name and ZIP have served their preparation comparisons. The source row number links each dog to all recorded values.
 ```{r}
 #| label: select-dog-fields
 dogs_estimated |>
   select(
-    estimated_dog_id, source_row_id, extract_year, original_name, name,
-    sex, birth_year, breed, original_zipcode, zipcode,
+    estimated_dog_id, source_row_id, extract_year, name,
+    sex, birth_year, breed, zipcode,
     license_issue_date, license_expiry_date, license_record_count,
     original_name_variants, latest_issue_ties, compound_name, any_compound_name,
     breed_unknown, birth_year_suspect, sex_unknown, zipcode_padded, zipcode_invalid,

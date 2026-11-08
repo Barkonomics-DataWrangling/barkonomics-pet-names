@@ -35,7 +35,6 @@ dog_handoff <- read_csv(
   "data/derived/dogs_2024.csv", na = "",
   col_types = cols(
     birth_year = col_character(),
-    original_zipcode = col_character(),
     zipcode = col_character(),
     license_issue_date = col_date(),
     license_expiry_date = col_date(),
@@ -77,7 +76,7 @@ source_licenses |>
     by = "estimated_dog_id", relationship = "many-to-one", na_matches = "never"
   ) |>
   mutate(
-    source_name_missing = animalname %in% expected_missing_name_labels,
+    source_name_missing = is.element(animalname, expected_missing_name_labels),
     normalized_source_name = str_to_upper(animalname, locale = "en"),
     normalized_source_zip = str_pad(zipcode_source, width = 5, pad = "0"),
     source_issue_date = str_sub(licenseissueddate, 1, 10),
@@ -203,7 +202,7 @@ stage_counts <- tribble(
   "identity_uncertain_dogs", sum(dog_handoff$identity_uncertain),
   "compound_name_dogs", sum(dog_handoff$compound_name),
   "baby_source_records", sum(named_licenses$animalname == "BABY"),
-  "baby_estimated_dogs", sum(dog_handoff$original_name == "BABY")
+  "baby_estimated_dogs", sum(retained_licenses$animalname == "BABY")
 )
 dog_handoff |>
   summarise(across(all_of(flag_names), sum)) |>

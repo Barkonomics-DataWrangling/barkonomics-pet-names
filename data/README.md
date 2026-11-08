@@ -11,15 +11,12 @@ The files were extracted byte for byte from the official national archive downlo
 
 The baby-name notebook reads the 140 annual files for 1880–2019 directly. All rankings and overall name recognition use those 14 complete decades.
 
-The character vector `missing_name_labels` at the top of [dog-names.qmd](../dog-names.qmd#missing-name-labels) contains the six agreed labels. Count their occurrences overall and by ZIP, then exclude those licenses before formatting names and dates or adding quality flags. `BABY` remains a name.
+The character vector `missing_name_labels` beside the missing-name step in [dog-names.qmd](../dog-names.qmd#missing-name-labels) contains the six agreed labels. Count their occurrences overall and by ZIP, then exclude those licenses before formatting names and dates or adding quality flags. `BABY` remains a name.
 ## Generate and check the handoff
-Render the notebooks from the repository root in this order. Dog and baby-name preparation are independent. The analysis reads their saved CSVs.
+Open the repository as the editor workspace and run each notebook’s R chunks from top to bottom. Run dog preparation and baby-name preparation before analysis, then run the separate checks. Preparation and checking need only code execution. Render the analysis when an HTML deliverable is needed.
 
 ```sh
-quarto render dog-names.qmd
-quarto render baby-names.qmd
 quarto render analysis.qmd
-quarto render dog-names-checks.qmd
 ```
 
 - [Dog preparation](../dog-names.qmd) writes dogs_prepared_2024.csv, the source-to-dog mapping, missing-name summaries and quality flags.

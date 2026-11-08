@@ -26,7 +26,7 @@ source("R/helpers.R")
 dogs_prepared <- read_csv(
   "data/derived/dogs_prepared_2024.csv", na = "",
   col_types = cols(
-    zipcode = col_character(), original_zipcode = col_character(),
+    zipcode = col_character(),
     birth_year = col_character(), .default = col_guess()
   )
 )
@@ -52,7 +52,7 @@ dogs_prepared |>
   dogs
 
 dogs |>
-  select(original_name, ssa_recognized, starts_with("top100_")) |>
+  select(name, ssa_recognized, starts_with("top100_")) |>
   preview()
 ```
 

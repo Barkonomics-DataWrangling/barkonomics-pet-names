@@ -1,18 +1,16 @@
 # Dog-name data dictionary
 The primary file is [dogs_2024.csv](derived/dogs_2024.csv), one row per named estimated dog under the five-field rule. Read ZIP codes and birth years as text. In the reference and audit files, an empty field means a missing value. Use `na = ""` to keep a name written with the two letters `NA` as text.
-The notebook keeps a source-stage table, dogs_original, with consistent original_ column names. The working table uses short names and retains original_name and original_zipcode for comparisons. source_row_id links every retained dog to the raw license.
+The notebook keeps a source-stage table, dogs_original, with consistent original_ column names. The preparation uses original names and ZIPs to compare spelling and padding. The exported dog tables contain the working fields. source_row_id links every retained dog to the original license and its recorded values.
 ## Dog columns
 | Column | Type | Meaning |
 | --- | --- | --- |
 | `estimated_dog_id` | Text | `dog2024-` plus the retained source row number, padded to six digits. Stable within this snapshot and rule, not an official ID or a cross-year identity. |
 | `source_row_id` | Integer | One-based data row of the retained license in the raw CSV, excluding its header. |
 | `extract_year` | Integer | Selected NYC extract, 2024; not necessarily the license issue year. |
-| `original_name` | Text | Name on the retained license, unchanged. |
 | `name` | Text | Full name uppercased with spaces and hyphens removed; no first-token, nickname or title substitution. |
 | `sex` | Text | Recorded dog sex (`F` or `M` in this snapshot). Dog sex does not constrain SSA name matching. |
 | `birth_year` | Text | Recorded birth year, including malformed values; never guessed or repaired. |
 | `breed` | Text | Recorded breed, including `Unknown`; no breed-alias consolidation. |
-| `original_zipcode` | Text | ZIP as published on the retained license. |
 | `zipcode` | Text | Five-character ZIP representation: digit-only source values of up to five digits are left-padded with zeros. This is not confirmation of valid NYC geography. |
 | `license_issue_date` | Date | Issue date of the retained license, `YYYY-MM-DD`. |
 | `license_expiry_date` | Date | Expiry date of the retained license, `YYYY-MM-DD`. |
@@ -59,7 +57,6 @@ dogs <- read_csv(
   "data/derived/dogs_2024.csv", na = "",
   col_types = cols(
     zipcode = col_character(),
-    original_zipcode = col_character(),
     birth_year = col_character()
   )
 )
