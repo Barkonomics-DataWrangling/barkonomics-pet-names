@@ -187,3 +187,6 @@ Use the six-label list directly. Define missing_name_labels with c() beside the 
 Give all publisher fields an original_ prefix in dogs_original. Select short working names after missing-name exclusion. Use original_name and original_zipcode during preparation comparisons, then omit them from the exported dog tables. source_row_id provides access to all original values. Display missing-name exclusions and quality summaries together in the cleaning report. Additional use of uncertainty flags to select income-analysis records or compare alternative results remains a research decision.
 
 Execute preparation and checking chunks directly while developing. Render analysis.qmd when the final HTML deliverable is needed.
+
+## Quality-flag review
+Keep zipcode_padded in the preparation tables and cleaning report, but omit it from both exported dog tables. The formatted zipcode is the field used downstream. Review the remaining flags individually before changing their treatment.
