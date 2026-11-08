@@ -18,6 +18,15 @@ library(tidyverse)
 source("R/helpers.R")
 ```
 
+## Missing-name labels
+These are the six recorded values we agreed mean a missing name. `c()` combines them into a character vector, a sequence of text values. `BABY` remains a name.
+```{r}
+#| label: missing-name-labels
+missing_name_labels <- c(
+  "UNKNOWN", "NAME NOT PROVIDED", "NONE", "NA", ".", "NONAME"
+)
+```
+
 ## From licenses to estimated dogs
 ### Read the license records
 NYC supplies the column headers. We read ZIP codes as text because a leading zero is part of the code and matters when joining to the income data. Reading the other fields as text also keeps names as written, including the two letters `NA` used for a missing name.
@@ -56,13 +65,13 @@ dogs_original |>
 ```
 
 ### Report missing names
-The list `missing_name_labels` contains the six labels we already agreed mean no name was recorded. The shared definitions file creates it with `c()`, which combines the six text values. `%in%` checks whether each license’s name is in that list. `BABY` remains a name.
+`dogs_original$original_name` takes the recorded-name column from the license table. `%in%` checks each value against our list. The result, `name_missing`, is a TRUE/FALSE vector in the same row order as `dogs_original`. Use it to count the excluded labels.
 ```{r}
 #| label: report-missing-names
-missing_name_labels
+name_missing <- dogs_original$original_name %in% missing_name_labels
 
 dogs_original |>
-  filter(original_name %in% missing_name_labels) |>
+  filter(name_missing) |>
   count(original_name, name = "source_license_records", sort = TRUE) ->
   missing_name_counts
 
@@ -94,11 +103,11 @@ missing_by_zip |>
 ```
 
 ### Keep the named licenses
-`filter()` keeps rows whose condition is TRUE. The `!` reverses the membership result, so this keeps names outside the six-label list. Only these licenses continue through name formatting, dates, quality flags and grouping.
+`filter()` keeps rows whose condition is TRUE. `!name_missing` reverses the named result above, so we keep licenses that have names. Apply this vector to the same `dogs_original` table and row order. Only the named licenses continue through formatting, dates, quality flags and grouping.
 ```{r}
 #| label: keep-named-licenses
 dogs_original |>
-  filter(!(original_name %in% missing_name_labels)) ->
+  filter(!name_missing) ->
   named_licenses
 ```
 

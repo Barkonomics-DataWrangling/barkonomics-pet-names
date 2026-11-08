@@ -14,7 +14,9 @@ Run this notebook to compare the saved dog table with the city licenses and the 
 
 ```{r}
 library(tidyverse)
-source("R/helpers.R")
+expected_missing_name_labels <- c(
+  "UNKNOWN", "NAME NOT PROVIDED", "NONE", "NA", ".", "NONAME"
+)
 ```
 
 ## Read the saved files
@@ -75,7 +77,7 @@ source_licenses |>
     by = "estimated_dog_id", relationship = "many-to-one", na_matches = "never"
   ) |>
   mutate(
-    source_name_missing = animalname %in% missing_name_labels,
+    source_name_missing = animalname %in% expected_missing_name_labels,
     normalized_source_name = str_to_upper(animalname, locale = "en"),
     normalized_source_zip = str_pad(zipcode_source, width = 5, pad = "0"),
     source_issue_date = str_sub(licenseissueddate, 1, 10),

@@ -1,7 +1,3 @@
-missing_name_labels <- c(
-  "UNKNOWN", "NAME NOT PROVIDED", "NONE", "NA", ".", "NONAME"
-)
-
 preview <- function(records) {
   records |>
     slice_head(n = 6)
