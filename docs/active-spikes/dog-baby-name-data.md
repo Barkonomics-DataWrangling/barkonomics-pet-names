@@ -26,7 +26,6 @@ data/
   README.md          # Source descriptions, acquisition and regeneration instructions.
   sources.csv        # Exact source URLs, selection, retrieval date, checksums and counts.
   raw/               # Preserved source downloads or selected exports.
-  lookups/           # Project-owned missing-name label mapping.
   derived/           # Regenerable cleaned and joined outputs.
 dog-names.qmd        # Prepare estimated dogs.
 baby-names.qmd       # Prepare baby-name decades.
@@ -154,7 +153,7 @@ Load `tidyverse` as a suite. Use descriptive names and readable sequential trans
 The R policy proposal is a separate contribution with its own commit and eventual issue-linked PR. Prepare its issue and PR from the policy diff and commits when publication is requested. The dog/name PR remains focused on issue #1 and the implementation/data handoff.
 
 ## Verification scope
-Use the separate checks notebook to compare the saved dog table with the source licenses, missing-name lookup and SSA reference. The R notebook does not calculate source or output checksums and does not depend on `digest`. Acquisition provenance lives in the source inventory and data README. Keep `sources <- read_csv(...)` as the named inventory for inspection and expected reuse. The handoff has thirteen output CSVs; output checksum generation is outside its scope.
+Use the separate checks notebook to compare the saved dog table with the source licenses, missing-name list and SSA reference. The R notebook does not calculate source or output checksums and does not depend on `digest`. Acquisition provenance lives in the source inventory and data README. Keep `sources <- read_csv(...)` as the named inventory for inspection and expected reuse. The handoff has thirteen output CSVs; output checksum generation is outside its scope.
 
 ## Quarto implementation
 Use [dog-names.qmd](../../dog-names.qmd) for dogs, [baby-names.qmd](../../baby-names.qmd) for SSA preparation, [analysis.qmd](../../analysis.qmd) for the combined analysis and [dog-names-checks.qmd](../../dog-names-checks.qmd) for independent checks on the saved files. Render from the repository root. Durable output definitions live beside the data. Issue #1 owns shared coordination and acceptance; its PR will own change review. Documentation placement is project-specific, not a universal ban on code documentation under docs. Consumer workflow pins stay unchanged until the shared workflow guidance is settled.
@@ -173,7 +172,7 @@ Unpublished preparation for the eventual data PR.
 
 Contributes to #1. Prepares one row per named estimated dog from NYC's 2024 license extract, with original names, quality flags, broad SSA recognition and overlapping top-100 decade memberships. The saved handoff contains 92,963 estimated dogs; all 105,974 source records are accounted for in the lineage and missingness outputs.
 
-Includes the fixed NYC and official SSA source snapshots with checksums, the six-label missing-name lookup, three Quarto notebooks for preparation and analysis plus separate saved-file checks, generated CSVs, and `dog-names.qmd`, `data/dog-name-data-dictionary.md` and `docs/active-spikes/dog-baby-name-data.md`. The official SSA archive was acquired through the browser after command-line downloads returned 403.
+Includes the fixed NYC and official SSA source snapshots with checksums, the six-label missing-name list, three Quarto notebooks for preparation and analysis plus separate saved-file checks, generated CSVs, and `dog-names.qmd`, `data/dog-name-data-dictionary.md` and `docs/active-spikes/dog-baby-name-data.md`. The official SSA archive was acquired through the browser after command-line downloads returned 403.
 
 All 21 saved-file checks pass, covering latest-license selection and deterministic ties, unique five-field dog keys, complete source-to-dog lineage, unchanged dog count through the SSA join, exactly 100 names per decade, retained uncertain records and matching flags. An independent calculation from both raw sources agrees with every dog representative and SSA flag. The three independently rendered notebooks produce thirteen output CSVs including the check results. Runtime versions, per-stage counts and quality summaries are included.
 
@@ -182,4 +181,4 @@ Review the documented identity approximation and the CSV interface for Shweta's 
 The R style policy requires a separate issue and PR. Keep the policy commit out of this PR’s change set; integrate the policy PR first and compare this contribution against the updated target before publication.
 
 ## Missing-name implementation
-Use the six-label list directly. Read its recorded_name column into missing_name_labels with pull(). Count the excluded labels overall and by ZIP, then filter with !(original_name %in% missing_name_labels). The named licenses proceed through name formatting, ZIPs, dates and quality flags. Keep the recorded values and a source-row audit. A shared format_zipcodes() function applies the same leading-zero rule to the missingness summary and named licenses. Name-status and name-missing columns are unnecessary in dog preparation.
+Use the six-label list directly. Define missing_name_labels with c() in R/helpers.R so preparation and checks use the same six values. Count the excluded labels overall and by ZIP, then filter with !(original_name %in% missing_name_labels). The named licenses proceed through name formatting, ZIPs, dates and quality flags. Keep the recorded values and a source-row audit. A shared format_zipcodes() function applies the same leading-zero rule to the missingness summary and named licenses. Name-status and name-missing columns are unnecessary in dog preparation.

@@ -14,6 +14,7 @@ Run this notebook to compare the saved dog table with the city licenses and the 
 
 ```{r}
 library(tidyverse)
+source("R/helpers.R")
 ```
 
 ## Read the saved files
@@ -27,11 +28,6 @@ source_licenses <- read_csv(
   mutate(source_row_id = row_number()) |>
   rename(zipcode_source = zipcode)
 
-missing_name_labels <- read_csv(
-  "data/lookups/missing_name_labels.csv",
-  col_types = cols(.default = col_character()), na = character()
-) |>
-  pull(recorded_name)
 
 dog_handoff <- read_csv(
   "data/derived/dogs_2024.csv", na = "",

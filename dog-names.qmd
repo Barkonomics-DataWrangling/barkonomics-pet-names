@@ -29,11 +29,6 @@ dogs_raw <- read_csv(
   col_types = cols(.default = col_character()),
   na = character(), trim_ws = FALSE
 )
-missing_name_labels <- read_csv(
-  "data/lookups/missing_name_labels.csv",
-  col_types = cols(.default = col_character()), na = character()
-) |>
-  pull(recorded_name)
 ```
 
 ### Give the original license fields clear names
@@ -61,9 +56,11 @@ dogs_original |>
 ```
 
 ### Report missing names
-The list `missing_name_labels` contains the six labels we already agreed mean no name was recorded. `pull(recorded_name)` takes that column from the CSV and gives us its values. `%in%` checks whether each license’s name is in that list. `BABY` remains a name.
+The list `missing_name_labels` contains the six labels we already agreed mean no name was recorded. The shared definitions file creates it with `c()`, which combines the six text values. `%in%` checks whether each license’s name is in that list. `BABY` remains a name.
 ```{r}
 #| label: report-missing-names
+missing_name_labels
+
 dogs_original |>
   filter(original_name %in% missing_name_labels) |>
   count(original_name, name = "source_license_records", sort = TRUE) ->

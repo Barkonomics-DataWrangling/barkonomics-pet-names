@@ -11,7 +11,7 @@ The files were extracted byte for byte from the official national archive downlo
 
 The baby-name notebook reads the 140 annual files for 1880–2019 directly. All rankings and overall name recognition use those 14 complete decades.
 
-The [missing-name list](lookups/missing_name_labels.csv) contains the six agreed labels in one column. Count their occurrences overall and by ZIP, then exclude those licenses before formatting names and dates or adding quality flags. `BABY` remains a name.
+The character vector `missing_name_labels` in [R/helpers.R](../R/helpers.R) contains the six agreed labels. Count their occurrences overall and by ZIP, then exclude those licenses before formatting names and dates or adding quality flags. `BABY` remains a name.
 ## Generate and check the handoff
 Render the notebooks from the repository root in this order. Dog and baby-name preparation are independent. The analysis reads their saved CSVs.
 
