@@ -1,0 +1,381 @@
+estimated_dog_id,source_row_id,name,zipcode,zcta,post_office,income_status,exclusion_reason
+dog2024-000255,255,PENNY,22202,,,,zip_not_in_ny_lookup
+dog2024-000379,379,TINY,08027,,,,zip_not_in_ny_lookup
+dog2024-000495,495,JAX,11729,11729,Deer Park,estimate,outside_nyc_area_list
+dog2024-000554,554,EDEN,11731,11731,East Northport,estimate,outside_nyc_area_list
+dog2024-000724,724,MAMBO,84047,,,,zip_not_in_ny_lookup
+dog2024-000885,885,SUSHI,10605,10605,White Plains,estimate,outside_nyc_area_list
+dog2024-000898,898,SANDY,12010,12010,Amsterdam,estimate,outside_nyc_area_list
+dog2024-001029,1029,DEXTER,34986,,,,zip_not_in_ny_lookup
+dog2024-001836,1836,THEODORE,11746,11746,Huntington Station,estimate,outside_nyc_area_list
+dog2024-001937,1937,OSITO,48310,,,,zip_not_in_ny_lookup
+dog2024-001941,1941,CODY,11791,11791,Syosset,estimate,outside_nyc_area_list
+dog2024-001994,1994,BUDDY,18328,,,,zip_not_in_ny_lookup
+dog2024-002739,2739,RILEY,11596,11596,Williston Park,estimate,outside_nyc_area_list
+dog2024-002838,2838,ROONI,12451,12451,Leeds,estimate,outside_nyc_area_list
+dog2024-003030,3030,FLUFFY,11554,11554,East Meadow,estimate,outside_nyc_area_list
+dog2024-003891,3891,LADY,14905,14905,Elmira,estimate,outside_nyc_area_list
+dog2024-003986,3986,FLUFFY,08075,,,,zip_not_in_ny_lookup
+dog2024-004055,4055,RANGER,11706,11706,Bay Shore,estimate,outside_nyc_area_list
+dog2024-004143,4143,MIA,11757,11757,Lindenhurst,estimate,outside_nyc_area_list
+dog2024-004159,4159,GASPARD,11757,11757,Lindenhurst,estimate,outside_nyc_area_list
+dog2024-004171,4171,ZOE,11561,11561,Long Beach,estimate,outside_nyc_area_list
+dog2024-004237,4237,BRUCE,10977,10977,Spring Valley,estimate,outside_nyc_area_list
+dog2024-004563,4563,GHOST,34472,,,,zip_not_in_ny_lookup
+dog2024-005205,5205,FANCY,10933,10933,Johnson,not_available,outside_nyc_area_list
+dog2024-005248,5248,PJ,06708,,,,zip_not_in_ny_lookup
+dog2024-005702,5702,AUDREY,10567,10567,Cortlandt Manor,estimate,outside_nyc_area_list
+dog2024-005866,5866,TIGER,00923,,,,zip_not_in_ny_lookup
+dog2024-006193,6193,ISA,10954,10954,Nanuet,estimate,outside_nyc_area_list
+dog2024-006356,6356,LOKI,10992,10992,Washingtonville,estimate,outside_nyc_area_list
+dog2024-008006,8006,CHARLIE,11756,11756,Levittown,estimate,outside_nyc_area_list
+dog2024-008323,8323,DYLAN,11501,11501,Mineola,estimate,outside_nyc_area_list
+dog2024-008388,8388,DELTA,03833,,,,zip_not_in_ny_lookup
+dog2024-008604,8604,KERMIT,12590,12590,Wappingers Falls,estimate,outside_nyc_area_list
+dog2024-009119,9119,AVA,11771,11771,Oyster Bay,estimate,outside_nyc_area_list
+dog2024-009164,9164,AMOR,19119,,,,zip_not_in_ny_lookup
+dog2024-009820,9820,OLIVER,11501,11501,Mineola,estimate,outside_nyc_area_list
+dog2024-009889,9889,BAMBI,07624,,,,zip_not_in_ny_lookup
+dog2024-009961,9961,SCARLET,18326,,,,zip_not_in_ny_lookup
+dog2024-010172,10172,UCO,12309,12309,Schenectady,estimate,outside_nyc_area_list
+dog2024-010801,10801,EINSTEIN,12180,12180,Troy,estimate,outside_nyc_area_list
+dog2024-011771,11771,PENNY,07030,,,,zip_not_in_ny_lookup
+dog2024-012449,12449,JACKJACK,07302,,,,zip_not_in_ny_lookup
+dog2024-012468,12468,TEDDY,10703,10703,Yonkers,estimate,outside_nyc_area_list
+dog2024-012697,12697,FREDDY,10703,10703,Yonkers,estimate,outside_nyc_area_list
+dog2024-013044,13044,ARLO,06880,,,,zip_not_in_ny_lookup
+dog2024-013411,13411,OPHELIA,12458,12458,Napanoch,estimate,outside_nyc_area_list
+dog2024-013445,13445,BELLA,11003,11003,Elmont,estimate,outside_nyc_area_list
+dog2024-013463,13463,PORK,11003,11003,Elmont,estimate,outside_nyc_area_list
+dog2024-013501,13501,OLIVER,10605,10605,White Plains,estimate,outside_nyc_area_list
+dog2024-013562,13562,OREO,11575,11575,Roosevelt,estimate,outside_nyc_area_list
+dog2024-013592,13592,MYLO,11951,11951,Mastic Beach,estimate,outside_nyc_area_list
+dog2024-013628,13628,STELLA,07302,,,,zip_not_in_ny_lookup
+dog2024-013904,13904,LIARA,10970,10970,Pomona,estimate,outside_nyc_area_list
+dog2024-013993,13993,GEORGE,14850,14850,Ithaca,estimate,outside_nyc_area_list
+dog2024-014243,14243,SHERMAN,10801,10801,New Rochelle,estimate,outside_nyc_area_list
+dog2024-014257,14257,JADA,11590,11590,Westbury,estimate,outside_nyc_area_list
+dog2024-014371,14371,CHOMPIE,10168,10168,New York,not_available,income_unavailable
+dog2024-014599,14599,CHLOE,10163,10170,New York,not_available,income_unavailable
+dog2024-014821,14821,HAPPY,06793,,,,zip_not_in_ny_lookup
+dog2024-015263,15263,ZEKE,11516,11516,Cedarhurst,estimate,outside_nyc_area_list
+dog2024-015598,15598,RUTHIE,06793,,,,zip_not_in_ny_lookup
+dog2024-015936,15936,PENELOPE,11561,11561,Long Beach,estimate,outside_nyc_area_list
+dog2024-016036,16036,PRETZEL,11561,11561,Long Beach,estimate,outside_nyc_area_list
+dog2024-016049,16049,COCA,10801,10801,New Rochelle,estimate,outside_nyc_area_list
+dog2024-016272,16272,TEDDY,12550,12550,Newburgh,estimate,outside_nyc_area_list
+dog2024-016429,16429,CJ,10579,10579,Putnam Valley,estimate,outside_nyc_area_list
+dog2024-016590,16590,CHEERIO,12188,12188,Waterford,estimate,outside_nyc_area_list
+dog2024-017199,17199,DANGER,11003,11003,Elmont,estimate,outside_nyc_area_list
+dog2024-017517,17517,ROXY,11930,11930,Amagansett,estimate,outside_nyc_area_list
+dog2024-018327,18327,ALFIE,01060,,,,zip_not_in_ny_lookup
+dog2024-018686,18686,JASPER,10112,10112,New York,not_available,income_unavailable
+dog2024-018909,18909,KIWI,11714,11714,Bethpage,estimate,outside_nyc_area_list
+dog2024-019075,19075,TOBY,29526,,,,zip_not_in_ny_lookup
+dog2024-019213,19213,DASHER,11570,11570,Rockville Centre,estimate,outside_nyc_area_list
+dog2024-019286,19286,KYLO,11726,11726,Copiague,estimate,outside_nyc_area_list
+dog2024-019482,19482,MORLOYAL,11003,11003,Elmont,estimate,outside_nyc_area_list
+dog2024-019694,19694,NAME,29150,,,,zip_not_in_ny_lookup
+dog2024-019977,19977,PETE,11590,11590,Westbury,estimate,outside_nyc_area_list
+dog2024-020016,20016,RORY,11560,11560,Locust Valley,estimate,outside_nyc_area_list
+dog2024-020191,20191,ROONEY,11930,11930,Amagansett,estimate,outside_nyc_area_list
+dog2024-020725,20725,FLOKI,10512,10512,Carmel,estimate,outside_nyc_area_list
+dog2024-020944,20944,NAME,12601,12601,Poughkeepsie,estimate,outside_nyc_area_list
+dog2024-020983,20983,ROCKY,11554,11554,East Meadow,estimate,outside_nyc_area_list
+dog2024-021175,21175,SOPHIE,11572,11572,Oceanside,estimate,outside_nyc_area_list
+dog2024-021191,21191,KENZO,07055,,,,zip_not_in_ny_lookup
+dog2024-021237,21237,SIMBA,11746,11746,Huntington Station,estimate,outside_nyc_area_list
+dog2024-021705,21705,LUCY,30342,,,,zip_not_in_ny_lookup
+dog2024-021906,21906,ROVER,08027,,,,zip_not_in_ny_lookup
+dog2024-022107,22107,ESTER,11550,11550,Hempstead,estimate,outside_nyc_area_list
+dog2024-022272,22272,CYNTHIA,11550,11550,Hempstead,estimate,outside_nyc_area_list
+dog2024-022388,22388,JACK,12522,12522,Dover Plains,estimate,outside_nyc_area_list
+dog2024-022889,22889,MANGO,11572,11572,Oceanside,estimate,outside_nyc_area_list
+dog2024-022946,22946,CAMMY,07024,,,,zip_not_in_ny_lookup
+dog2024-022993,22993,INDIANA,85044,,,,zip_not_in_ny_lookup
+dog2024-023125,23125,ROY,10710,10710,Yonkers,estimate,outside_nyc_area_list
+dog2024-023473,23473,AMETHYST,12550,12550,Newburgh,estimate,outside_nyc_area_list
+dog2024-023918,23918,MOWGLI,10020,10020,New York,not_available,income_unavailable
+dog2024-024044,24044,LOLA,32259,,,,zip_not_in_ny_lookup
+dog2024-024250,24250,SARAH,11575,11575,Roosevelt,estimate,outside_nyc_area_list
+dog2024-024624,24624,PEPSI,11554,11554,East Meadow,estimate,outside_nyc_area_list
+dog2024-024654,24654,COCO,12590,12590,Wappingers Falls,estimate,outside_nyc_area_list
+dog2024-024822,24822,MAX,11706,11706,Bay Shore,estimate,outside_nyc_area_list
+dog2024-024932,24932,BELLE,11725,11725,Commack,estimate,outside_nyc_area_list
+dog2024-025395,25395,PIE,11725,11725,Commack,estimate,outside_nyc_area_list
+dog2024-026192,26192,GRACE,10901,10901,Suffern,estimate,outside_nyc_area_list
+dog2024-026311,26311,SHIROU,11581,11581,Valley Stream,estimate,outside_nyc_area_list
+dog2024-026543,26543,NOT,11542,11542,Glen Cove,estimate,outside_nyc_area_list
+dog2024-026742,26742,QUEENIE,12458,12458,Napanoch,estimate,outside_nyc_area_list
+dog2024-026813,26813,ACEVEDO,10512,10512,Carmel,estimate,outside_nyc_area_list
+dog2024-026923,26923,ZOE,10048,,,,zip_not_in_ny_lookup
+dog2024-027531,27531,KALI,11518,11518,East Rockaway,estimate,outside_nyc_area_list
+dog2024-028095,28095,CALVIN,14564,14564,Victor,estimate,outside_nyc_area_list
+dog2024-028229,28229,POPPY,11566,11566,Merrick,estimate,outside_nyc_area_list
+dog2024-028674,28674,BAGHEERA,11581,11581,Valley Stream,estimate,outside_nyc_area_list
+dog2024-028790,28790,NINA,49431,,,,zip_not_in_ny_lookup
+dog2024-029025,29025,BUBBLES,10703,10703,Yonkers,estimate,outside_nyc_area_list
+dog2024-029064,29064,BALTO,11581,11581,Valley Stream,estimate,outside_nyc_area_list
+dog2024-029083,29083,POM,07420,,,,zip_not_in_ny_lookup
+dog2024-029161,29161,YUMI,10940,10940,Middletown,estimate,outside_nyc_area_list
+dog2024-029570,29570,GINNY,11787,11787,Smithtown,estimate,outside_nyc_area_list
+dog2024-029809,29809,OREO,11570,11570,Rockville Centre,estimate,outside_nyc_area_list
+dog2024-029871,29871,SASHA,11793,11793,Wantagh,estimate,outside_nyc_area_list
+dog2024-030133,30133,CAMILA,11950,11950,Mastic,estimate,outside_nyc_area_list
+dog2024-030255,30255,LUNA,11950,11950,Mastic,estimate,outside_nyc_area_list
+dog2024-030357,30357,LEON,12603,12603,Poughkeepsie,estimate,outside_nyc_area_list
+dog2024-030519,30519,ANDY,06514,,,,zip_not_in_ny_lookup
+dog2024-030797,30797,XYLA,12589,12589,Wallkill,estimate,outside_nyc_area_list
+dog2024-030927,30927,MAX,11798,11798,Wyandanch,zcta_not_in_acs,outside_nyc_area_list
+dog2024-031071,31071,FINNICK,10701,10701,Yonkers,estimate,outside_nyc_area_list
+dog2024-031159,31159,LAZULI,12534,12534,Hudson,estimate,outside_nyc_area_list
+dog2024-031203,31203,KUYA,12589,12589,Wallkill,estimate,outside_nyc_area_list
+dog2024-031362,31362,SEDDO,01312,,,,zip_not_in_ny_lookup
+dog2024-031628,31628,BLOSSOM,11003,11003,Elmont,estimate,outside_nyc_area_list
+dog2024-031775,31775,KANIN,07026,,,,zip_not_in_ny_lookup
+dog2024-032276,32276,RAVEN,11596,11596,Williston Park,estimate,outside_nyc_area_list
+dog2024-032514,32514,REMY,10601,10601,White Plains,estimate,outside_nyc_area_list
+dog2024-032698,32698,HONEY,11003,11003,Elmont,estimate,outside_nyc_area_list
+dog2024-032989,32989,STITCH,18326,,,,zip_not_in_ny_lookup
+dog2024-033039,33039,WILLIE,10541,10541,Mahopac,estimate,outside_nyc_area_list
+dog2024-033264,33264,CALI,11968,11968,Southampton,estimate,outside_nyc_area_list
+dog2024-034646,34646,ROCKY,10956,10956,New City,estimate,outside_nyc_area_list
+dog2024-034684,34684,COOKIE,11010,11010,Franklin Square,estimate,outside_nyc_area_list
+dog2024-035023,35023,CHESTER,11590,11590,Westbury,estimate,outside_nyc_area_list
+dog2024-035107,35107,HENDRIX,10940,10940,Middletown,estimate,outside_nyc_area_list
+dog2024-035190,35190,VICKY,11590,11590,Westbury,estimate,outside_nyc_area_list
+dog2024-035333,35333,ENZO,20008,,,,zip_not_in_ny_lookup
+dog2024-035479,35479,DYLAN,01067,,,,zip_not_in_ny_lookup
+dog2024-036149,36149,NAANO,11315,,,,zip_not_in_ny_lookup
+dog2024-036450,36450,CHOCO,11315,,,,zip_not_in_ny_lookup
+dog2024-036457,36457,CHARLIE,32937,,,,zip_not_in_ny_lookup
+dog2024-036630,36630,EDDIE,11792,11792,Wading River,estimate,outside_nyc_area_list
+dog2024-037129,37129,DALLAS,10708,10708,Bronxville,estimate,outside_nyc_area_list
+dog2024-037236,37236,ASTRA,11430,11430,Jamaica,not_available,income_unavailable
+dog2024-037331,37331,BOREUM,12207,12207,Albany,estimate,outside_nyc_area_list
+dog2024-037527,37527,OTIS,10801,10801,New Rochelle,estimate,outside_nyc_area_list
+dog2024-037764,37764,NAME,11003,11003,Elmont,estimate,outside_nyc_area_list
+dog2024-038612,38612,FIG,11548,11548,Greenvale,estimate,outside_nyc_area_list
+dog2024-039199,39199,MOKA,11572,11572,Oceanside,estimate,outside_nyc_area_list
+dog2024-039223,39223,A,11937,11937,East Hampton,estimate,outside_nyc_area_list
+dog2024-039400,39400,TYSON,14043,14043,Depew,estimate,outside_nyc_area_list
+dog2024-039446,39446,MELO,11510,11510,Baldwin,estimate,outside_nyc_area_list
+dog2024-039576,39576,STONEY,10707,10707,Tuckahoe,estimate,outside_nyc_area_list
+dog2024-039712,39712,ROCKY,11558,11558,Island Park,estimate,outside_nyc_area_list
+dog2024-039747,39747,NAME,11710,11710,Bellmore,estimate,outside_nyc_area_list
+dog2024-040041,40041,MILO,10950,10950,Monroe,estimate,outside_nyc_area_list
+dog2024-040488,40488,BEZO,11016,,,,zip_not_in_ny_lookup
+dog2024-040510,40510,PEPPER,03221,,,,zip_not_in_ny_lookup
+dog2024-040556,40556,KAYU,10960,10960,Nyack,estimate,outside_nyc_area_list
+dog2024-041103,41103,WHOOPIE,11792,11792,Wading River,estimate,outside_nyc_area_list
+dog2024-041265,41265,HARLEY,08759,,,,zip_not_in_ny_lookup
+dog2024-041301,41301,NEO,10603,10603,White Plains,estimate,outside_nyc_area_list
+dog2024-041368,41368,CHANEL,11747,11747,Melville,estimate,outside_nyc_area_list
+dog2024-041492,41492,MIDNIGHT,11553,11553,Uniondale,estimate,outside_nyc_area_list
+dog2024-041498,41498,BIBBIDI,10965,10965,Pearl River,estimate,outside_nyc_area_list
+dog2024-042045,42045,CHICHI,11550,11550,Hempstead,estimate,outside_nyc_area_list
+dog2024-042059,42059,TSISYK,01214,,,,zip_not_in_ny_lookup
+dog2024-042157,42157,TOBY,10950,10950,Monroe,estimate,outside_nyc_area_list
+dog2024-042394,42394,COOPER,01358,,,,zip_not_in_ny_lookup
+dog2024-042396,42396,MAX,10956,10956,New City,estimate,outside_nyc_area_list
+dog2024-042412,42412,MUSHROOM,11738,11738,Farmingville,estimate,outside_nyc_area_list
+dog2024-042493,42493,ARIEL,10541,10541,Mahopac,estimate,outside_nyc_area_list
+dog2024-042706,42706,MAUI,11003,11003,Elmont,estimate,outside_nyc_area_list
+dog2024-042716,42716,DOGGI,11798,11798,Wyandanch,zcta_not_in_acs,outside_nyc_area_list
+dog2024-042880,42880,NAME,11554,11554,East Meadow,estimate,outside_nyc_area_list
+dog2024-043001,43001,LOKI,06279,,,,zip_not_in_ny_lookup
+dog2024-043193,43193,POODLE,10710,10710,Yonkers,estimate,outside_nyc_area_list
+dog2024-044433,44433,MAXWELL,10605,10605,White Plains,estimate,outside_nyc_area_list
+dog2024-044462,44462,HUSKY,10930,10930,Highland Mills,estimate,outside_nyc_area_list
+dog2024-045065,45065,KLOUD,32822,,,,zip_not_in_ny_lookup
+dog2024-045302,45302,NORA,11706,11706,Bay Shore,estimate,outside_nyc_area_list
+dog2024-045314,45314,EEVEE,10601,10601,White Plains,estimate,outside_nyc_area_list
+dog2024-045574,45574,JELLY,10708,10708,Bronxville,estimate,outside_nyc_area_list
+dog2024-045716,45716,TEDDIE,11955,11955,Moriches,estimate,outside_nyc_area_list
+dog2024-045814,45814,MILO,12603,12603,Poughkeepsie,estimate,outside_nyc_area_list
+dog2024-046061,46061,MAX,12550,12550,Newburgh,estimate,outside_nyc_area_list
+dog2024-046224,46224,CHIA,12524,12524,Fishkill,estimate,outside_nyc_area_list
+dog2024-046249,46249,CYRUS,12201,12207,Albany,estimate,outside_nyc_area_list
+dog2024-046388,46388,MUELLER,11754,11754,Kings Park,estimate,outside_nyc_area_list
+dog2024-046421,46421,COCCO,07480,,,,zip_not_in_ny_lookup
+dog2024-046498,46498,ROMEO,07928,,,,zip_not_in_ny_lookup
+dog2024-047022,47022,BROWNIE,11096,11096,Inwood,estimate,outside_nyc_area_list
+dog2024-047874,47874,MICKEY,11572,11572,Oceanside,estimate,outside_nyc_area_list
+dog2024-048208,48208,KOA,11003,11003,Elmont,estimate,outside_nyc_area_list
+dog2024-048598,48598,NAGA,11554,11554,East Meadow,estimate,outside_nyc_area_list
+dog2024-048895,48895,GRETA,33160,,,,zip_not_in_ny_lookup
+dog2024-049046,49046,ROSEY,11554,11554,East Meadow,estimate,outside_nyc_area_list
+dog2024-049181,49181,MALTESE,10562,10562,Ossining,estimate,outside_nyc_area_list
+dog2024-049847,49847,COCO,10701,10701,Yonkers,estimate,outside_nyc_area_list
+dog2024-049883,49883,BRUNO,11758,11758,Massapequa,estimate,outside_nyc_area_list
+dog2024-050035,50035,OLLIE,07065,,,,zip_not_in_ny_lookup
+dog2024-050182,50182,NAME,10801,10801,New Rochelle,estimate,outside_nyc_area_list
+dog2024-050293,50293,ATHENA,12043,12043,Cobleskill,estimate,outside_nyc_area_list
+dog2024-050315,50315,PRINCESS,11439,11439,Jamaica,not_available,income_unavailable
+dog2024-050455,50455,OSKAR,12043,12043,Cobleskill,estimate,outside_nyc_area_list
+dog2024-050729,50729,NINA,33496,,,,zip_not_in_ny_lookup
+dog2024-050913,50913,TOY,06608,,,,zip_not_in_ny_lookup
+dog2024-051126,51126,CAOILAINN,11968,11968,Southampton,estimate,outside_nyc_area_list
+dog2024-051208,51208,BEAR,11563,11563,Lynbrook,estimate,outside_nyc_area_list
+dog2024-051685,51685,NAME,02141,,,,zip_not_in_ny_lookup
+dog2024-051816,51816,DICKENS,46033,,,,zip_not_in_ny_lookup
+dog2024-051911,51911,DENVER,74136,,,,zip_not_in_ny_lookup
+dog2024-052375,52375,JOHNNIE,10805,10805,New Rochelle,estimate,outside_nyc_area_list
+dog2024-052433,52433,TARA,11581,11581,Valley Stream,estimate,outside_nyc_area_list
+dog2024-052615,52615,ACE,10708,10708,Bronxville,estimate,outside_nyc_area_list
+dog2024-052655,52655,PHANTOM,11545,11545,Glen Head,estimate,outside_nyc_area_list
+dog2024-052781,52781,OSMIUM,12309,12309,Schenectady,estimate,outside_nyc_area_list
+dog2024-054019,54019,FANTASTIC,10111,10111,New York,not_available,income_unavailable
+dog2024-054130,54130,EVIE,12496,12496,Windham,estimate,outside_nyc_area_list
+dog2024-054264,54264,A,11554,11554,East Meadow,estimate,outside_nyc_area_list
+dog2024-054776,54776,ISSA,12496,12496,Windham,estimate,outside_nyc_area_list
+dog2024-054799,54799,A,10990,10990,Warwick,estimate,outside_nyc_area_list
+dog2024-055081,55081,ARLO,10706,10706,Hastings on Hudson,estimate,outside_nyc_area_list
+dog2024-057072,57072,CHARLIE,11577,11577,Roslyn Heights,estimate,outside_nyc_area_list
+dog2024-057756,57756,LUNA,10941,10941,Middletown,estimate,outside_nyc_area_list
+dog2024-057808,57808,ELLA,10701,10701,Yonkers,estimate,outside_nyc_area_list
+dog2024-057848,57848,LUKE,10941,10941,Middletown,estimate,outside_nyc_area_list
+dog2024-058274,58274,LOLA,10703,10703,Yonkers,estimate,outside_nyc_area_list
+dog2024-058307,58307,SARGE,11003,11003,Elmont,estimate,outside_nyc_area_list
+dog2024-058755,58755,BAILEY,10710,10710,Yonkers,estimate,outside_nyc_area_list
+dog2024-058797,58797,SUMMER,10933,10933,Johnson,not_available,outside_nyc_area_list
+dog2024-058865,58865,BROOKLYN,12528,12528,Highland,estimate,outside_nyc_area_list
+dog2024-059316,59316,COCO,10333,,,,zip_not_in_ny_lookup
+dog2024-059526,59526,FRED,11803,11803,Plainview,estimate,outside_nyc_area_list
+dog2024-059928,59928,RILEY,12601,12601,Poughkeepsie,estimate,outside_nyc_area_list
+dog2024-060029,60029,CIAN,10020,10020,New York,not_available,income_unavailable
+dog2024-060055,60055,NALA,10020,10020,New York,not_available,income_unavailable
+dog2024-060300,60300,QBEE,11725,11725,Commack,estimate,outside_nyc_area_list
+dog2024-060364,60364,TRIXIE,13363,13363,Lee Center,estimate,outside_nyc_area_list
+dog2024-060440,60440,MINNIE,10992,10992,Washingtonville,estimate,outside_nyc_area_list
+dog2024-060960,60960,OZZIE,11572,11572,Oceanside,estimate,outside_nyc_area_list
+dog2024-061176,61176,CHESTER,14901,14901,Elmira,estimate,outside_nyc_area_list
+dog2024-061353,61353,ZAZA,14564,14564,Victor,estimate,outside_nyc_area_list
+dog2024-061778,61778,MICKEY,10801,10801,New Rochelle,estimate,outside_nyc_area_list
+dog2024-061804,61804,ANTONIO,10526,10526,Goldens Bridge,top_coded,outside_nyc_area_list
+dog2024-063055,63055,CARINA,10701,10701,Yonkers,estimate,outside_nyc_area_list
+dog2024-064096,64096,LUCKY,11516,11516,Cedarhurst,estimate,outside_nyc_area_list
+dog2024-064237,64237,MAX,10956,10956,New City,estimate,outside_nyc_area_list
+dog2024-064327,64327,LUNA,07728,,,,zip_not_in_ny_lookup
+dog2024-064438,64438,LULU,11803,11803,Plainview,estimate,outside_nyc_area_list
+dog2024-064490,64490,AFRIKA,12550,12550,Newburgh,estimate,outside_nyc_area_list
+dog2024-064958,64958,NON,10020,10020,New York,not_available,income_unavailable
+dog2024-066354,66354,TOBY,34758,,,,zip_not_in_ny_lookup
+dog2024-067128,67128,FANCY,10020,10020,New York,not_available,income_unavailable
+dog2024-067144,67144,THUNDER,12550,12550,Newburgh,estimate,outside_nyc_area_list
+dog2024-067326,67326,QTIP,11704,11704,West Babylon,estimate,outside_nyc_area_list
+dog2024-067366,67366,TALIA,18328,,,,zip_not_in_ny_lookup
+dog2024-068650,68650,A,11572,11572,Oceanside,estimate,outside_nyc_area_list
+dog2024-069808,69808,WINSTON,10996,10996,West Point,estimate,outside_nyc_area_list
+dog2024-070297,70297,DEXTER,10977,10977,Spring Valley,estimate,outside_nyc_area_list
+dog2024-070724,70724,OTIS,11518,11518,East Rockaway,estimate,outside_nyc_area_list
+dog2024-070968,70968,NAME,10940,10940,Middletown,estimate,outside_nyc_area_list
+dog2024-071462,71462,RICO,10048,,,,zip_not_in_ny_lookup
+dog2024-071727,71727,POODLE,46168,,,,zip_not_in_ny_lookup
+dog2024-071838,71838,MOKOSA,11710,11710,Bellmore,estimate,outside_nyc_area_list
+dog2024-072255,72255,BELLA,10163,10170,New York,not_available,income_unavailable
+dog2024-072337,72337,ARYA,11735,11735,Farmingdale,estimate,outside_nyc_area_list
+dog2024-072560,72560,DOG,11337,,,,zip_not_in_ny_lookup
+dog2024-072789,72789,MOLLY,10917,10917,Central Valley,estimate,outside_nyc_area_list
+dog2024-072929,72929,CHLOE,11798,11798,Wyandanch,zcta_not_in_acs,outside_nyc_area_list
+dog2024-074142,74142,TOKYO,10701,10701,Yonkers,estimate,outside_nyc_area_list
+dog2024-074166,74166,BALA,11779,11779,Ronkonkoma,estimate,outside_nyc_area_list
+dog2024-075142,75142,OLIVE,08742,,,,zip_not_in_ny_lookup
+dog2024-075198,75198,MONSIEUR,11030,11030,Manhasset,estimate,outside_nyc_area_list
+dog2024-075426,75426,MURPHY,12524,12524,Fishkill,estimate,outside_nyc_area_list
+dog2024-075593,75593,HONEY,78759,,,,zip_not_in_ny_lookup
+dog2024-075997,75997,TEO,11003,11003,Elmont,estimate,outside_nyc_area_list
+dog2024-076718,76718,PRIENCE,10020,10020,New York,not_available,income_unavailable
+dog2024-076739,76739,NAKOS,11713,11713,Bellport,estimate,outside_nyc_area_list
+dog2024-077082,77082,NINA,12201,12207,Albany,estimate,outside_nyc_area_list
+dog2024-077501,77501,SAMY,19530,,,,zip_not_in_ny_lookup
+dog2024-077606,77606,SNOWSTORM,12078,12078,Gloversville,estimate,outside_nyc_area_list
+dog2024-077721,77721,POLINA,11581,11581,Valley Stream,estimate,outside_nyc_area_list
+dog2024-077770,77770,CHIP,12078,12078,Gloversville,estimate,outside_nyc_area_list
+dog2024-077830,77830,EMY,10710,10710,Yonkers,estimate,outside_nyc_area_list
+dog2024-077880,77880,BENNY,16214,,,,zip_not_in_ny_lookup
+dog2024-077932,77932,YORKIE,10428,,,,zip_not_in_ny_lookup
+dog2024-078115,78115,PIPER,10933,10933,Johnson,not_available,outside_nyc_area_list
+dog2024-078570,78570,FEATHER,10601,10601,White Plains,estimate,outside_nyc_area_list
+dog2024-078643,78643,ZAC,10801,10801,New Rochelle,estimate,outside_nyc_area_list
+dog2024-079033,79033,MINIE,11797,11797,Woodbury,estimate,outside_nyc_area_list
+dog2024-079294,79294,BALOO,55346,,,,zip_not_in_ny_lookup
+dog2024-079322,79322,BLEECKER,55346,,,,zip_not_in_ny_lookup
+dog2024-079470,79470,BANDIT,11729,11729,Deer Park,estimate,outside_nyc_area_list
+dog2024-079492,79492,NOVA,10920,10920,Congers,estimate,outside_nyc_area_list
+dog2024-079817,79817,MILO,10701,10701,Yonkers,estimate,outside_nyc_area_list
+dog2024-079846,79846,TANK,13421,13421,Oneida,estimate,outside_nyc_area_list
+dog2024-079857,79857,LEXUS,95926,,,,zip_not_in_ny_lookup
+dog2024-080191,80191,OLIE,11725,11725,Commack,estimate,outside_nyc_area_list
+dog2024-080201,80201,CONROE,49506,,,,zip_not_in_ny_lookup
+dog2024-080237,80237,SHIHTZU,07735,,,,zip_not_in_ny_lookup
+dog2024-080352,80352,CHAMPAGE,10549,10549,Mount Kisco,estimate,outside_nyc_area_list
+dog2024-080510,80510,VANDERSLICE,19146,,,,zip_not_in_ny_lookup
+dog2024-080801,80801,DRACO,10553,10553,Mount Vernon,estimate,outside_nyc_area_list
+dog2024-081472,81472,PARSNIP,07601,,,,zip_not_in_ny_lookup
+dog2024-081876,81876,ANTONY,11553,11553,Uniondale,estimate,outside_nyc_area_list
+dog2024-082148,82148,NOT,11478,,,,zip_not_in_ny_lookup
+dog2024-082177,82177,TITI,14615,14615,Rochester,estimate,outside_nyc_area_list
+dog2024-082883,82883,REAPER,10506,10506,Bedford,top_coded,outside_nyc_area_list
+dog2024-083079,83079,PRINCE,11424,11424,Jamaica,not_available,income_unavailable
+dog2024-083455,83455,THUNDER,11735,11735,Farmingdale,estimate,outside_nyc_area_list
+dog2024-083772,83772,MARLA,10501,10501,Amawalk,estimate,outside_nyc_area_list
+dog2024-084339,84339,LEO,10956,10956,New City,estimate,outside_nyc_area_list
+dog2024-084583,84583,LILY,10603,10603,White Plains,estimate,outside_nyc_area_list
+dog2024-085184,85184,PRINCE,11727,11727,Coram,estimate,outside_nyc_area_list
+dog2024-085304,85304,COOPER,10601,10601,White Plains,estimate,outside_nyc_area_list
+dog2024-086019,86019,LILLY,11376,,,,zip_not_in_ny_lookup
+dog2024-086437,86437,EVA,11096,11096,Inwood,estimate,outside_nyc_area_list
+dog2024-087665,87665,HOBBIT,10512,10512,Carmel,estimate,outside_nyc_area_list
+dog2024-087790,87790,DULCE,11717,11717,Brentwood,zcta_not_in_acs,outside_nyc_area_list
+dog2024-087921,87921,LEXI,12540,12540,Lagrangeville,estimate,outside_nyc_area_list
+dog2024-088355,88355,RALPHIE,11647,,,,zip_not_in_ny_lookup
+dog2024-088991,88991,HAZEL,10707,10707,Tuckahoe,estimate,outside_nyc_area_list
+dog2024-089196,89196,FRANK,11577,11577,Roslyn Heights,estimate,outside_nyc_area_list
+dog2024-090689,90689,SUNSET,11452,,,,zip_not_in_ny_lookup
+dog2024-090786,90786,NOBLE,11575,11575,Roosevelt,estimate,outside_nyc_area_list
+dog2024-090841,90841,PEYTON,12866,12866,Saratoga Springs,estimate,outside_nyc_area_list
+dog2024-090991,90991,DICE,10992,10992,Washingtonville,estimate,outside_nyc_area_list
+dog2024-091174,91174,SKAYA,12430,12430,Fleischmanns,estimate,outside_nyc_area_list
+dog2024-091178,91178,PAISLEY,12866,12866,Saratoga Springs,estimate,outside_nyc_area_list
+dog2024-091281,91281,HAVEN,10927,10927,Haverstraw,estimate,outside_nyc_area_list
+dog2024-091342,91342,HERO,11714,11714,Bethpage,estimate,outside_nyc_area_list
+dog2024-091369,91369,BENJI,01033,,,,zip_not_in_ny_lookup
+dog2024-091739,91739,RAJAH,07849,,,,zip_not_in_ny_lookup
+dog2024-092315,92315,BARNEY,14305,14305,Niagara Falls,estimate,outside_nyc_area_list
+dog2024-092480,92480,HERMAN,11371,11371,Flushing,not_available,income_unavailable
+dog2024-092506,92506,LITA,08831,,,,zip_not_in_ny_lookup
+dog2024-093159,93159,JASPER,10552,10552,Mount Vernon,estimate,outside_nyc_area_list
+dog2024-093300,93300,APOLLO,12531,12531,Holmes,estimate,outside_nyc_area_list
+dog2024-093715,93715,BOMBON,11757,11757,Lindenhurst,estimate,outside_nyc_area_list
+dog2024-094235,94235,MICKEY,01843,,,,zip_not_in_ny_lookup
+dog2024-094482,94482,DUKE,10987,10987,Tuxedo Park,estimate,outside_nyc_area_list
+dog2024-094651,94651,GATOR,10996,10996,West Point,estimate,outside_nyc_area_list
+dog2024-095079,95079,NOVA,11096,11096,Inwood,estimate,outside_nyc_area_list
+dog2024-095519,95519,SOLO,11003,11003,Elmont,estimate,outside_nyc_area_list
+dog2024-095931,95931,LOYALTY,11003,11003,Elmont,estimate,outside_nyc_area_list
+dog2024-095979,95979,OREO,11050,11050,Port Washington,estimate,outside_nyc_area_list
+dog2024-096776,96776,BABYDOG,15017,,,,zip_not_in_ny_lookup
+dog2024-096896,96896,SPOTTY,11758,11758,Massapequa,estimate,outside_nyc_area_list
+dog2024-097719,97719,MILLO,11793,11793,Wantagh,estimate,outside_nyc_area_list
+dog2024-097840,97840,DALI,10960,10960,Nyack,estimate,outside_nyc_area_list
+dog2024-098884,98884,LOLA,10801,10801,New Rochelle,estimate,outside_nyc_area_list
+dog2024-099013,99013,POODLE,10703,10703,Yonkers,estimate,outside_nyc_area_list
+dog2024-099060,99060,SVEN,10175,10173,New York,not_available,income_unavailable
+dog2024-099407,99407,SOHO,11765,11765,Mill Neck,estimate,outside_nyc_area_list
+dog2024-099650,99650,TEDDY,10926,10926,Harriman,estimate,outside_nyc_area_list
+dog2024-100339,100339,IGGY,72727,,,,zip_not_in_ny_lookup
+dog2024-100502,100502,HORCHATA,10163,10170,New York,not_available,income_unavailable
+dog2024-101035,101035,DUNDUKE,11003,11003,Elmont,estimate,outside_nyc_area_list
+dog2024-101600,101600,LUNA,11548,11548,Greenvale,estimate,outside_nyc_area_list
+dog2024-101872,101872,SHEILA,15701,,,,zip_not_in_ny_lookup
+dog2024-102738,102738,NAME,11530,11530,Garden City,estimate,outside_nyc_area_list
+dog2024-102884,102884,MILES,11542,11542,Glen Cove,estimate,outside_nyc_area_list
+dog2024-103248,103248,MAYA,11542,11542,Glen Cove,estimate,outside_nyc_area_list
+dog2024-103897,103897,RORY,11758,11758,Massapequa,estimate,outside_nyc_area_list
+dog2024-104974,104974,RALLY,10605,10605,White Plains,estimate,outside_nyc_area_list
+dog2024-105046,105046,CIDER,13441,13441,Rome,not_available,outside_nyc_area_list
+dog2024-105086,105086,MURPHY,11577,11577,Roslyn Heights,estimate,outside_nyc_area_list
+dog2024-105508,105508,SHILOH,07921,,,,zip_not_in_ny_lookup
+dog2024-105533,105533,PRALINE,10708,10708,Bronxville,estimate,outside_nyc_area_list
+dog2024-105635,105635,SCONE,11717,11717,Brentwood,zcta_not_in_acs,outside_nyc_area_list

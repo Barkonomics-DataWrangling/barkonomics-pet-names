@@ -6,6 +6,10 @@ included_license_records,100125
 excluded_birth_year_license_records,39
 excluded_birth_year_dogs,36
 dogs_after_ssa_join,92927
+dogs_for_income_comparison,92547
+dogs_excluded_from_income_comparison,380
+income_comparison_license_records,99725
+income_comparison_top_coded_dogs,364
 consolidated_license_records,7198
 license_audit_rows,105974
 ssa_name_decade_rows,328552

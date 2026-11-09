@@ -49,6 +49,20 @@ missing_by_zip <- read_csv(
   "data/derived/missing_names_by_zip.csv", na = "",
   col_types = cols(zipcode = col_character(), .default = col_guess())
 )
+income_dogs <- read_csv(
+  "data/derived/dogs_income_2024.csv", na = "",
+  col_types = cols(birth_year = col_character(), zipcode = col_character(), zcta = col_character(), .default = col_guess())
+)
+income_exclusions <- read_csv(
+  "data/derived/income_exclusions.csv", na = "",
+  col_types = cols(zipcode = col_character(), zcta = col_character(), .default = col_guess())
+)
+income_comparison_counts <- read_csv("data/derived/income_comparison_counts.csv", show_col_types = FALSE)
+zip_income <- read_csv(
+  "data/lookups/zip_zcta_income_ny_acs2024.csv", na = "",
+  col_types = cols(zip_code = col_character(), zcta = col_character(), .default = col_guess())
+)
+nyc_areas <- read_csv("data/raw/nyc-zcta-list.csv", col_types = cols(zcta5 = col_character()))
 ```
 
 ## Prepare the identity lookup
@@ -217,6 +231,45 @@ included_licenses |>
 
 ```
 
+## Check the NYC income selection
+Derive eligible IDs from the saved source lookup and city list. Compare the selected table and exclusion report with the full dog/name handoff.
+```{r}
+#| label: check-income-selection
+dog_handoff |>
+  left_join(zip_income, by = c("zipcode" = "zip_code"), relationship = "many-to-one") |>
+  filter(is.element(zcta, nyc_areas$zcta5)) |>
+  filter(is.element(income_status, c("estimate", "top_coded", "bottom_coded"))) ->
+  expected_income_dogs
+
+dog_handoff |>
+  anti_join(expected_income_dogs, by = "estimated_dog_id") ->
+  expected_income_exclusions
+
+dog_handoff |>
+  names() ->
+  handoff_fields
+
+income_dogs |>
+  select(all_of(handoff_fields)) |>
+  anti_join(dog_handoff, by = handoff_fields) |>
+  nrow() ->
+  altered_dog_rows
+
+expected_income_dogs |>
+  filter(income_status == "top_coded") |>
+  pull(estimated_dog_id) ->
+  expected_capped_dog_ids
+
+income_dogs |>
+  filter(income_status == "top_coded") ->
+  capped_income_dogs
+
+income_exclusions |>
+  count(income_comparison_status = exclusion_reason, name = "estimated_dogs") |>
+  add_row(income_comparison_status = "included", estimated_dogs = nrow(income_dogs)) ->
+  expected_income_counts
+```
+
 ## Count records in the saved tables
 ```{r}
 #| label: reconcile-stage-counts
@@ -229,6 +282,10 @@ stage_counts <- tribble(
   "excluded_birth_year_license_records", nrow(excluded_birth_year_licenses),
   "excluded_birth_year_dogs", excluded_birth_year_dog_count,
   "dogs_after_ssa_join", nrow(dog_handoff),
+  "dogs_for_income_comparison", nrow(income_dogs),
+  "dogs_excluded_from_income_comparison", nrow(income_exclusions),
+  "income_comparison_license_records", sum(income_dogs$license_record_count),
+  "income_comparison_top_coded_dogs", nrow(capped_income_dogs),
   "consolidated_license_records", nrow(included_licenses) - nrow(dog_handoff),
   "license_audit_rows", nrow(license_audit),
   "ssa_name_decade_rows", nrow(ssa_decades),
@@ -302,7 +359,22 @@ checks <- tribble(
   "BABY source records retained",
   nrow(baby_licenses) == 120 && !anyNA(baby_licenses$estimated_dog_id),
   "unknown-breed licenses with usable birth years retained",
-  all(is.element(unknown_breed_licenses$estimated_dog_id, dog_handoff$estimated_dog_id))
+  all(is.element(unknown_breed_licenses$estimated_dog_id, dog_handoff$estimated_dog_id)),
+  "income and city lookups have unique keys",
+  !anyDuplicated(zip_income$zip_code) && !anyDuplicated(nyc_areas$zcta5),
+  "income table contains exactly the selected NYC-area dogs",
+  setequal(income_dogs$estimated_dog_id, expected_income_dogs$estimated_dog_id) &&
+    !anyDuplicated(income_dogs$estimated_dog_id),
+  "income join preserves all original dog fields and name flags",
+  altered_dog_rows == 0,
+  "income exclusions account for every remaining dog exactly once",
+  setequal(income_exclusions$estimated_dog_id, expected_income_exclusions$estimated_dog_id) &&
+    !anyDuplicated(income_exclusions$estimated_dog_id),
+  "income summary counts agree with selected and excluded tables",
+  setequal(income_comparison_counts, expected_income_counts),
+  "capped incomes retained without treating their codes as exact estimates",
+  setequal(capped_income_dogs$estimated_dog_id, expected_capped_dog_ids) &&
+    all(is.na(capped_income_dogs$median_household_income))
 )
 write_csv(checks, "data/derived/validation_checks.csv")
 print(checks, n = Inf)

@@ -21,3 +21,9 @@ dog/reference flags agree,TRUE
 unmatched and recognized dogs retained,TRUE
 BABY source records retained,TRUE
 unknown-breed licenses with usable birth years retained,TRUE
+income and city lookups have unique keys,TRUE
+income table contains exactly the selected NYC-area dogs,TRUE
+income join preserves all original dog fields and name flags,TRUE
+income exclusions account for every remaining dog exactly once,TRUE
+income summary counts agree with selected and excluded tables,TRUE
+capped incomes retained without treating their codes as exact estimates,TRUE

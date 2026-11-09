@@ -19,9 +19,25 @@ The notebook keeps a source-stage table, dogs_original, with consistent original
 | `top100_1880` … `top100_2010` | Boolean | One column per complete decade. True when the name is among its 100 largest combined-sex birth counts. |
 
 The five-field group key uses `name`, `sex`, the recorded `birth_year`, `breed` and `zipcode`. Select greatest issue date, then greatest expiry date, then smallest `source_row_id`. Apply the approved birth-year inferences only after grouping, then exclude the 36 dogs whose years still fail the four-digit, 1990–2024 rule. Neither operation merges license groups or changes their ZIPs. The correction lookup records the original and inferred years beside each specific source record, name, breed and sex. The 14 decade flags can overlap, and percentages using them need not sum to 100%. A false recognition flag means absent from this reference, not proven non-human.
+## Income comparison columns
+[dogs_income_2024.csv](derived/dogs_income_2024.csv) contains 92,547 selected dogs with all the dog/name fields above and the following income fields. Their ZIPs map to areas on the published city list and have an ordinary or open-ended income estimate. Boundary overlap with areas outside NYC is accepted. This table supplies both counting-unit comparisons; the broader dog/name handoff remains available separately.
+
+| Column | Type | Meaning |
+| --- | --- | --- |
+| `zcta` | Text | Five-character Census area code from the ZIP crosswalk. Several ZIPs may share one area. |
+| `median_household_income` | Number or missing | ACS median household income in dollars when an ordinary estimate is available. Empty for an open-ended amount; consult `income_status`. |
+| `income_margin_of_error` | Number or missing | Published ACS margin of error in dollars where available. |
+| `income_status` | Text | `estimate` is an ordinary estimate; `top_coded` means $250,000+; `bottom_coded` means the source's $2,500- category. The selected snapshot has no bottom-coded dogs. Capped cases remain included even though their exact numeric estimate is empty. |
+| `acs_release` | Integer | ACS release used, 2024. |
+| `acs_period` | Text | Five-year period represented by that release, 2020–2024. |
+
+The input lookup preserves Shweta's source values, including reporting codes such as `250001`. The selected table clears those codes from the numeric estimate so they are not treated as exact incomes. Income describes the area associated with the recorded owner's ZIP, not the owner's personal wealth.
 ## Supporting tables
 | File | Row unit and key | Purpose |
 | --- | --- | --- |
+| [dogs_income_2024.csv](derived/dogs_income_2024.csv) | One selected estimated dog | Dog/name fields plus income for the 92,547 dogs in the NYC comparison. |
+| [income_exclusions.csv](derived/income_exclusions.csv) | One excluded estimated dog; `estimated_dog_id` unique | Source row, name, ZIP, available lookup details and exclusion reason for each of the 380 dogs omitted from income comparisons. |
+| [income_comparison_counts.csv](derived/income_comparison_counts.csv) | One inclusion/exclusion status | Counts included dogs and each exclusion reason, totaling the 92,927 prepared dogs. |
 | [dogs_prepared_2024.csv](derived/dogs_prepared_2024.csv) | One estimated dog | Prepared dog fields before baby-name matching. |
 | [ssa_name_reference.csv](derived/ssa_name_reference.csv) | One normalized name; `name` unique | Recognition across 1880–2019 and 14 decade measures. Join many dogs to one reference row. |
 | [ssa_name_decades.csv](derived/ssa_name_decades.csv) | One observed name/decade; `(name, decade)` unique | Long version showing aggregation, ranking and the input to the wide reference. |
@@ -29,11 +45,13 @@ The five-field group key uses `name`, `sex`, the recorded `birth_year`, `breed` 
 | [missing_names_by_zip.csv](derived/missing_names_by_zip.csv) | One extract/ZIP | Counts all source license records, missing-name records, named records and missing-name share. These are record counts, not dog counts. |
 | [missing_name_labels.csv](derived/missing_name_labels.csv) | One missing label | Counts the six selected source labels. |
 | [quality_flags.csv](derived/quality_flags.csv) | One unit/measure | Counts preparation findings before birth-year corrections and exclusions, plus estimated dogs with tied latest issue dates and the final birth-year exclusions at dog and license level. |
-| [matching_by_counting_unit.csv](derived/matching_by_counting_unit.csv) | One unit/measure | Recognition and decade shares for the same eligible dogs, weighted equally or by their license-record counts. |
+| [matching_by_counting_unit.csv](derived/matching_by_counting_unit.csv) | One unit/measure | Recognition and decade shares for the 92,547 NYC income-comparison dogs, weighted equally or by their license-record counts. |
 | [ssa_top100_cutoffs.csv](derived/ssa_top100_cutoffs.csv) | One decade | Names and counts at ranks 100/101 and whether the cutoff is tied. |
 | [stage_counts.csv](derived/stage_counts.csv) | One processing stage/measure | Counts measured from the source and saved tables in the checks notebook. |
 | [validation_checks.csv](derived/validation_checks.csv) | One check | Pass/fail results from independently re-reading saved files. |
 | [runtime_versions.csv](derived/runtime_versions.csv) | One package/runtime | Versions used for validation. |
+
+The income exclusion reasons are `zip_not_in_ny_lookup` (88 dogs), `outside_nyc_area_list` (275) and `income_unavailable` (17). They are assigned in that order, so each excluded dog appears once. Lookup failures do not establish invalid ZIPs. The selected dog table omits this temporary classification.
 
 The cleaning report contains these measures; their per-record fields are not exported in the dog tables.
 

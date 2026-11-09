@@ -31,6 +31,11 @@ dogs_prepared <- read_csv(
   )
 )
 ssa_reference <- read_csv("data/derived/ssa_name_reference.csv", na = "", show_col_types = FALSE)
+zip_income <- read_csv(
+  "data/lookups/zip_zcta_income_ny_acs2024.csv", na = "",
+  col_types = cols(zip_code = col_character(), zcta = col_character(), .default = col_guess())
+)
+nyc_areas <- read_csv("data/raw/nyc-zcta-list.csv", col_types = cols(zcta5 = col_character()))
 ```
 
 ## Match baby names to dogs
@@ -56,16 +61,99 @@ dogs |>
   preview()
 ```
 
+## Attach neighborhood income
+Match the recorded owner's ZIP to Shweta's ZIP-to-ZCTA income table. Several ZIPs can share one Census area, or ZCTA. The income describes that whole area, not the owner's personal wealth.
+
+Keep an exact numeric estimate only when one is supplied. For `top_coded` areas, the income is $250,000 or more; the exact amount is unknown. These dogs remain eligible, and the status will place them in the highest income group. The saved lookup's `250001` is a reporting code, not an exact income.
+```{r}
+#| label: attach-neighborhood-income
+zip_income |>
+  select(
+    zipcode = zip_code, lookup_state = state, post_office = po_name, zcta,
+    median_household_income = median_hh_income,
+    income_margin_of_error = median_hh_income_moe,
+    income_status, acs_release, acs_period
+  ) |>
+  mutate(median_household_income = if_else(income_status == "estimate", median_household_income, NA_real_)) ->
+  income_reference
+
+dogs |>
+  left_join(income_reference, by = "zipcode") ->
+  dogs_with_income
+```
+
+## Select the NYC comparison
+Use the city's published ZCTA list as our study boundary. Some listed areas extend outside NYC; we accept that overlap because a ZIP alone cannot locate each owner within the area. The results describe dogs with recorded ZIPs mapping to this selected set of areas, rather than a precise census of dogs living inside the municipal boundary.
+
+Check whether each ZIP matched the lookup, whether its area is on the city list, and whether income information is available. `is.element()` checks membership in a list. The income statuses include the open-ended highest and lowest amounts; an exact numeric estimate is not required for inclusion.
+```{r}
+#| label: identify-income-comparison-records
+nyc_areas |>
+  pull(zcta5) ->
+  nyc_area_codes
+
+dogs_with_income |>
+  pull(lookup_state) |>
+  is.na() ->
+  zipcode_unmatched
+
+dogs_with_income |>
+  pull(zcta) |>
+  is.element(nyc_area_codes) ->
+  area_on_city_list
+
+dogs_with_income |>
+  pull(income_status) |>
+  is.element(c("estimate", "top_coded", "bottom_coded")) ->
+  income_available
+
+dogs_with_income |>
+  mutate(
+    income_comparison_status = case_when(
+      zipcode_unmatched ~ "zip_not_in_ny_lookup",
+      !area_on_city_list ~ "outside_nyc_area_list",
+      !income_available ~ "income_unavailable",
+      TRUE ~ "included"
+    )
+  ) ->
+  dogs_with_comparison_status
+```
+
+Report the exclusions, then keep the same selected dogs for all comparisons below. The status column serves this report and is left out of the selected dog table.
+```{r}
+#| label: keep-income-comparison-records
+dogs_with_comparison_status |>
+  count(income_comparison_status, name = "estimated_dogs") ->
+  income_comparison_counts
+
+dogs_with_comparison_status |>
+  filter(income_comparison_status != "included") |>
+  select(
+    estimated_dog_id, source_row_id, name, zipcode, zcta, post_office,
+    income_status, exclusion_reason = income_comparison_status
+  ) ->
+  income_exclusions
+
+dogs_with_comparison_status |>
+  filter(income_comparison_status == "included") |>
+  select(-income_comparison_status, -lookup_state, -post_office) ->
+  dogs_for_income_comparison
+
+income_comparison_counts
+```
+
+This retains 92,547 estimated dogs, including 364 with incomes reported as $250,000+. The other 380 are recorded in the exclusion table. An outside-city ZIP does not tell us whether the owner moved, has another residence, or supplied a different address. These exclusions limit which dogs our findings describe.
+
 ## Compare counting units
-Compare the proportion of matching names when each dog counts once with the proportion when each license counts once. Both calculations use the same eligible dogs after missing-name and birth-year exclusions. `across()` repeats the same calculation for every name flag.
+Compare the proportion of matching names when each dog counts once with the proportion when each license counts once. Both calculations use the same selected NYC-area dogs with income information. `across()` repeats the same calculation for every name flag.
 ```{r}
 #| label: compare-counting-units
-dogs |>
+dogs_for_income_comparison |>
   summarise(across(all_of(name_flags), mean)) |>
   mutate(unit = "estimated_dog") ->
   dog_matching_rates
 
-dogs |>
+dogs_for_income_comparison |>
   summarise(across(all_of(name_flags), function(name_matches) {
     weighted.mean(name_matches, license_record_count)
   })) |>
@@ -85,10 +173,13 @@ matching_comparison
 ```{r}
 #| label: save-matched-dogs
 write_csv(dogs, "data/derived/dogs_2024.csv", na = "")
+write_csv(dogs_for_income_comparison, "data/derived/dogs_income_2024.csv", na = "")
+write_csv(income_exclusions, "data/derived/income_exclusions.csv", na = "")
+write_csv(income_comparison_counts, "data/derived/income_comparison_counts.csv", na = "")
 write_csv(matching_comparison, "data/derived/matching_by_counting_unit.csv", na = "")
 ```
 
 ## Compare neighborhoods
-The next step is to join Shweta’s ZIP-to-ZCTA crosswalk and income table here. Match each dog's ZIP to an area, then attach that area's income group. Compare name proportions and the share of dogs matching each baby-name decade within those groups. Missing-name records have their own ZIP summary for checking whether missingness differs by area.
+The next step is to choose the income-group boundaries and compare names and baby-name decades between those groups. Put the $250,000+ areas in an open-ended highest group. Aggregate by ZCTA when comparing areas so ZIPs sharing one Census area are not treated as separate neighborhoods. Missing-name records have their own ZIP summary for checking whether missingness differs by area.
 
-Neighborhood income describes the area where a dog is licensed. A generational pattern could be consistent with diffusion, but this comparison alone cannot establish its direction or cause. The current results above describe NYC as a whole. The neighborhood comparison awaits the agreed geography and income tables.
+Neighborhood income describes the area associated with the recorded owner's ZIP. A generational pattern could be consistent with diffusion, but this comparison alone cannot establish its direction or cause. The current results above describe the selected NYC-area dogs as a whole; differences between income groups have not yet been calculated.
