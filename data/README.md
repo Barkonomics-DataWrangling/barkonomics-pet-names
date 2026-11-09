@@ -12,6 +12,8 @@ The files were extracted byte for byte from the official national archive downlo
 The baby-name notebook reads the 140 annual files for 1880–2019 directly. All rankings and overall name recognition use those 14 complete decades.
 
 The character vector `missing_name_labels` beside the missing-name step in [dog-names.qmd](../dog-names.qmd#missing-name-labels) contains the six agreed labels. Count their occurrences overall and by ZIP, then exclude those licenses before formatting names and dates or adding quality flags. `BABY` remains a name.
+
+[birth_year_corrections.csv](lookups/birth_year_corrections.csv) contains four approved, inferred replacements for specific source records: ROCKY 223 → 2023, SIMBA 222 → 2022, BILLIE 202 → 2020 and MILO 204 → 2024. The lookup includes name, breed, sex and the original year so the notebook applies each correction to the reviewed record. Apply these after dog grouping; preserve the raw source and all existing groups. The notebook displays the lookup as part of the cleaning explanation. The birth-year quality counts describe the original values before these inferences.
 ## Generate and check the handoff
 Open the repository as the editor workspace and run each notebook’s R chunks from top to bottom. Run dog preparation and baby-name preparation before analysis, then run the separate checks. Preparation and checking need only code execution. Render the analysis when an HTML deliverable is needed.
 

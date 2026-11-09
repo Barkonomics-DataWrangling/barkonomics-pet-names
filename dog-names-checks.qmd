@@ -65,7 +65,7 @@ dog_handoff |>
 ```
 
 ## Compare source and saved identities
-Trace every source license to its representative and compare the five identifying fields.
+Trace every source license to its representative and compare the five identifying fields, allowing the four explicitly approved birth-year inferences. State the expected replacements here independently of the preparation lookup.
 
 ```{r}
 #| label: compare-source-and-saved-identities
@@ -85,9 +85,20 @@ source_licenses |>
   mutate(
     normalized_source_name = str_remove_all(normalized_source_name, "[\\s-]"),
     source_issue_date = as.Date(source_issue_date),
-    source_expiry_date = as.Date(source_expiry_date),
+    source_expiry_date = as.Date(source_expiry_date)
+  ) |>
+  mutate(
+    expected_birth_year = case_when(
+      source_row_id == 61720 ~ "2023",
+      source_row_id == 62878 ~ "2022",
+      source_row_id == 63559 ~ "2020",
+      source_row_id == 99337 ~ "2024",
+      .default = animalbirth
+    )
+  ) |>
+  mutate(
     five_fields_agree = name == normalized_source_name & sex == animalgender &
-      birth_year == animalbirth & breed == breedname & zipcode == normalized_source_zip
+      birth_year == expected_birth_year & breed == breedname & zipcode == normalized_source_zip
   ) ->
   mapped_licenses
 
