@@ -245,3 +245,33 @@ Aslan approved the published city ZCTA list as the geographic rule, accepting th
 The saved inputs are the 221-code city list and the reproduced 2,150-row New York income handoff from Shweta's PR #9. `analysis.qmd` writes 92,547 selected dogs representing 99,725 license records and a separate table of 380 exclusions. Retain all 364 dogs with $250,000+ area incomes; their exact numeric estimate is empty and the status preserves the open-ended amount. Exclusions are classified once, in order: no ZIP match in the NY lookup (88), area outside the city list (275), and city-listed area without income (17). All later comparison calculations use the selected table; the full 92,927-row dog/name handoff remains separately inspectable.
 
 The analysis documents the boundary limitation beside the selection code. It has not yet chosen income-band cutoffs or calculated differences between income groups. Shweta's source script is unchanged, and no PR merge or publication is implied by using its reproduced handoff.
+
+## Income-band options inspected — November 9
+Inspection only; no income groups are adopted or added to analysis outputs. The selected table at `669a065` contains 92,547 estimated dogs in 190 distinct ZCTAs. Count each ZCTA once as a neighborhood, including when several ZIPs map to it. These counts concern represented neighborhoods, not every area in the city list. Four ZCTAs containing 364 dogs have $250,000+ incomes and belong in the highest group under every option below.
+
+The recommended starting option uses round-dollar boundaries on area median household income. Lower bounds are inclusive and upper bounds exclusive. These are descriptive bands, not official social-class categories.
+
+| Income band | Dogs | Neighborhoods |
+| --- | ---: | ---: |
+| Under $50,000 | 9,414 | 24 |
+| $50,000 to under $100,000 | 41,344 | 94 |
+| $100,000 to under $150,000 | 25,232 | 46 |
+| $150,000+ | 16,557 | 26 |
+| Total | 92,547 | 190 |
+
+An alternative ranks the 190 neighborhoods by income and divides them into four groups as evenly as possible (48, 48, 47 and 47 areas). Capped areas rank above all ordinary estimates without assigning them a fictitious exact income. There are no equal-income ties across the proposed quarter boundaries. The ranges below describe observed values; no neighborhoods fall in the small gaps between them.
+
+| Neighborhood quarter | Observed income range | Dogs | Neighborhoods |
+| --- | --- | ---: | ---: |
+| Lowest | $24,086–$67,897 | 20,424 | 48 |
+| Second | $67,918–$89,931 | 19,079 | 48 |
+| Third | $90,046–$120,230 | 21,981 | 47 |
+| Highest | $121,062 through $250,000+ | 31,063 | 47 |
+
+Round bands are easier to state in dollars and reproduce across samples. Neighborhood quarters balance the number of represented areas, but their boundaries depend on this sample and their dog counts remain unequal. Compare name proportions rather than raw totals under either choice. This inspection uses incomes and group sizes, not dog-name outcomes, to frame the choice.
+
+Splitting the recommended highest band at $200,000 would yield 15,563 dogs in 18 areas at $150,000–$199,999, and 994 dogs in eight areas at $200,000+. A simpler three-band alternative gives 25,762 dogs in 60 areas below $75,000, 50,228 in 104 areas from $75,000 to under $150,000, and 16,557 in 26 areas at $150,000+. These alternatives remain available; the recommendation is the four round-dollar bands.
+
+ACS estimates have margins of error, so a small difference around a cutoff does not establish a sharp economic distinction. For example, area 11420 has an estimate of $100,006 with a margin of error of $5,819. [Census guidance](https://www.census.gov/help/topics/faq.do-i-need-to-consider-the-margins-of-error-when-comparing-acs-estimates.html) explains why those margins matter. Treat bands as presentation choices, not certainty about an area's rank or its residents' individual incomes.
+
+Independent Python calculations and a tidyverse count agree on both four-group options and reconcile to all 92,547 dogs and 190 areas. No notebook, source snapshot, generated analysis table, or PR was changed by this inspection.
