@@ -176,14 +176,6 @@ named_licenses |>
   filter(breedname == "Unknown") ->
   unknown_breed_licenses
 
-dog_handoff |>
-  select(breed_unknown, birth_year_suspect, identity_uncertain) |>
-  mutate(
-    expected_uncertainty = breed_unknown | birth_year_suspect,
-    flag_agrees = identity_uncertain == expected_uncertainty
-  ) ->
-  uncertainty_flags
-
 ```
 
 ## Count records in the saved tables
@@ -199,8 +191,6 @@ stage_counts <- tribble(
   "license_audit_rows", nrow(license_audit),
   "ssa_name_decade_rows", nrow(ssa_decades),
   "ssa_reference_names", nrow(ssa_reference),
-  "identity_uncertain_dogs", sum(dog_handoff$identity_uncertain),
-  "compound_name_dogs", sum(dog_handoff$compound_name),
   "baby_source_records", sum(named_licenses$animalname == "BABY"),
   "baby_estimated_dogs", sum(retained_licenses$animalname == "BABY")
 )
@@ -265,10 +255,8 @@ checks <- tribble(
   any(dog_handoff$ssa_recognized) && any(!dog_handoff$ssa_recognized) && !anyNA(saved_name_flags),
   "BABY source records retained",
   nrow(baby_licenses) == 120 && !anyNA(baby_licenses$estimated_dog_id),
-  "uncertain records retained",
-  nrow(unknown_breed_licenses) == 8287 && !anyNA(unknown_breed_licenses$estimated_dog_id),
-  "uncertainty flags are complete and consistent",
-  !anyNA(uncertainty_flags) && all(uncertainty_flags$flag_agrees)
+  "unknown-breed licenses retained",
+  nrow(unknown_breed_licenses) == 8287 && !anyNA(unknown_breed_licenses$estimated_dog_id)
 )
 write_csv(checks, "data/derived/validation_checks.csv")
 print(checks, n = Inf)

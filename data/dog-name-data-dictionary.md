@@ -15,13 +15,6 @@ The notebook keeps a source-stage table, dogs_original, with consistent original
 | `license_issue_date` | Date | Issue date of the retained license, `YYYY-MM-DD`. |
 | `license_expiry_date` | Date | Expiry date of the retained license, `YYYY-MM-DD`. |
 | `license_record_count` | Integer | Number of named source license records assigned to this estimated dog. |
-| `original_name_variants` | Integer | Distinct original name strings within the five-field group; all are 1 in this snapshot. |
-| `latest_issue_ties` | Integer | Number of group records sharing its latest issue date; values above 1 invoke the expiry/date-row tie rule. |
-| `compound_name` | Boolean | Retained original name has internal whitespace or an internal ASCII hyphen. |
-| `any_compound_name` | Boolean | At least one source name in the group has that pattern. This equals `compound_name` for the current snapshot. |
-| `breed_unknown` | Boolean | Recorded breed is `Unknown` or blank, ignoring case and outer whitespace for this flag only. |
-| `birth_year_suspect` | Boolean | Birth year is not four digits or lies outside 1990–2024. This is a screening flag, not an age exclusion or a correction. |
-| `identity_uncertain` | Boolean | The breed is unknown or the birth year is suspect. Records remain in the output. All other identities are still estimates. |
 | `ssa_recognized` | Boolean | Full normalized name appears in a published SSA record in any selected year: 1880–2019. |
 | `top100_1880` … `top100_2010` | Boolean | One column per complete decade. True when the name is among its 100 largest combined-sex birth counts. |
 
@@ -35,14 +28,22 @@ The five-field group key is `name`, `sex`, `birth_year`, `breed`, `zipcode`. Sel
 | [license_to_dog.csv](derived/license_to_dog.csv) | One raw license record; `source_row_id` unique | Maps every source record to its estimated dog and retained row, or to `missing_name` with empty IDs. Other statuses are `retained` and `consolidated`. |
 | [missing_names_by_zip.csv](derived/missing_names_by_zip.csv) | One extract/ZIP | Counts all source license records, missing-name records, named records and missing-name share. These are record counts, not dog counts. |
 | [missing_name_labels.csv](derived/missing_name_labels.csv) | One missing label | Counts the six selected source labels. |
-| [quality_flags.csv](derived/quality_flags.csv) | One unit/flag | Compares flagged counts among named license records and estimated dogs. |
+| [quality_flags.csv](derived/quality_flags.csv) | One unit/measure | Counts preparation findings among named license records and estimated dogs, plus estimated dogs with tied latest issue dates. |
 | [matching_by_counting_unit.csv](derived/matching_by_counting_unit.csv) | One unit/measure | Recognition and decade shares when weighting estimated dogs equally versus weighting by their license-record counts. |
 | [ssa_top100_cutoffs.csv](derived/ssa_top100_cutoffs.csv) | One decade | Names and counts at ranks 100/101 and whether the cutoff is tied. |
 | [stage_counts.csv](derived/stage_counts.csv) | One processing stage/measure | Counts measured from the source and saved tables in the checks notebook. |
 | [validation_checks.csv](derived/validation_checks.csv) | One check | Pass/fail results from independently re-reading saved files. |
 | [runtime_versions.csv](derived/runtime_versions.csv) | One package/runtime | Versions used for validation. |
 
-The cleaning report includes `zipcode_padded`, counting records whose ZIP gained leading zeros. The dog tables contain the formatted `zipcode` without that flag. Five digits do not establish a geographic match.
+The cleaning report contains these measures; their per-record fields are not exported in the dog tables.
+
+| Measure | Meaning |
+| --- | --- |
+| `breed_unknown` | Breed is `Unknown` or blank, ignoring case and outer whitespace. |
+| `birth_year_suspect` | Birth year is not four digits or lies outside 1990–2024. This is a screening choice, not a correction or exclusion rule. |
+| `zipcode_padded` | ZIP gained leading zeros during preparation. Five digits do not establish a geographic match. |
+| `compound_name` | Recorded name contains internal whitespace or an internal ASCII hyphen. For estimated dogs, this uses the retained license. |
+| `latest_issue_ties` | Number of estimated dogs with multiple licenses sharing their latest issue date. The expiry-date and source-row sorting resolves the tie. This measure is reported only at dog level. |
 
 In the SSA tables, `births` sums published counts across sex and all ten years in that decade. `share` divides by the decade's total published counts; suppressed names are not part of that denominator. `rank` orders descending counts and then alphabetically in C locale. `top100` is `rank <= 100`. The wide table uses decade suffixes from `_1880` through `_2010`; an absent decade has zero births/share, false membership and an empty rank. Every reference row has `ssa_recognized = TRUE`.
 

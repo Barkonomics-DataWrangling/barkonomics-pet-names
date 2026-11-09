@@ -18,5 +18,4 @@ reference names unique,TRUE
 dog/reference flags agree,TRUE
 unmatched and recognized dogs retained,TRUE
 BABY source records retained,TRUE
-uncertain records retained,TRUE
-uncertainty flags are complete and consistent,TRUE
+unknown-breed licenses retained,TRUE

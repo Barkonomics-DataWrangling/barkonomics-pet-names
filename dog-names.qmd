@@ -120,7 +120,7 @@ dogs_original |>
 ```
 
 ### Format names for matching
-Uppercase the whole name, then remove spaces and hyphens. These are the spelling differences we agreed to ignore when matching. For example, `WALL-E` becomes `WALLE`. Keep the recorded name during preparation so we can identify names containing spaces or hyphens before those characters disappear. We also count how many recorded spellings each estimated dog combines.
+Uppercase the whole name, then remove spaces and hyphens. These are the spelling differences we agreed to ignore when matching. For example, `WALL-E` becomes `WALLE`. Keep the recorded name during preparation so we can identify names containing spaces or hyphens before those characters disappear.
 ```{r}
 #| label: format-names
 named_licenses |>
@@ -159,11 +159,11 @@ dogs_with_dates |>
   preview()
 ```
 
-### Flag uncertain fields
-We flag compounds using the spelling on the license. We also mark records with an unknown breed or a questionable birth year, and record ZIP padding for the cleaning report. These licenses still count.
+### Prepare the cleaning report fields
+Identify compound names, unknown breeds, questionable birth years and ZIP padding for the cleaning report. These records still count, and the report fields stay out of the exported dog tables. The birth-year screen marks values that are not four digits or fall outside 1990–2024; that range is a screening choice, not a correction rule.
 
 ```{r}
-#| label: flag-uncertain-fields
+#| label: prepare-cleaning-report-fields
 dogs_with_dates |>
   mutate(
     breed_label = str_trim(breed),
@@ -178,9 +178,6 @@ dogs_with_dates |>
     birth_year_in_range = between(birth_year_number, 1990L, 2024L),
     birth_year_suspect = !birth_year_has_four_digits | !birth_year_in_range,
     birth_year_suspect = replace_na(birth_year_suspect, TRUE)
-  ) |>
-  mutate(
-    identity_uncertain = breed_unknown | birth_year_suspect
   ) ->
   dogs_with_quality_flags
 ```
@@ -195,8 +192,6 @@ dogs_with_quality_flags |>
   group_by(name, sex, birth_year, breed, zipcode) |>
   mutate(
     license_record_count = n(),
-    original_name_variants = n_distinct(original_name),
-    any_compound_name = any(compound_name),
     latest_issue_date = max(license_issue_date),
     latest_issue_ties = sum(license_issue_date == latest_issue_date)
   ) |>
@@ -226,9 +221,7 @@ dogs_estimated |>
   select(
     estimated_dog_id, source_row_id, extract_year, name,
     sex, birth_year, breed, zipcode,
-    license_issue_date, license_expiry_date, license_record_count,
-    original_name_variants, latest_issue_ties, compound_name, any_compound_name,
-    breed_unknown, birth_year_suspect, identity_uncertain
+    license_issue_date, license_expiry_date, license_record_count
   ) ->
   dogs
 ```
@@ -274,12 +267,12 @@ missing_by_zip |>
 ```
 
 ### Corrections and unresolved fields
-The padded-ZIP count records corrections already made. Count it from the preparation tables; the exported dog tables need only the formatted ZIP. Unknown breeds and suspect birth years remain unresolved because the source does not provide a reliable replacement. Compound names follow the full-name matching rule. These counts describe the named licenses and estimated dogs.
+The padded-ZIP count records corrections already made. Unknown breeds and suspect birth years remain unresolved because the source does not provide a reliable replacement. Compound names follow the full-name matching rule. Count these from the preparation tables. Also count estimated dogs with multiple licenses tied on the latest issue date; the expiry-date and source-row sorting resolves those ties.
 
 ```{r}
 #| label: summarize-quality-flags
 quality_flags <- c("breed_unknown", "birth_year_suspect",
-  "zipcode_padded", "identity_uncertain", "compound_name")
+  "zipcode_padded", "compound_name")
 dogs_with_quality_flags |>
   summarise(across(all_of(quality_flags), sum)) |>
   mutate(unit = "named_license_record") ->
@@ -290,10 +283,16 @@ dogs_estimated |>
   mutate(unit = "estimated_dog") ->
   dog_quality_counts
 
+dogs_estimated |>
+  filter(latest_issue_ties > 1) |>
+  summarise(unit = "estimated_dog", flag = "latest_issue_ties", count = n()) ->
+  latest_issue_tie_count
+
 license_quality_counts |>
   bind_rows(dog_quality_counts) |>
   pivot_longer(cols = all_of(quality_flags), names_to = "flag", values_to = "count") |>
-  select(unit, flag, count) ->
+  select(unit, flag, count) |>
+  bind_rows(latest_issue_tie_count) ->
   quality_summary
 ```
 

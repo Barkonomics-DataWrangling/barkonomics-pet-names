@@ -1,22 +1,24 @@
 ---
 attention: live
-reviewed: 2026-11-08
+reviewed: 2026-11-09
 tags: [barkonomics, dog-data, baby-names, r]
 ---
 # Dog and baby-name data tasks
 ## Background
 Prepare Aslan's R contribution to [issue #1](https://github.com/Barkonomics-DataWrangling/barkonomics-pet-names/issues/1). [Concept and open decisions](dog-baby-name-data.md) distinguish source observations, proposals and accepted choices. Aslan authorized completion of the dog-level handoff, including source acquisition, implementation, verification and a report of remaining questions. Keep implementation understandable through the course's own transformation vocabulary and techniques.
 
-The contribution asks whether dog names and generational associations differ across neighborhood income groups, with diffusion as a motivating hypothesis. Use top-100 names in the 14 complete SSA decades, 1880–2019. Preserve full-name matching, compound flags, the six agreed missing-name labels and the five-field estimate of dog identity.
+The contribution asks whether dog names and generational associations differ across neighborhood income groups, with diffusion as a motivating hypothesis. Use top-100 names in the 14 complete SSA decades, 1880–2019. Preserve full-name matching, compound-name reporting, the six agreed missing-name labels and the five-field estimate of dog identity.
 ## Current state
 The [dog notebook](../../dog-names.qmd) on `aslan/dog-name-review` prepares 92,963 estimated dogs from 100,164 named licenses. It reports 5,810 missing names separately. The [checks notebook](../../dog-names-checks.qmd) tests the saved files. [PR #10](https://github.com/Barkonomics-DataWrangling/barkonomics-pet-names/pull/10) is the review for [issue #1](https://github.com/Barkonomics-DataWrangling/barkonomics-pet-names/issues/1).
 ## To Do
+- Decide whether unusable birth-year cells should become missing values in the export after grouping. License dates do not identify a unique correction; the recorded values remain unchanged while this is discussed.
 - Settle which recognition/generation choices need joint agreement and identify the course synonym requirement's concrete treatment. Aslan has selected broader SSA recognition and overlapping top-100 decade flags; shared review and the synonym requirement remain pending.
 - Prepare an inspectable issue-linked draft PR with the spike records, source reproducibility instructions, validation evidence and remaining acceptance. Publication, commits and integration retain their actual authorization boundaries. The complete local handoff and PR copy are prepared; actual GitHub publication remains separate.
 ## Ready for Human QA
 - Aslan: walk through the named R transformations and inspect original-to-retained examples using the lineage CSV. Confirm the explanation is comfortable for the interview; the automated checks do not establish human understanding.
 - Shweta: review the CSV interface and the shared assumptions, confirm ZIP–ZCTA/income column names, and record acceptance or requested changes through issue #1 and the eventual PR. The conceptual spike holds the unpublished issue/PR preparation; no message or review request has been sent.
 ## Done
+- November 9. Kept breed, birth-year, compound-name and ZIP-padding findings in the cleaning report; added the count of dogs with tied latest issue dates. Removed the corresponding exported diagnostic columns and removed identity_uncertain, original_name_variants and any_compound_name entirely. Retained license_record_count for the analysis. Removed the obsolete uncertainty-flag check and duplicate stage counts. Inspected suspect birth years: 31 estimated dogs have non-four-digit years and 11 have four-digit years before 1990. Birth-year repair or replacement remains undecided.
 - November 8 follow-up. Removed the zero-count zipcode_invalid and sex_unknown flags from preparation and reports, and sex_unknown from both dog exports. Kept the sex and zipcode fields and the separate ZIP-format check. The combined uncertainty flag now uses breed and birth year; its values are unchanged in this snapshot.
 - November 8 follow-up. Kept zipcode_invalid in the cleaning report and removed it from both exported dog tables. The separate uncertainty check derives ZIP format from zipcode. Whether to retain zero-count diagnostics in the report remains under discussion.
 - November 8 follow-up. Kept zipcode_padded in the cleaning report and removed it from both exported dog tables. The report uses dogs_estimated, which retains the preparation flags. The other flags remain under individual review.
