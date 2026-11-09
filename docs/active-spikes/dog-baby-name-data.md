@@ -208,3 +208,33 @@ Supporting license rows in the raw snapshot, numbered from the first data row af
 - BROWNIE: row 101787 receives 2022; the inference uses the shared typo pattern with HONEY, not an independently matching BROWNIE record.
 
 Apply the lookup after the original five-field grouping and source-to-dog mapping. Preserve the raw records, group membership, representative rows and ZIPs. Do not apply replacements to every occurrence of a malformed year. The cleaning report counts original birth-year problems and displays the inferred corrections separately. The checks notebook independently states the expected replacements. The six approved inferences complete the manual repair pass; do not infer further birth years. After those corrections, exclude the remaining 36 dogs whose years fail the four-digit, 1990–2024 rule. Use the resulting 92,927-dog set consistently across analyses and retain the excluded source rows and group IDs in the audit.
+
+## Income match inspection — November 9
+Inspected [Shweta's PR #9](https://github.com/Barkonomics-DataWrangling/barkonomics-pet-names/pull/9) at head `eb7ecc0cbe336740d872d340aae8f95f760f57e3`, still open and draft. Its generated CSV is not committed. The saved script's Git blob matches the current PR exactly (`33e65395d41efd9be26321c5b836bd2745075418`). Re-executed that script with release 2024 and state NY using the official source downloads saved during the November 5 review. Its 2,150-row output matches the earlier generated file byte for byte. This inspection uses the 92,927 prepared dogs at `bd8a31d`; it adopts no geographic or income exclusion rule.
+
+Joining dog `zipcode` to the output's unique `zip_code` keeps all 92,927 dog rows without duplication. The statewide results are:
+
+| Income result | Estimated dogs |
+| --- | ---: |
+| Ordinary income estimate | 92,447 |
+| Income reported as $250,000+ | 366 |
+| Matched ZIP/ZCTA, income unavailable | 21 |
+| Matched ZIP/ZCTA, ZCTA absent from the ACS file | 5 |
+| ZIP absent from the NY-filtered lookup | 88 |
+
+Thus 92,813 dogs (99.877%) have income information before defining NYC scope. Of the 88 absent from the NY lookup, 72 have national-crosswalk entries outside New York State and 16 have no national-crosswalk entry. The latter are unmatched in this source, not established invalid ZIPs.
+
+For a provisional NYC screen, matched ZCTAs were compared with the 221 unique codes in [NYC Open Data's ZIP Code Tabulation Areas dataset](https://data.cityofnewyork.us/City-Government/ZIP-Code-Tabulation-Areas/35j5-n34v), retrieved November 9. There are 92,183 dogs with ordinary estimates on that list, 364 with $250,000+ incomes, 17 on the list without income, 275 in NY lookup areas absent from the city list, 72 outside the NY lookup's state coverage, and 16 without a national ZIP match. Using city-list membership and available income would retain 92,547 dogs (99.591%) and exclude 380. This is a candidate rule, not an implemented filter.
+
+| Example | Source row | ZIP → ZCTA | Finding |
+| --- | ---: | --- | --- |
+| MOWGLI, Labrador Retriever | 23918 | 10020 → 10020 | NYC-listed area, income unavailable; six dogs have ZIP 10020. |
+| CHLOE, Goldendoodle | 14599 | 10163 → 10170 | NYC-listed area, income unavailable; three dogs have ZIP 10163. |
+| ZOE, American Staffordshire Terrier | 26923 | 10048 → no match | No national-crosswalk entry; two dogs have this ZIP. |
+| CHOCO, Cavalier King Charles Spaniel | 36450 | 11315 → no match | No national-crosswalk entry; two dogs have this ZIP. |
+| STELLA, American Pit Bull Terrier/Pit Bull | 13628 | 07302 → absent from NY output | National crosswalk labels the ZIP Jersey City, NJ. |
+| BELLA, Bull Dog, English | 13445 | 11003 → 11003 | Income available; Elmont is absent from the city ZCTA list. |
+
+City-list membership is not proof of an individual dog's location inside municipal boundaries. It includes ZCTA 11040, labeled New Hyde Park in the crosswalk, with 27 dogs; it also includes 10704 and 10705, labeled Yonkers, with 12 dogs in total. ZIPs supply no street address with which to resolve those cases. Decide whether to use the published list with this geographic limitation or a stricter borough-based area definition before adopting exclusions. The $250,000+ cases remain useful for the proposed open-ended highest income group; they should not be treated as exact $250,001 incomes or as missing observations.
+
+Independent CSV calculations agree with the R counts and confirm unchanged dog order and identifying fields. Production notebooks, dog exports, raw snapshots and shared PR comments remain unchanged by this inspection.
