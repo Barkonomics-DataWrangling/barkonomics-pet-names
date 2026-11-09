@@ -218,6 +218,91 @@ dogs_for_income_comparison |>
 
 Neighborhood income describes the area associated with the recorded owner's ZIP. These shares describe whether dog names and their baby-name generations differ across area-income groups. They cannot establish a chain of names moving from wealthy families to poorer families and then to dogs.
 
+## Compare baby-name decades
+The horizontal axis describes when the baby names were popular. Every point uses the same 2024 dog snapshot; the lines do not show dog names changing over time. Each income group keeps the same color in both charts.
+```{r}
+#| label: plot-baby-name-decades
+#| fig-width: 12
+#| fig-height: 7
+income_group_colors <- c("#D55E00", "#009E73", "#0072B2", "#7B4B94")
+
+name_matches_by_income |>
+  filter(name_measure != "ssa_recognized") |>
+  mutate(decade = str_remove(name_measure, "top100_")) |>
+  mutate(decade = as.integer(decade)) ->
+  decade_matches
+
+decade_matches |>
+  ggplot(aes(x = decade, y = share, color = income_group, linetype = income_group)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2.5) +
+  scale_color_manual(values = income_group_colors) +
+  scale_x_continuous(breaks = seq(1880, 2010, by = 10)) +
+  scale_y_continuous(labels = scales::label_percent(accuracy = 1), limits = c(0, 0.08)) +
+  labs(
+    title = "Dog names and baby-name decades",
+    subtitle = "Share of dogs matching each decade's U.S. top 100 baby names",
+    x = "Baby-name decade (starting year)", y = "Share of dogs in the income group",
+    color = "Area median household income", linetype = "Area median household income",
+    caption = "2024 NYC-area licenses | 92,547 estimated dogs | Each dog counts equally.\nA dog can match several decades; these percentages do not add to 100%."
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    legend.position = "top", legend.title = element_text(size = 11),
+    panel.grid.minor = element_blank(), plot.title = element_text(face = "bold"),
+    plot.caption = element_text(hjust = 0)
+  ) ->
+  decade_comparison_plot
+
+decade_comparison_plot
+```
+
+The higher-income groups have larger matching shares for every decade from the 1880s through the 1950s. For the 1880s list, the lowest and highest groups match 3.5% and 7.0%; for the 1920s, they match 1.8% and 4.2%. All four groups dip around the 1960s–1980s and rise for the 2000s–2010s. The recent decades do not follow a consistent income order. SSA's early birth records are less complete, so these are comparisons with the published lists, not perfect measures of historical naming.
+
+## Compare overall baby-name recognition
+This broader measure includes any name published in the SSA reference for 1880–2019, even if it never reached a decade's top 100. An unmatched name is not necessarily unused by people; it is absent from our reference under the chosen matching rules.
+```{r}
+#| label: plot-overall-baby-name-recognition
+#| fig-width: 10
+#| fig-height: 6
+name_matches_by_income |>
+  filter(name_measure == "ssa_recognized") |>
+  mutate(percentage_label = scales::percent(share, accuracy = 0.1)) ->
+  overall_recognition
+
+overall_recognition |>
+  ggplot(aes(x = income_group, y = share, fill = income_group)) +
+  geom_col(width = 0.65, show.legend = FALSE) +
+  geom_text(aes(label = percentage_label), vjust = -0.6, size = 5) +
+  scale_fill_manual(values = income_group_colors) +
+  scale_y_continuous(labels = scales::label_percent(accuracy = 1), limits = c(0, 1)) +
+  labs(
+    title = "Most dogs have a name found in the baby-name reference",
+    subtitle = "Share matching any published U.S. baby name from 1880–2019",
+    x = "Area median household income", y = "Share of dogs in the income group",
+    caption = "2024 NYC-area licenses | 92,547 estimated dogs | Each dog counts equally.\nThis includes uncommon baby names, not only the top 100."
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    panel.grid.major.x = element_blank(), panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold"), plot.caption = element_text(hjust = 0)
+  ) ->
+  overall_recognition_plot
+
+overall_recognition_plot
+```
+
+Recognition rises across the four income groups: 78.1%, 79.8%, 80.6% and 82.1%. The highest-minus-lowest difference is 4.1 percentage points before rounding. Most dogs in every group match the broad reference. The larger relative differences in the older top-100 lists suggest looking next at which actual names contribute to those differences; the charts alone do not show why owners chose them.
+
+## Save the charts
+Save a PNG copy of each chart in `figures` for review without rendering HTML. `dir.create()` makes that output folder if it does not already exist.
+```{r}
+#| label: save-name-comparison-charts
+dir.create("figures", showWarnings = FALSE)
+ggsave("figures/baby-name-decades-by-income.png", plot = decade_comparison_plot, width = 12, height = 7, dpi = 180, bg = "white")
+ggsave("figures/baby-name-recognition-by-income.png", plot = overall_recognition_plot, width = 10, height = 6, dpi = 180, bg = "white")
+```
+
 ## Save the matched dogs and comparisons
 ```{r}
 #| label: save-matched-dogs
