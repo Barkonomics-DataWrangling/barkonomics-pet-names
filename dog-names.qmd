@@ -256,8 +256,8 @@ dogs_original |>
   license_to_dog
 ```
 
-### Apply the four agreed birth-year inferences
-These four corrections use matching names, known breeds and sex, with a compatible year found on another license. They are inferred years, not verified birth dates. The source row number and recorded fields restrict each correction to the license we reviewed.
+### Apply the agreed birth-year inferences
+Five corrections use matching names, known breeds and sex, with a compatible year found on another license. BROWNIE's 1022 → 2022 correction uses a likely first-digit typo and the same recorded error on HONEY's license, which shares its breed, ZIP and license dates. BROWNIE and HONEY remain separate dogs. These are inferred years, not verified birth dates. The source row number and recorded fields restrict each correction to the license we reviewed.
 
 Apply the lookup after grouping and tracing the licenses. The recorded birth years still define the groups, so these corrections do not merge dogs across ZIPs. A missing lookup result means that the recorded year stays unchanged. The temporary yes/no column chooses which year to use and is removed before export.
 ```{r}
@@ -290,7 +290,7 @@ missing_by_zip |>
 ```
 
 ### Corrections and unresolved fields
-The padded-ZIP count records corrections already made. The birth-year counts describe the recorded values before the four inferences shown above; the other suspect years and unknown breeds remain unresolved. Compound names follow the full-name matching rule. Count these from the preparation tables. Also count estimated dogs with multiple licenses tied on the latest issue date; the expiry-date and source-row sorting resolves those ties.
+The padded-ZIP count records corrections already made. The birth-year counts describe the recorded values before the inferences shown above; the other suspect years and unknown breeds remain unresolved. Compound names follow the full-name matching rule. Count these from the preparation tables. Also count estimated dogs with multiple licenses tied on the latest issue date; the expiry-date and source-row sorting resolves those ties.
 
 ```{r}
 #| label: summarize-quality-flags

@@ -9,7 +9,7 @@ The notebook keeps a source-stage table, dogs_original, with consistent original
 | `extract_year` | Integer | Selected NYC extract, 2024; not necessarily the license issue year. |
 | `name` | Text | Full name uppercased with spaces and hyphens removed; no first-token, nickname or title substitution. |
 | `sex` | Text | Recorded dog sex (`F` or `M` in this snapshot). Dog sex does not constrain SSA name matching. |
-| `birth_year` | Text | Recorded birth year except for the four approved inferences in [birth_year_corrections.csv](lookups/birth_year_corrections.csv). Other malformed values remain as recorded. |
+| `birth_year` | Text | Recorded birth year except for the approved inferences in [birth_year_corrections.csv](lookups/birth_year_corrections.csv). Other malformed values remain as recorded. |
 | `breed` | Text | Recorded breed, including `Unknown`; no breed-alias consolidation. |
 | `zipcode` | Text | Five-character ZIP representation: digit-only source values of up to five digits are left-padded with zeros. This is not confirmation of valid NYC geography. |
 | `license_issue_date` | Date | Issue date of the retained license, `YYYY-MM-DD`. |
@@ -18,7 +18,7 @@ The notebook keeps a source-stage table, dogs_original, with consistent original
 | `ssa_recognized` | Boolean | Full normalized name appears in a published SSA record in any selected year: 1880–2019. |
 | `top100_1880` … `top100_2010` | Boolean | One column per complete decade. True when the name is among its 100 largest combined-sex birth counts. |
 
-The five-field group key uses `name`, `sex`, the recorded `birth_year`, `breed` and `zipcode`. Select greatest issue date, then greatest expiry date, then smallest `source_row_id`. Apply the four birth-year inferences only after grouping; they do not merge license groups or change their ZIPs. The correction lookup records the original and inferred years beside each specific source record, name, breed and sex. The 14 decade flags can overlap, and percentages using them need not sum to 100%. A false recognition flag means absent from this reference, not proven non-human.
+The five-field group key uses `name`, `sex`, the recorded `birth_year`, `breed` and `zipcode`. Select greatest issue date, then greatest expiry date, then smallest `source_row_id`. Apply the approved birth-year inferences only after grouping; they do not merge license groups or change their ZIPs. The correction lookup records the original and inferred years beside each specific source record, name, breed and sex. The 14 decade flags can overlap, and percentages using them need not sum to 100%. A false recognition flag means absent from this reference, not proven non-human.
 ## Supporting tables
 | File | Row unit and key | Purpose |
 | --- | --- | --- |
@@ -40,7 +40,7 @@ The cleaning report contains these measures; their per-record fields are not exp
 | Measure | Meaning |
 | --- | --- |
 | `breed_unknown` | Breed is `Unknown` or blank, ignoring case and outer whitespace. |
-| `birth_year_suspect` | Recorded birth year is not four digits or lies outside 1990–2024, counted before the four approved inferences. This is a screening choice, not a correction or exclusion rule. |
+| `birth_year_suspect` | Recorded birth year is not four digits or lies outside 1990–2024, counted before the approved inferences. This is a screening choice, not a correction or exclusion rule. |
 | `zipcode_padded` | ZIP gained leading zeros during preparation. Five digits do not establish a geographic match. |
 | `compound_name` | Recorded name contains internal whitespace or an internal ASCII hyphen. For estimated dogs, this uses the retained license. |
 | `latest_issue_ties` | Number of estimated dogs with multiple licenses sharing their latest issue date. The expiry-date and source-row sorting resolves the tie. This measure is reported only at dog level. |

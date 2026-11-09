@@ -65,7 +65,7 @@ dog_handoff |>
 ```
 
 ## Compare source and saved identities
-Trace every source license to its representative and compare the five identifying fields, allowing the four explicitly approved birth-year inferences. State the expected replacements here independently of the preparation lookup.
+Trace every source license to its representative and compare the five identifying fields, allowing the explicitly approved birth-year inferences. State the expected replacements here independently of the preparation lookup.
 
 ```{r}
 #| label: compare-source-and-saved-identities
@@ -93,6 +93,8 @@ source_licenses |>
       source_row_id == 62878 ~ "2022",
       source_row_id == 63559 ~ "2020",
       source_row_id == 99337 ~ "2024",
+      source_row_id == 101787 ~ "2022",
+      source_row_id == 102214 ~ "2022",
       .default = animalbirth
     )
   ) |>
