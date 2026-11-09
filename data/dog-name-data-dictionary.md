@@ -47,6 +47,7 @@ The input lookup preserves Shweta's source values, including reporting codes suc
 | [missing_names_by_zip.csv](derived/missing_names_by_zip.csv) | One extract/ZIP | Counts all source license records, missing-name records, named records and missing-name share. These are record counts, not dog counts. |
 | [missing_name_labels.csv](derived/missing_name_labels.csv) | One missing label | Counts the six selected source labels. |
 | [quality_flags.csv](derived/quality_flags.csv) | One unit/measure | Counts preparation findings before birth-year corrections and exclusions, plus estimated dogs with tied latest issue dates and the final birth-year exclusions at dog and license level. |
+| [name_matches_by_income.csv](derived/name_matches_by_income.csv) | One income group/name measure; 60 rows | `matching_dogs` counts matches once per estimated dog; `dogs` is the full selected dog count in that income group; `neighborhoods` counts distinct ZCTAs; `share = matching_dogs / dogs`. Measures are overall SSA recognition and 14 overlapping decade flags. |
 | [matching_by_counting_unit.csv](derived/matching_by_counting_unit.csv) | One unit/measure | Recognition and decade shares for the 92,547 NYC income-comparison dogs, weighted equally or by their license-record counts. |
 | [ssa_top100_cutoffs.csv](derived/ssa_top100_cutoffs.csv) | One decade | Names and counts at ranks 100/101 and whether the cutoff is tied. |
 | [stage_counts.csv](derived/stage_counts.csv) | One processing stage/measure | Counts measured from the source and saved tables in the checks notebook. |
