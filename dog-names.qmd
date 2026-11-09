@@ -164,7 +164,7 @@ dogs_with_dates |>
 ```
 
 ### Prepare the cleaning report fields
-Identify compound names, unknown breeds, questionable birth years and ZIP padding for the cleaning report. These records still count, and the report fields stay out of the exported dog tables. The birth-year screen marks values that are not four digits or fall outside 1990–2024; that range is a screening choice, not a correction rule.
+Identify compound names, unknown breeds, questionable birth years and ZIP padding for the cleaning report. The report fields stay out of the exported dog tables. The birth-year screen marks values that are not four digits or fall outside 1990–2024. After grouping and applying the agreed year corrections, we exclude dogs whose years still fail that rule. Compound names, unknown breeds and padded ZIPs do not cause exclusions.
 
 ```{r}
 #| label: prepare-cleaning-report-fields
@@ -272,7 +272,53 @@ dogs |>
   mutate(has_birth_year_correction = !is.na(inferred_birth_year)) |>
   mutate(birth_year = if_else(has_birth_year_correction, inferred_birth_year, birth_year)) |>
   select(-inferred_birth_year, -has_birth_year_correction) ->
+  dogs_with_year_corrections
+```
+
+### Exclude dogs with unresolved birth years
+Keep dogs whose birth year has four digits and falls within 1990–2024. Apply this rule after the agreed corrections. Excluding the remaining 36 dogs gives all later comparisons the same set of dogs, rather than including them for some calculations and omitting them from others.
+
+The first two pipelines answer each part of the rule. `&` requires both answers to be TRUE. These vectors follow the row order of `dogs_with_year_corrections`.
+```{r}
+#| label: exclude-unresolved-birth-years
+dogs_with_year_corrections |>
+  pull(birth_year) |>
+  str_detect("^[0-9]{4}$") ->
+  birth_year_has_four_digits
+
+dogs_with_year_corrections |>
+  pull(birth_year) |>
+  as.integer() |>
+  between(1990, 2024) ->
+  birth_year_in_range
+
+birth_year_has_four_digits & birth_year_in_range ->
+  birth_year_usable
+
+dogs_with_year_corrections |>
+  filter(birth_year_usable) ->
   dogs_prepared
+
+dogs_with_year_corrections |>
+  filter(!birth_year_usable) ->
+  dogs_excluded_birth_year
+```
+
+Keep every source row in the audit. Mark all licenses belonging to the excluded dogs as `excluded_birth_year`; their group IDs and source links remain available even though those dogs are absent from the analysis tables.
+```{r}
+#| label: record-birth-year-exclusions
+dogs_excluded_birth_year |>
+  pull(estimated_dog_id) ->
+  excluded_birth_year_dog_ids
+
+license_to_dog |>
+  pull(estimated_dog_id) |>
+  is.element(excluded_birth_year_dog_ids) ->
+  license_excluded_birth_year
+
+license_to_dog |>
+  mutate(record_status = if_else(license_excluded_birth_year, "excluded_birth_year", record_status)) ->
+  license_audit
 ```
 
 ## Cleaning summary
@@ -290,7 +336,7 @@ missing_by_zip |>
 ```
 
 ### Corrections and unresolved fields
-The padded-ZIP count records corrections already made. The birth-year counts describe the recorded values before the inferences shown above; the other suspect years and unknown breeds remain unresolved. Compound names follow the full-name matching rule. Count these from the preparation tables. Also count estimated dogs with multiple licenses tied on the latest issue date; the expiry-date and source-row sorting resolves those ties.
+The first counts describe all named licenses and their estimated dogs before year corrections and exclusions. The padded-ZIP count records formatting corrections; compound names follow the full-name matching rule, and unknown breeds remain as recorded. Also count estimated dogs with multiple licenses tied on the latest issue date; the expiry-date and source-row sorting resolves those ties. Finally, report the 36 dogs excluded for unresolved birth years and the 39 licenses they represent.
 
 ```{r}
 #| label: summarize-quality-flags
@@ -311,11 +357,18 @@ dogs_estimated |>
   summarise(unit = "estimated_dog", flag = "latest_issue_ties", count = n()) ->
   latest_issue_tie_count
 
+dogs_excluded_birth_year |>
+  summarise(estimated_dog = n(), named_license_record = sum(license_record_count)) |>
+  pivot_longer(everything(), names_to = "unit", values_to = "count") |>
+  mutate(flag = "excluded_birth_year") |>
+  select(unit, flag, count) ->
+  birth_year_exclusion_counts
+
 license_quality_counts |>
   bind_rows(dog_quality_counts) |>
   pivot_longer(cols = all_of(quality_flags), names_to = "flag", values_to = "count") |>
   select(unit, flag, count) |>
-  bind_rows(latest_issue_tie_count) ->
+  bind_rows(latest_issue_tie_count, birth_year_exclusion_counts) ->
   quality_summary
 ```
 
@@ -330,7 +383,7 @@ quality_summary
 # Create the folder for these tables if needed.
 dir.create("data/derived", showWarnings = FALSE)
 write_csv(dogs_prepared, "data/derived/dogs_prepared_2024.csv", na = "")
-write_csv(license_to_dog, "data/derived/license_to_dog.csv", na = "")
+write_csv(license_audit, "data/derived/license_to_dog.csv", na = "")
 write_csv(missing_by_zip, "data/derived/missing_names_by_zip.csv", na = "")
 write_csv(missing_name_counts, "data/derived/missing_name_labels.csv", na = "")
 write_csv(quality_summary, "data/derived/quality_flags.csv", na = "")

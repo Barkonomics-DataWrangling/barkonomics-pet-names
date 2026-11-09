@@ -6,6 +6,8 @@ five-field dog keys unique,TRUE
 source names classified before normalization,TRUE
 5810 missing-name records excluded only from name analysis,TRUE
 all named rows assigned,TRUE
+audit birth-year exclusions agree with source years and approved corrections,TRUE
+dog CSV contains exactly the eligible estimated dogs,TRUE
 one retained row per estimated dog,TRUE
 retained IDs agree with dog CSV,TRUE
 group sizes reconcile,TRUE
@@ -18,4 +20,4 @@ reference names unique,TRUE
 dog/reference flags agree,TRUE
 unmatched and recognized dogs retained,TRUE
 BABY source records retained,TRUE
-unknown-breed licenses retained,TRUE
+unknown-breed licenses with usable birth years retained,TRUE

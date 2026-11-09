@@ -1092,7 +1092,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 1091,dog2024-081995,81995,consolidated
 1092,dog2024-001092,1092,retained
 1093,dog2024-001093,1093,retained
-1094,dog2024-001094,1094,retained
+1094,dog2024-001094,1094,excluded_birth_year
 1095,dog2024-090248,90248,consolidated
 1096,dog2024-001096,1096,retained
 1097,dog2024-001097,1097,retained
@@ -5086,7 +5086,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 5085,dog2024-005085,5085,retained
 5086,dog2024-005086,5086,retained
 5087,dog2024-005087,5087,retained
-5088,dog2024-005088,5088,retained
+5088,dog2024-005088,5088,excluded_birth_year
 5089,dog2024-050374,50374,consolidated
 5090,dog2024-005090,5090,retained
 5091,dog2024-096872,96872,consolidated
@@ -6105,7 +6105,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 6104,dog2024-006104,6104,retained
 6105,dog2024-006105,6105,retained
 6106,dog2024-006106,6106,retained
-6107,dog2024-006107,6107,retained
+6107,dog2024-006107,6107,excluded_birth_year
 6108,dog2024-006108,6108,retained
 6109,dog2024-006109,6109,retained
 6110,dog2024-006110,6110,retained
@@ -7015,7 +7015,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 7014,dog2024-007014,7014,retained
 7015,dog2024-007015,7015,retained
 7016,dog2024-007016,7016,retained
-7017,dog2024-007017,7017,retained
+7017,dog2024-007017,7017,excluded_birth_year
 7018,dog2024-007018,7018,retained
 7019,dog2024-007019,7019,retained
 7020,dog2024-007020,7020,retained
@@ -15522,7 +15522,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 15521,dog2024-015521,15521,retained
 15522,dog2024-015522,15522,retained
 15523,dog2024-015523,15523,retained
-15524,dog2024-015524,15524,retained
+15524,dog2024-015524,15524,excluded_birth_year
 15525,dog2024-081133,81133,consolidated
 15526,dog2024-015526,15526,retained
 15527,dog2024-015527,15527,retained
@@ -16471,7 +16471,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 16470,dog2024-016470,16470,retained
 16471,dog2024-016471,16471,retained
 16472,dog2024-016472,16472,retained
-16473,dog2024-016473,16473,retained
+16473,dog2024-016473,16473,excluded_birth_year
 16474,dog2024-016474,16474,retained
 16475,dog2024-016475,16475,retained
 16476,dog2024-016476,16476,retained
@@ -20767,7 +20767,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 20766,dog2024-020766,20766,retained
 20767,dog2024-020767,20767,retained
 20768,dog2024-020768,20768,retained
-20769,dog2024-020769,20769,retained
+20769,dog2024-020769,20769,excluded_birth_year
 20770,dog2024-020770,20770,retained
 20771,dog2024-020771,20771,retained
 20772,dog2024-073119,73119,consolidated
@@ -21158,7 +21158,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 21157,dog2024-021157,21157,retained
 21158,dog2024-054268,54268,consolidated
 21159,dog2024-021159,21159,retained
-21160,dog2024-021160,21160,retained
+21160,dog2024-021160,21160,excluded_birth_year
 21161,dog2024-021161,21161,retained
 21162,dog2024-021162,21162,retained
 21163,dog2024-057955,57955,consolidated
@@ -28257,7 +28257,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 28256,dog2024-028256,28256,retained
 28257,dog2024-028257,28257,retained
 28258,dog2024-028258,28258,retained
-28259,dog2024-069715,69715,consolidated
+28259,dog2024-069715,69715,excluded_birth_year
 28260,dog2024-088191,88191,consolidated
 28261,dog2024-028261,28261,retained
 28262,,,missing_name
@@ -30390,7 +30390,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 30389,dog2024-030389,30389,retained
 30390,dog2024-030390,30390,retained
 30391,dog2024-030391,30391,retained
-30392,dog2024-030392,30392,retained
+30392,dog2024-030392,30392,excluded_birth_year
 30393,dog2024-030393,30393,retained
 30394,dog2024-030394,30394,retained
 30395,dog2024-030395,30395,retained
@@ -30569,7 +30569,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 30568,dog2024-030568,30568,retained
 30569,dog2024-030569,30569,retained
 30570,dog2024-069833,69833,consolidated
-30571,dog2024-030571,30571,retained
+30571,dog2024-030571,30571,excluded_birth_year
 30572,dog2024-030572,30572,retained
 30573,dog2024-030573,30573,retained
 30574,dog2024-030574,30574,retained
@@ -30969,7 +30969,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 30968,dog2024-030968,30968,retained
 30969,dog2024-030969,30969,retained
 30970,dog2024-030970,30970,retained
-30971,dog2024-030971,30971,retained
+30971,dog2024-030971,30971,excluded_birth_year
 30972,dog2024-030972,30972,retained
 30973,dog2024-030973,30973,retained
 30974,dog2024-077551,77551,consolidated
@@ -33940,7 +33940,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 33939,dog2024-033939,33939,retained
 33940,dog2024-033940,33940,retained
 33941,dog2024-033941,33941,retained
-33942,dog2024-075395,75395,consolidated
+33942,dog2024-075395,75395,excluded_birth_year
 33943,dog2024-033943,33943,retained
 33944,dog2024-033944,33944,retained
 33945,dog2024-033945,33945,retained
@@ -34774,7 +34774,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 34773,dog2024-034773,34773,retained
 34774,dog2024-034774,34774,retained
 34775,dog2024-034775,34775,retained
-34776,dog2024-084629,84629,consolidated
+34776,dog2024-084629,84629,excluded_birth_year
 34777,dog2024-034777,34777,retained
 34778,dog2024-034778,34778,retained
 34779,dog2024-034779,34779,retained
@@ -36602,7 +36602,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 36601,dog2024-036601,36601,retained
 36602,,,missing_name
 36603,dog2024-036603,36603,retained
-36604,dog2024-036604,36604,retained
+36604,dog2024-036604,36604,excluded_birth_year
 36605,dog2024-077029,77029,consolidated
 36606,dog2024-036606,36606,retained
 36607,,,missing_name
@@ -36871,7 +36871,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 36870,dog2024-036870,36870,retained
 36871,dog2024-036871,36871,retained
 36872,dog2024-036872,36872,retained
-36873,dog2024-036873,36873,retained
+36873,dog2024-036873,36873,excluded_birth_year
 36874,dog2024-036874,36874,retained
 36875,dog2024-036875,36875,retained
 36876,dog2024-036876,36876,retained
@@ -47921,7 +47921,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 47920,dog2024-047920,47920,retained
 47921,dog2024-047921,47921,retained
 47922,,,missing_name
-47923,dog2024-047923,47923,retained
+47923,dog2024-047923,47923,excluded_birth_year
 47924,dog2024-090246,90246,consolidated
 47925,dog2024-047925,47925,retained
 47926,dog2024-047926,47926,retained
@@ -48883,7 +48883,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 48882,dog2024-048882,48882,retained
 48883,dog2024-048883,48883,retained
 48884,dog2024-048884,48884,retained
-48885,dog2024-048885,48885,retained
+48885,dog2024-048885,48885,excluded_birth_year
 48886,dog2024-048886,48886,retained
 48887,dog2024-048887,48887,retained
 48888,dog2024-048888,48888,retained
@@ -52446,7 +52446,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 52445,dog2024-052445,52445,retained
 52446,dog2024-052446,52446,retained
 52447,dog2024-052447,52447,retained
-52448,dog2024-052448,52448,retained
+52448,dog2024-052448,52448,excluded_birth_year
 52449,dog2024-052449,52449,retained
 52450,dog2024-052450,52450,retained
 52451,dog2024-052451,52451,retained
@@ -52721,7 +52721,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 52720,dog2024-052720,52720,retained
 52721,dog2024-052721,52721,retained
 52722,dog2024-052722,52722,retained
-52723,dog2024-052723,52723,retained
+52723,dog2024-052723,52723,excluded_birth_year
 52724,dog2024-052724,52724,retained
 52725,dog2024-052725,52725,retained
 52726,dog2024-052726,52726,retained
@@ -53195,11 +53195,11 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 53194,dog2024-053194,53194,retained
 53195,dog2024-053195,53195,retained
 53196,dog2024-053196,53196,retained
-53197,dog2024-053197,53197,retained
+53197,dog2024-053197,53197,excluded_birth_year
 53198,dog2024-053198,53198,retained
 53199,dog2024-053199,53199,retained
 53200,dog2024-053200,53200,retained
-53201,dog2024-053201,53201,retained
+53201,dog2024-053201,53201,excluded_birth_year
 53202,,,missing_name
 53203,dog2024-053203,53203,retained
 53204,dog2024-053204,53204,retained
@@ -55527,7 +55527,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 55526,dog2024-055526,55526,retained
 55527,dog2024-055527,55527,retained
 55528,dog2024-055528,55528,retained
-55529,dog2024-055529,55529,retained
+55529,dog2024-055529,55529,excluded_birth_year
 55530,dog2024-055530,55530,retained
 55531,dog2024-055531,55531,retained
 55532,dog2024-055532,55532,retained
@@ -55546,7 +55546,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 55545,dog2024-055545,55545,retained
 55546,dog2024-055546,55546,retained
 55547,,,missing_name
-55548,dog2024-055548,55548,retained
+55548,dog2024-055548,55548,excluded_birth_year
 55549,dog2024-055549,55549,retained
 55550,dog2024-055550,55550,retained
 55551,dog2024-055551,55551,retained
@@ -57026,7 +57026,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 57025,dog2024-057025,57025,retained
 57026,dog2024-057026,57026,retained
 57027,,,missing_name
-57028,dog2024-057028,57028,retained
+57028,dog2024-057028,57028,excluded_birth_year
 57029,dog2024-057029,57029,retained
 57030,dog2024-057030,57030,retained
 57031,dog2024-057031,57031,retained
@@ -59813,7 +59813,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 59812,dog2024-059812,59812,retained
 59813,,,missing_name
 59814,dog2024-059814,59814,retained
-59815,dog2024-059815,59815,retained
+59815,dog2024-059815,59815,excluded_birth_year
 59816,dog2024-059816,59816,retained
 59817,dog2024-059817,59817,retained
 59818,dog2024-059818,59818,retained
@@ -63814,7 +63814,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 63813,dog2024-063813,63813,retained
 63814,dog2024-063814,63814,retained
 63815,dog2024-063815,63815,retained
-63816,dog2024-063816,63816,retained
+63816,dog2024-063816,63816,excluded_birth_year
 63817,dog2024-063817,63817,retained
 63818,dog2024-063818,63818,retained
 63819,dog2024-063819,63819,retained
@@ -68802,7 +68802,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 68801,dog2024-068801,68801,retained
 68802,dog2024-068802,68802,retained
 68803,dog2024-068518,68518,consolidated
-68804,dog2024-068804,68804,retained
+68804,dog2024-068804,68804,excluded_birth_year
 68805,dog2024-068805,68805,retained
 68806,dog2024-068806,68806,retained
 68807,dog2024-068807,68807,retained
@@ -69713,7 +69713,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 69712,,,missing_name
 69713,dog2024-069713,69713,retained
 69714,dog2024-069714,69714,retained
-69715,dog2024-069715,69715,retained
+69715,dog2024-069715,69715,excluded_birth_year
 69716,dog2024-069716,69716,retained
 69717,dog2024-069717,69717,retained
 69718,dog2024-069718,69718,retained
@@ -70943,7 +70943,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 70942,dog2024-070942,70942,retained
 70943,dog2024-070943,70943,retained
 70944,dog2024-070944,70944,retained
-70945,dog2024-070945,70945,retained
+70945,dog2024-070945,70945,excluded_birth_year
 70946,dog2024-070946,70946,retained
 70947,dog2024-070947,70947,retained
 70948,dog2024-070948,70948,retained
@@ -72719,7 +72719,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 72718,dog2024-072718,72718,retained
 72719,dog2024-072719,72719,retained
 72720,dog2024-072720,72720,retained
-72721,dog2024-072721,72721,retained
+72721,dog2024-072721,72721,excluded_birth_year
 72722,dog2024-072722,72722,retained
 72723,,,missing_name
 72724,dog2024-072724,72724,retained
@@ -73823,7 +73823,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 73822,dog2024-073822,73822,retained
 73823,dog2024-073823,73823,retained
 73824,dog2024-073824,73824,retained
-73825,dog2024-073825,73825,retained
+73825,dog2024-073825,73825,excluded_birth_year
 73826,dog2024-073826,73826,retained
 73827,dog2024-075163,75163,consolidated
 73828,dog2024-073828,73828,retained
@@ -75393,7 +75393,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 75392,dog2024-075392,75392,retained
 75393,dog2024-075393,75393,retained
 75394,dog2024-075394,75394,retained
-75395,dog2024-075395,75395,retained
+75395,dog2024-075395,75395,excluded_birth_year
 75396,dog2024-075396,75396,retained
 75397,dog2024-075397,75397,retained
 75398,dog2024-075398,75398,retained
@@ -76956,7 +76956,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 76955,dog2024-076955,76955,retained
 76956,dog2024-076956,76956,retained
 76957,dog2024-076957,76957,retained
-76958,dog2024-076958,76958,retained
+76958,dog2024-076958,76958,excluded_birth_year
 76959,dog2024-076959,76959,retained
 76960,dog2024-076960,76960,retained
 76961,dog2024-076961,76961,retained
@@ -81661,7 +81661,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 81660,dog2024-081660,81660,retained
 81661,dog2024-081661,81661,retained
 81662,dog2024-081662,81662,retained
-81663,dog2024-081663,81663,retained
+81663,dog2024-081663,81663,excluded_birth_year
 81664,dog2024-081664,81664,retained
 81665,dog2024-081665,81665,retained
 81666,dog2024-081666,81666,retained
@@ -81979,7 +81979,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 81978,dog2024-081978,81978,retained
 81979,dog2024-081979,81979,retained
 81980,dog2024-081980,81980,retained
-81981,dog2024-081981,81981,retained
+81981,dog2024-081981,81981,excluded_birth_year
 81982,dog2024-081982,81982,retained
 81983,dog2024-081983,81983,retained
 81984,dog2024-081984,81984,retained
@@ -84627,7 +84627,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 84626,dog2024-084626,84626,retained
 84627,dog2024-084627,84627,retained
 84628,dog2024-084628,84628,retained
-84629,dog2024-084629,84629,retained
+84629,dog2024-084629,84629,excluded_birth_year
 84630,dog2024-084630,84630,retained
 84631,dog2024-084631,84631,retained
 84632,dog2024-084632,84632,retained
@@ -99938,7 +99938,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 99937,dog2024-099937,99937,retained
 99938,dog2024-099938,99938,retained
 99939,dog2024-099939,99939,retained
-99940,dog2024-099940,99940,retained
+99940,dog2024-099940,99940,excluded_birth_year
 99941,dog2024-099941,99941,retained
 99942,dog2024-099942,99942,retained
 99943,dog2024-099943,99943,retained
@@ -100961,7 +100961,7 @@ source_row_id,estimated_dog_id,retained_source_row_id,record_status
 100960,dog2024-100960,100960,retained
 100961,dog2024-100961,100961,retained
 100962,dog2024-100962,100962,retained
-100963,dog2024-100963,100963,retained
+100963,dog2024-100963,100963,excluded_birth_year
 100964,dog2024-100964,100964,retained
 100965,dog2024-100965,100965,retained
 100966,dog2024-100966,100966,retained

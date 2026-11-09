@@ -8,3 +8,5 @@ estimated_dog,birth_year_suspect,42
 estimated_dog,zipcode_padded,40
 estimated_dog,compound_name,275
 estimated_dog,latest_issue_ties,773
+estimated_dog,excluded_birth_year,36
+named_license_record,excluded_birth_year,39

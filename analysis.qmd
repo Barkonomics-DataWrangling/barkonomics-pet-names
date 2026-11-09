@@ -57,7 +57,7 @@ dogs |>
 ```
 
 ## Compare counting units
-Compare the proportion of matching names when each dog counts once with the proportion when each license counts once. `across()` repeats the same calculation for every name flag.
+Compare the proportion of matching names when each dog counts once with the proportion when each license counts once. Both calculations use the same eligible dogs after missing-name and birth-year exclusions. `across()` repeats the same calculation for every name flag.
 ```{r}
 #| label: compare-counting-units
 dogs |>

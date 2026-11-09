@@ -99,6 +99,14 @@ source_licenses |>
     )
   ) |>
   mutate(
+    expected_birth_year_has_four_digits = str_detect(expected_birth_year, "^[0-9]{4}$"),
+    expected_birth_year_number = as.integer(expected_birth_year)
+  ) |>
+  mutate(expected_birth_year_in_range = between(expected_birth_year_number, 1990, 2024)) |>
+  mutate(birth_year_usable = expected_birth_year_has_four_digits & expected_birth_year_in_range) |>
+  mutate(expected_birth_year_exclusion = !source_name_missing & !birth_year_usable) |>
+  mutate(
+    birth_year_exclusion_agrees = (record_status == "excluded_birth_year") == expected_birth_year_exclusion,
     five_fields_agree = name == normalized_source_name & sex == animalgender &
       birth_year == expected_birth_year & breed == breedname & zipcode == normalized_source_zip
   ) ->
@@ -107,6 +115,24 @@ source_licenses |>
 mapped_licenses |>
   filter(!source_name_missing) ->
   named_licenses
+
+named_licenses |>
+  filter(birth_year_usable) ->
+  included_licenses
+
+named_licenses |>
+  filter(!birth_year_usable) ->
+  excluded_birth_year_licenses
+
+included_licenses |>
+  pull(estimated_dog_id) |>
+  unique() ->
+  expected_dog_ids
+
+excluded_birth_year_licenses |>
+  distinct(estimated_dog_id) |>
+  nrow() ->
+  excluded_birth_year_dog_count
 
 mapped_licenses |>
   filter(source_name_missing) ->
@@ -122,7 +148,7 @@ No source license should outrank its retained representative under the documente
 
 ```{r}
 #| label: check-representative-selection-and-group-sizes
-named_licenses |>
+included_licenses |>
   mutate(
     later_issue = source_issue_date > license_issue_date,
     same_issue = source_issue_date == license_issue_date,
@@ -139,7 +165,7 @@ dog_handoff |>
   dog_group_sizes
 
 license_audit |>
-  filter(!is.na(estimated_dog_id)) |>
+  filter(is.element(record_status, c("retained", "consolidated"))) |>
   count(estimated_dog_id, name = "actual_license_count") |>
   left_join(dog_group_sizes, by = "estimated_dog_id", relationship = "one-to-one") |>
   mutate(counts_agree = actual_license_count == license_record_count) ->
@@ -181,11 +207,11 @@ ssa_decades |>
   count(decade, name = "name_count") ->
   top100_counts
 
-named_licenses |>
+included_licenses |>
   filter(animalname == "BABY") ->
   baby_licenses
 
-named_licenses |>
+included_licenses |>
   filter(breedname == "Unknown") ->
   unknown_breed_licenses
 
@@ -199,8 +225,11 @@ stage_counts <- tribble(
   "source_license_records", nrow(source_licenses),
   "missing_name_records", nrow(missing_licenses),
   "named_license_records", nrow(named_licenses),
+  "included_license_records", nrow(included_licenses),
+  "excluded_birth_year_license_records", nrow(excluded_birth_year_licenses),
+  "excluded_birth_year_dogs", excluded_birth_year_dog_count,
   "dogs_after_ssa_join", nrow(dog_handoff),
-  "consolidated_license_records", nrow(named_licenses) - nrow(dog_handoff),
+  "consolidated_license_records", nrow(included_licenses) - nrow(dog_handoff),
   "license_audit_rows", nrow(license_audit),
   "ssa_name_decade_rows", nrow(ssa_decades),
   "ssa_reference_names", nrow(ssa_reference),
@@ -243,16 +272,20 @@ checks <- tribble(
   nrow(missing_licenses) == 5810 && all(missing_licenses$record_status == "missing_name"),
   "all named rows assigned",
   !anyNA(named_licenses$estimated_dog_id),
+  "audit birth-year exclusions agree with source years and approved corrections",
+  all(mapped_licenses$birth_year_exclusion_agrees),
+  "dog CSV contains exactly the eligible estimated dogs",
+  setequal(expected_dog_ids, dog_handoff$estimated_dog_id),
   "one retained row per estimated dog",
   nrow(retained_licenses) == nrow(dog_handoff) && !anyDuplicated(retained_licenses$estimated_dog_id),
   "retained IDs agree with dog CSV",
   setequal(retained_licenses$source_row_id, dog_handoff$source_row_id),
   "group sizes reconcile",
-  all(group_counts$counts_agree) && sum(dog_handoff$license_record_count) == nrow(named_licenses),
+  all(group_counts$counts_agree) && sum(dog_handoff$license_record_count) == nrow(included_licenses),
   "latest license and deterministic ties",
   !any(license_selection$outranks_retained),
   "all five key fields agree",
-  all(named_licenses$five_fields_agree),
+  all(included_licenses$five_fields_agree),
   "ZIP codes are five-character text",
   is.character(dog_handoff$zipcode) && all(str_detect(dog_handoff$zipcode, "^[0-9]{5}$")),
   "source missingness reconciles by ZIP",
@@ -268,8 +301,8 @@ checks <- tribble(
   any(dog_handoff$ssa_recognized) && any(!dog_handoff$ssa_recognized) && !anyNA(saved_name_flags),
   "BABY source records retained",
   nrow(baby_licenses) == 120 && !anyNA(baby_licenses$estimated_dog_id),
-  "unknown-breed licenses retained",
-  nrow(unknown_breed_licenses) == 8287 && !anyNA(unknown_breed_licenses$estimated_dog_id)
+  "unknown-breed licenses with usable birth years retained",
+  all(is.element(unknown_breed_licenses$estimated_dog_id, dog_handoff$estimated_dog_id))
 )
 write_csv(checks, "data/derived/validation_checks.csv")
 print(checks, n = Inf)
