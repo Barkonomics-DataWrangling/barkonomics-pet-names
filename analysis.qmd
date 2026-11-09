@@ -137,12 +137,44 @@ dogs_with_comparison_status |>
 dogs_with_comparison_status |>
   filter(income_comparison_status == "included") |>
   select(-income_comparison_status, -lookup_state, -post_office) ->
-  dogs_for_income_comparison
+  dogs_in_selected_areas
 
 income_comparison_counts
 ```
 
 This retains 92,547 estimated dogs, including 364 with incomes reported as $250,000+. The other 380 are recorded in the exclusion table. An outside-city ZIP does not tell us whether the owner moved, has another residence, or supplied a different address. These exclusions limit which dogs our findings describe.
+
+## Group neighborhoods by income
+Use four bands of area median household income: under $50,000, $50,000–99,999, $100,000–149,999 and $150,000+. An estimate exactly on a boundary enters the higher band. Handle open-ended amounts first so the $250,000+ cases remain in the highest group despite having no exact numeric estimate. These bands describe areas, not individual owners' incomes or social classes.
+
+The labels below define their display order. `factor()` keeps that order when grouping or plotting, rather than sorting the labels alphabetically.
+```{r}
+#| label: assign-income-groups
+income_group_labels <- c(
+  "Under $50,000", "$50,000–99,999", "$100,000–149,999", "$150,000+"
+)
+
+dogs_in_selected_areas |>
+  mutate(
+    income_group = case_when(
+      income_status == "top_coded" ~ "$150,000+",
+      income_status == "bottom_coded" ~ "Under $50,000",
+      median_household_income < 50000 ~ "Under $50,000",
+      median_household_income < 100000 ~ "$50,000–99,999",
+      median_household_income < 150000 ~ "$100,000–149,999",
+      TRUE ~ "$150,000+"
+    )
+  ) |>
+  mutate(income_group = factor(income_group, levels = income_group_labels)) ->
+  dogs_for_income_comparison
+
+dogs_for_income_comparison |>
+  group_by(income_group) |>
+  summarise(dogs = n(), neighborhoods = n_distinct(zcta), .groups = "drop") ->
+  income_group_counts
+
+income_group_counts
+```
 
 ## Compare counting units
 Compare the proportion of matching names when each dog counts once with the proportion when each license counts once. Both calculations use the same selected NYC-area dogs with income information. `across()` repeats the same calculation for every name flag.
@@ -176,10 +208,11 @@ write_csv(dogs, "data/derived/dogs_2024.csv", na = "")
 write_csv(dogs_for_income_comparison, "data/derived/dogs_income_2024.csv", na = "")
 write_csv(income_exclusions, "data/derived/income_exclusions.csv", na = "")
 write_csv(income_comparison_counts, "data/derived/income_comparison_counts.csv", na = "")
+write_csv(income_group_counts, "data/derived/income_group_counts.csv", na = "")
 write_csv(matching_comparison, "data/derived/matching_by_counting_unit.csv", na = "")
 ```
 
 ## Compare neighborhoods
-The next step is to choose the income-group boundaries and compare names and baby-name decades between those groups. Put the $250,000+ areas in an open-ended highest group. Aggregate by ZCTA when comparing areas so ZIPs sharing one Census area are not treated as separate neighborhoods. Missing-name records have their own ZIP summary for checking whether missingness differs by area.
+The next decision is how to combine neighborhoods within each income group: count every dog equally, or calculate each ZCTA's naming proportions and give each area equal weight. Both use estimated dogs rather than license counts; they answer questions about dogs and about typical neighborhoods respectively. Missing-name records have their own ZIP summary for checking whether missingness differs by area.
 
 Neighborhood income describes the area associated with the recorded owner's ZIP. A generational pattern could be consistent with diffusion, but this comparison alone cannot establish its direction or cause. The current results above describe the selected NYC-area dogs as a whole; differences between income groups have not yet been calculated.

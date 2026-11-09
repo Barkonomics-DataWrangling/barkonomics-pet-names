@@ -24,6 +24,7 @@ The five-field group key uses `name`, `sex`, the recorded `birth_year`, `breed` 
 
 | Column | Type | Meaning |
 | --- | --- | --- |
+| `income_group` | Text | Area median household income band: `Under $50,000`, `$50,000–99,999`, `$100,000–149,999` or `$150,000+`. An exact boundary value belongs to the higher band; `top_coded` belongs to `$150,000+`. R uses this low-to-high display order. |
 | `zcta` | Text | Five-character Census area code from the ZIP crosswalk. Several ZIPs may share one area. |
 | `median_household_income` | Number or missing | ACS median household income in dollars when an ordinary estimate is available. Empty for an open-ended amount; consult `income_status`. |
 | `income_margin_of_error` | Number or missing | Published ACS margin of error in dollars where available. |
@@ -36,6 +37,7 @@ The input lookup preserves Shweta's source values, including reporting codes suc
 | File | Row unit and key | Purpose |
 | --- | --- | --- |
 | [dogs_income_2024.csv](derived/dogs_income_2024.csv) | One selected estimated dog | Dog/name fields plus income for the 92,547 dogs in the NYC comparison. |
+| [income_group_counts.csv](derived/income_group_counts.csv) | One income group | Estimated-dog count and distinct-ZCTA neighborhood count in each of the four selected bands; totals are 92,547 dogs and 190 neighborhoods. |
 | [income_exclusions.csv](derived/income_exclusions.csv) | One excluded estimated dog; `estimated_dog_id` unique | Source row, name, ZIP, available lookup details and exclusion reason for each of the 380 dogs omitted from income comparisons. |
 | [income_comparison_counts.csv](derived/income_comparison_counts.csv) | One inclusion/exclusion status | Counts included dogs and each exclusion reason, totaling the 92,927 prepared dogs. |
 | [dogs_prepared_2024.csv](derived/dogs_prepared_2024.csv) | One estimated dog | Prepared dog fields before baby-name matching. |
