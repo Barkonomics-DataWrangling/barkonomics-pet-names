@@ -292,7 +292,97 @@ overall_recognition |>
 overall_recognition_plot
 ```
 
-Recognition rises across the four income groups: 78.1%, 79.8%, 80.6% and 82.1%. The highest-minus-lowest difference is 4.1 percentage points before rounding. Most dogs in every group match the broad reference. The larger relative differences in the older top-100 lists suggest looking next at which actual names contribute to those differences; the charts alone do not show why owners chose them.
+Recognition rises across the four income groups: 78.1%, 79.8%, 80.6% and 82.1%. The highest-minus-lowest difference, calculated from the unrounded shares, is 4.1 percentage points. Most dogs in every group match the broad reference. The individual-name comparisons below show which names contribute to the differences; the charts alone do not show why owners chose them.
+
+## Look at the actual dog names
+Count names within each income group and divide by all dogs in that group. Rank by the count, breaking ties alphabetically. This lets us compare common names without letting the larger groups dominate through their raw counts.
+```{r}
+#| label: count-dog-names-by-income
+dogs_for_income_comparison |>
+  count(income_group, name, name = "dogs_with_name") |>
+  left_join(income_group_counts, by = "income_group") |>
+  mutate(share = dogs_with_name / dogs) |>
+  group_by(income_group) |>
+  arrange(desc(dogs_with_name), name, .by_group = TRUE, .locale = "C") |>
+  mutate(rank = row_number()) |>
+  ungroup() ->
+  dog_names_by_income
+
+dog_names_by_income |>
+  filter(rank <= 10) |>
+  select(income_group, rank, name, dogs_with_name, share)
+```
+
+LUNA is the most common name in every income group. CHARLIE ranks ninth in the lowest group and second in the highest. Many names are shared across groups; the comparison concerns differences in frequency, not separate sets of names.
+
+## Find names contributing to the decade differences
+Compare the highest and lowest income groups name by name. A positive difference means the name is more common in the highest group. Multiply the difference in shares by 100 to express it in percentage points. If a name occurs in only one group, `values_fill = 0` supplies zero for the other group.
+```{r}
+#| label: compare-individual-name-shares
+dog_names_by_income |>
+  filter(income_group == "Under $50,000" | income_group == "$150,000+") |>
+  mutate(comparison_group = if_else(
+    income_group == "Under $50,000", "lowest_income_share", "highest_income_share"
+  )) |>
+  select(name, comparison_group, share) |>
+  pivot_wider(names_from = comparison_group, values_from = share, values_fill = 0) |>
+  mutate(difference_percentage_points = 100 * (highest_income_share - lowest_income_share)) ->
+  name_share_differences
+
+ssa_name_flags |>
+  select(name, starts_with("top100_")) |>
+  pivot_longer(cols = starts_with("top100_"), names_to = "name_measure", values_to = "in_top100") |>
+  filter(in_top100) |>
+  select(-in_top100) ->
+  top_names_by_decade
+
+name_share_differences |>
+  inner_join(top_names_by_decade, by = "name") |>
+  arrange(name_measure, desc(difference_percentage_points), name, .locale = "C") ->
+  decade_name_contributions
+```
+
+Each name appears once for each decade it matches. Adding all its decade's positive and negative contributions gives that decade's highest-minus-lowest group difference. Keep contributions for all 14 decades; display the five largest positive contributions for the 1880s and 1920s as examples from the chart.
+```{r}
+#| label: inspect-older-name-contributions
+decade_name_contributions |>
+  filter(name_measure == "top100_1880" | name_measure == "top100_1920") |>
+  group_by(name_measure) |>
+  slice_head(n = 5) |>
+  ungroup()
+```
+
+DAISY, HENRY, STELLA, GEORGE and LUCY together account for about 41% of the 1880s gap. HENRY, GEORGE, RUBY, HARRY and BETTY account for about 42% of the 1920s gap. Neither gap comes from a single name. The same name can contribute to several decades: HENRY is also in the 2010s top 100. A match to an old list does not establish that the name is exclusively old-fashioned or that an owner took it from that era.
+
+## Look across neighborhoods
+Calculate the same shares separately within each Census area. This shows whether the pooled income-group results describe every neighborhood or conceal variation. The main charts still count every dog equally; this table does not replace them with equal-neighborhood weighting.
+```{r}
+#| label: compare-name-matches-by-neighborhood
+dogs_for_income_comparison |>
+  group_by(income_group, zcta) |>
+  summarise(dogs = n(), across(all_of(name_flags), sum), .groups = "drop") |>
+  pivot_longer(cols = all_of(name_flags), names_to = "name_measure", values_to = "matching_dogs") |>
+  mutate(share = matching_dogs / dogs) ->
+  name_matches_by_neighborhood
+
+name_matches_by_neighborhood |>
+  filter(name_measure == "top100_1880" | name_measure == "top100_1920") |>
+  group_by(name_measure, income_group) |>
+  summarise(
+    neighborhoods = n(),
+    median_neighborhood_share = median(share),
+    .groups = "drop"
+  )
+```
+
+The median describes the middle neighborhood's share, rather than the pooled share of dogs. It rises across the four income bands for both displayed decades. For the 1880s it is 3.0%, 4.3%, 5.3% and 6.7%; for the 1920s it is 1.6%, 2.1%, 2.5% and 4.1%. Neighborhoods still overlap: area income does not determine an individual dog's name. Small areas can also have unstable percentages when only a few dogs contribute.
+
+## What this first pass establishes
+In this selected 2024 licensed-dog sample, neighborhood income is associated with naming differences. The oldest top-100 comparison is about twice as common in the highest income group, but the absolute gap is about 3.6 dogs per 100: 7.03% compared with 3.45%. Most dogs in both groups do not match that list.
+
+Overall recognition is broader than a judgment that a name sounds human. For example, ROCKY, LUCKY and BUDDY all occur in the SSA reference. The four-percentage-point recognition gap therefore measures overlap with published baby names, not owners' intentions.
+
+The charts cannot choose between diffusion, continuing use of classic names, revivals, or other differences between neighborhoods. We have no parents' income data, no record of how owners chose names, and no history of when each name became a dog name. The observed associations are descriptive; they do not establish a causal effect, statistical significance, or a pattern covering unlicensed dogs. The next review concerns whether the code and explanations make these measured comparisons clear and whether the collaborators agree on their use.
 
 ## Save the charts
 Save a PNG copy of each chart in `figures` for review without rendering HTML. `dir.create()` makes that output folder if it does not already exist.
@@ -313,4 +403,7 @@ write_csv(income_comparison_counts, "data/derived/income_comparison_counts.csv",
 write_csv(income_group_counts, "data/derived/income_group_counts.csv", na = "")
 write_csv(matching_comparison, "data/derived/matching_by_counting_unit.csv", na = "")
 write_csv(name_matches_by_income, "data/derived/name_matches_by_income.csv", na = "")
+write_csv(dog_names_by_income, "data/derived/dog_names_by_income.csv", na = "")
+write_csv(decade_name_contributions, "data/derived/decade_name_contributions.csv", na = "")
+write_csv(name_matches_by_neighborhood, "data/derived/name_matches_by_neighborhood.csv", na = "")
 ```
