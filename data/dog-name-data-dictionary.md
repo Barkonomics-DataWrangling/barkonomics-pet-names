@@ -1,6 +1,6 @@
 # Dog-name data dictionary
 The primary file is [dogs_2024.csv](derived/dogs_2024.csv), one row per eligible named estimated dog under the five-field rule: 92,921 dogs after early exclusion of missing names and unusable birth years. Read ZIP codes and birth years as text. Empty fields in the audit represent missing links for excluded records; use `na = ""` when importing the saved outputs.
-The notebook keeps dogs_raw unchanged, renames the working fields once, and records cleaning details before replacing name and ZIP formatting. source_row_id links every retained dog or excluded license to its recorded values. The exported dog tables do not contain duplicate original_ fields.
+The notebook reads the six missing-name labels as missing values, renames the working fields once, and records compound names before changing their formatting. ZIP strings stay as recorded. source_row_id links every retained dog or excluded license to its original values in the unchanged source CSV. The exported dog tables do not contain duplicate original_ fields.
 ## Dog columns
 | Column | Type | Meaning |
 | --- | --- | --- |
@@ -11,7 +11,7 @@ The notebook keeps dogs_raw unchanged, renames the working fields once, and reco
 | `sex` | Text | Recorded dog sex (`F` or `M` in this snapshot). Dog sex does not constrain SSA name matching. |
 | `birth_year` | Text | Recorded birth year, with no inferred replacements. Only four-digit years from 1990–2024 enter grouping and export. |
 | `breed` | Text | Recorded breed, including `Unknown`; no breed-alias consolidation. |
-| `zipcode` | Text | Five-character ZIP representation: digit-only source values of up to five digits are left-padded with zeros. This is not confirmation of valid NYC geography. |
+| `zipcode` | Text | Recorded ZIP string, without added zeros. The selected NYC comparison contains only five-digit ZIPs; the broader prepared table also retains 40 short ZIP strings outside that comparison. |
 | `license_issue_date` | Date | Issue date of the retained license, `YYYY-MM-DD`. |
 | `license_expiry_date` | Date | Expiry date of the retained license, `YYYY-MM-DD`. |
 | `license_record_count` | Integer | Number of named source license records assigned to this estimated dog. |
@@ -45,8 +45,7 @@ The input lookup preserves Shweta's source values, including reporting codes suc
 | [ssa_name_decades.csv](derived/ssa_name_decades.csv) | One observed name/decade; `(name, decade)` unique | Long version showing aggregation, ranking and the input to the wide reference. |
 | [license_to_dog.csv](derived/license_to_dog.csv) | One raw license record; `source_row_id` unique | Usable records link to their estimated dog and retained row as `retained` or `consolidated`. The 5,810 missing-name licenses have `missing_name`; the 45 named licenses with unusable years have `excluded_birth_year`. Both excluded categories have empty dog IDs and retained-source IDs because they do not enter grouping. |
 | [excluded_birth_year_licenses.csv](derived/excluded_birth_year_licenses.csv) | One excluded named license; `source_row_id` unique; 45 rows | Short column names with the unmodified recorded values, including name, birth year, ZIP and date text. These rows do not enter formatting or dog grouping. |
-| [missing_names_by_zip.csv](derived/missing_names_by_zip.csv) | One extract/ZIP | Counts all source license records, missing-name records, named records and missing-name share. These are record counts, not dog counts. |
-| [missing_name_labels.csv](derived/missing_name_labels.csv) | One missing label | `name` contains the excluded source label; `source_license_records` counts its licenses. All six labels have the same exclusion treatment. |
+| [missing_names_by_zip.csv](derived/missing_names_by_zip.csv) | One extract/recorded ZIP | Counts all source license records, missing-name records, named records and missing-name share. Combines the six labels `UNKNOWN`, `NAME NOT PROVIDED`, `NONE`, `NA`, `.`, and `NONAME`. These are record counts, not dog counts. |
 | [quality_flags.csv](derived/quality_flags.csv) | One unit/measure | Counts formatting and breed findings among usable licenses and estimated dogs, plus dogs with tied latest issue dates. `excluded_birth_year` separately counts the 45 named licenses removed before grouping. |
 | [name_matches_by_income.csv](derived/name_matches_by_income.csv) | One income group/name measure; 60 rows | `matching_dogs` counts matches once per estimated dog; `dogs` is the full selected dog count in that income group; `neighborhoods` counts distinct ZCTAs; `share = matching_dogs / dogs`. Measures are overall SSA recognition and 14 overlapping decade flags. |
 | [dog_names_by_income.csv](derived/dog_names_by_income.csv) | One observed name/income group; 24,864 rows | `dogs_with_name` counts estimated dogs with the name; `dogs` and `neighborhoods` are full income-band totals; `share = dogs_with_name / dogs`. `rank` orders descending name counts, breaking ties alphabetically. Names absent from a band have no row. |
@@ -66,7 +65,6 @@ The cleaning report contains these measures; their per-record fields are not exp
 | --- | --- |
 | `breed_unknown` | Breed is `Unknown` or blank, ignoring case and outer whitespace. |
 | `excluded_birth_year` | Named licenses whose recorded years are not four digits within 1990–2024: 45 licenses excluded before grouping. The independent stage-count check finds 42 distinct five-field keys among them. |
-| `zipcode_padded` | ZIP gained leading zeros during preparation. Five digits do not establish a geographic match. |
 | `compound_name` | Recorded name contains internal whitespace or an internal ASCII hyphen. For estimated dogs, this uses the retained license. |
 | `latest_issue_ties` | Number of estimated dogs with multiple licenses sharing their latest issue date. The expiry-date and source-row sorting resolves the tie. This measure is reported only at dog level. |
 

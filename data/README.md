@@ -11,7 +11,9 @@ The files were extracted byte for byte from the official national archive downlo
 
 The baby-name notebook reads the 140 annual files for 1880–2019 directly. All rankings and overall name recognition use those 14 complete decades.
 
-The character vector `missing_name_labels` beside the missing-name step in [dog-names.qmd](../dog-names.qmd#count-and-exclude-missing-names) contains the six agreed labels. Count their occurrences overall and by ZIP, then exclude those licenses before formatting names and dates or adding quality flags. `BABY` remains a name.
+The character vector `missing_name_labels` beside the import in [dog-names.qmd](../dog-names.qmd#read-the-license-records) contains the six agreed labels: `UNKNOWN`, `NAME NOT PROVIDED`, `NONE`, `NA`, `.`, and `NONAME`. The import reads all six as missing values. Report one combined missing-name count overall and by recorded ZIP, then exclude those licenses before formatting names and dates or adding report fields. `BABY` remains a name; the source CSV retains the original labels.
+
+Keep ZIP strings as recorded. All selected NYC dogs already have five-digit ZIPs. The 40 named licenses with short ZIPs fall outside the selected comparison, so preparation does not pad them with zeros.
 
 Count and exclude named licenses whose recorded birth year is not a four-digit year from 1990–2024 before formatting or grouping. This removes 45 licenses, which form 42 distinct five-field keys in the independent check, and leaves 92,921 estimated dogs representing 100,119 named licenses. The [excluded-license report](derived/excluded_birth_year_licenses.csv) preserves the 45 recorded rows under short column names. The audit retains all 105,974 source rows; missing names and unusable years have their source row and reason but no dog IDs because they do not enter grouping.
 
@@ -35,6 +37,6 @@ quarto render analysis.qmd
 - [Birth-year inference reference](../birth-year-inferences.qmd) displays six considered corrections and their original join operation without writing prepared outputs. It is optional and not part of the preparation sequence.
 - [Checks](../dog-names-checks.qmd) independently reads the sources and outputs to check the saved result.
 
-The notebooks need Quarto and the R packages tidyverse, knitr and rmarkdown. Their shared preview and ZIP-formatting functions live in [helpers.R](../helpers.R). The [data dictionary](dog-name-data-dictionary.md) defines the output fields. Aslan used Codex for assistance with implementation and checks.
+The notebooks need Quarto and the R packages tidyverse, knitr and rmarkdown. Their shared table preview function lives in [helpers.R](../helpers.R). The [data dictionary](dog-name-data-dictionary.md) defines the output fields. Aslan used Codex for assistance with implementation and checks.
 
 Keep the generated CSVs with this contribution for review and offline use. Regenerate the checks after changing a processing result. The [spike](../docs/active-spikes/dog-baby-name-data.md) records decisions and work history.

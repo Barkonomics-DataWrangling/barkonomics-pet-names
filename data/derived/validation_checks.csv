@@ -13,7 +13,7 @@ retained IDs agree with dog CSV,TRUE
 group sizes reconcile,TRUE
 latest license and deterministic ties,TRUE
 all five key fields agree,TRUE
-ZIP codes are five-character text,TRUE
+selected NYC ZIPs are five-character text,TRUE
 source missingness reconciles by ZIP,TRUE
 reference names unique,TRUE
 100 names in each selected decade,TRUE

@@ -19,19 +19,25 @@ source("helpers.R")
 ```
 
 ## Read the license records
-Read the supplied fields as text. A ZIP code's leading zero is part of its identifier, and recorded birth years need to be inspected before treating them as numbers. `na = character()` preserves the supplied text so our missing-name list can count and remove all six labels, including the text `NA`.
+Read the fields as text so ZIPs remain identifiers and recorded birth years can be inspected before conversion. The source uses six labels for missing names. `na = missing_name_labels` reads all six as R missing values; they receive the same treatment, while `BABY` remains a name. The saved source CSV retains the recorded labels.
+
+Keep ZIP strings as supplied. In this snapshot, all dogs selected for the NYC income comparison already have five-digit ZIPs. The 40 named-license records with short ZIPs are outside that comparison, so restoring their zeros would not change the selected dogs.
 ```{r}
 #| label: read-license-records
+missing_name_labels <- c(
+  "UNKNOWN", "NAME NOT PROVIDED", "NONE", "NA", ".", "NONAME"
+)
+
 sources <- read_csv("data/sources.csv", show_col_types = FALSE)
 dogs_raw <- read_csv(
   "data/raw/nyc-dogs-2024.csv",
   col_types = cols(.default = col_character()),
-  na = character(), trim_ws = FALSE
+  na = missing_name_labels, trim_ws = FALSE
 )
 ```
 
 ## Give the license fields clear names
-Rename once to the working names. The `dogs_raw` table and saved source remain unchanged. The source row number lets us find each recorded license after filtering and grouping.
+Rename once to the working names. The source row number lets us find each recorded license in the saved CSV after filtering and grouping.
 ```{r}
 #| label: name-license-columns
 dogs_raw |>
@@ -51,31 +57,20 @@ licenses |>
 ```
 
 ## Count and exclude missing names
-These six recorded values mean the name is missing. `BABY` remains a name. `is.element()` checks each recorded name against this list and saves the TRUE/FALSE answers in source-row order.
+The six source labels have already become missing values during import. `is.na()` answers TRUE for a missing name and FALSE for a recorded name. Keep those answers in source-row order for counting and filtering.
 ```{r}
-#| label: report-missing-names
-missing_name_labels <- c(
-  "UNKNOWN", "NAME NOT PROVIDED", "NONE", "NA", ".", "NONAME"
-)
-
+#| label: identify-missing-names
 licenses |>
   pull(name) |>
-  is.element(missing_name_labels) ->
+  is.na() ->
   name_missing
-
-licenses |>
-  filter(name_missing) |>
-  count(name, name = "source_license_records", sort = TRUE) ->
-  missing_name_counts
-
-missing_name_counts
 ```
 
-Report missing names by ZIP before excluding them. The temporary `name_missing` column is used only for this summary. `sum()` counts TRUE answers; dividing by all licenses in the ZIP gives the missing-name share. Format ZIPs consistently so records for the same ZIP are counted together.
+Report missing names by ZIP before excluding them. The temporary `name_missing` column is used only for this summary. `sum()` counts TRUE answers; dividing by all licenses in the ZIP gives the missing-name share. ZIPs are grouped using their recorded text.
 ```{r}
 #| label: summarize-missingness-by-zip
 licenses |>
-  mutate(name_missing = name_missing, zipcode = format_zipcodes(zipcode)) |>
+  mutate(name_missing = name_missing) |>
   group_by(extract_year, zipcode) |>
   summarise(
     source_license_records = n(),
@@ -125,7 +120,7 @@ named_licenses |>
 This excludes 45 named licenses before name formatting, date conversion or dog grouping. Together with the 5,810 missing-name exclusions, it leaves 100,119 licenses for preparation.
 
 ## Record the remaining cleaning details
-Identify compound names before removing their separators, and short ZIP strings before padding them. These report fields do not cause exclusions or appear in the exported dog tables. Unknown breeds remain as recorded. There are no missing ZIPs in this snapshot, so there is no missing-ZIP filter.
+Identify compound names before removing their separators, and record unknown breeds for the cleaning report. These report fields do not cause exclusions or appear in the exported dog tables. Unknown breeds remain as recorded. There are no missing ZIPs in this snapshot, so there is no missing-ZIP filter.
 ```{r}
 #| label: prepare-cleaning-report-fields
 usable_licenses |>
@@ -133,7 +128,6 @@ usable_licenses |>
   mutate(breed_label = str_to_upper(breed_label)) |>
   mutate(
     compound_name = str_detect(name, "\\S\\s+\\S|[^\\s-]-[^\\s-]"),
-    zipcode_padded = str_length(zipcode) < 5,
     breed_unknown = is.element(breed_label, c("", "UNKNOWN"))
   ) |>
   select(-breed_label) ->
@@ -150,20 +144,11 @@ licenses_for_formatting |>
   licenses_with_matching_names
 ```
 
-## Format ZIP codes
-Restore leading zeros so ZIPs have the five-character spelling used by a ZIP lookup. For example, `7024` and `07024` are different text keys; padding lets the former match the latter when that ZIP is present in the lookup. The short ZIPs in this snapshot fall outside our selected NYC income comparison, so this formatting does not change which dogs enter that comparison.
-```{r}
-#| label: format-zipcodes
-licenses_with_matching_names |>
-  mutate(zipcode = format_zipcodes(zipcode)) ->
-  licenses_with_zipcodes
-```
-
 ## Read license dates
 The source dates include a time. Take the first ten characters, such as `2024-05-30`, and read them as dates so we can sort the licenses.
 ```{r}
 #| label: read-license-dates
-licenses_with_zipcodes |>
+licenses_with_matching_names |>
   mutate(
     license_issue_date = str_sub(license_issue_date, 1, 10),
     license_expiry_date = str_sub(license_expiry_date, 1, 10)
@@ -252,7 +237,7 @@ licenses |>
 ```
 
 ## Cleaning summary
-Missing-name counts describe all source licenses. Formatting and breed findings describe the usable licenses and their estimated dogs. The birth-year exclusion count describes the 45 named licenses removed before grouping. The separate exclusion CSV preserves their recorded fields for inspection.
+The source uses six labels for missing names: `UNKNOWN`, `NAME NOT PROVIDED`, `NONE`, `NA`, `.`, and `NONAME`. The report combines them into one missing-name count across all source licenses and also reports missingness by recorded ZIP; it does not distinguish which label was used. Formatting and breed findings describe the usable licenses and their estimated dogs. The birth-year exclusion count describes the 45 named licenses removed before grouping. The separate exclusion CSV preserves their recorded fields for inspection.
 ```{r}
 #| label: summarize-cleaning
 missing_by_zip |>
@@ -262,7 +247,7 @@ missing_by_zip |>
     missing_name_share = missing_name_records / source_license_records
   )
 
-quality_flags <- c("breed_unknown", "zipcode_padded", "compound_name")
+quality_flags <- c("breed_unknown", "compound_name")
 licenses_with_dates |>
   summarise(across(all_of(quality_flags), sum)) |>
   mutate(unit = "named_license_record") ->
@@ -300,7 +285,6 @@ dir.create("data/derived", showWarnings = FALSE)
 write_csv(dogs_prepared, "data/derived/dogs_prepared_2024.csv", na = "")
 write_csv(license_audit, "data/derived/license_to_dog.csv", na = "")
 write_csv(missing_by_zip, "data/derived/missing_names_by_zip.csv", na = "")
-write_csv(missing_name_counts, "data/derived/missing_name_labels.csv", na = "")
 write_csv(excluded_birth_year_licenses, "data/derived/excluded_birth_year_licenses.csv", na = "")
 write_csv(quality_summary, "data/derived/quality_flags.csv", na = "")
 ```

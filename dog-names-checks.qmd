@@ -92,7 +92,6 @@ source_licenses |>
   mutate(
     source_name_missing = is.element(animalname, expected_missing_name_labels),
     normalized_source_name = str_to_upper(animalname, locale = "en"),
-    normalized_source_zip = str_pad(zipcode_source, width = 5, pad = "0"),
     source_issue_date = str_sub(licenseissueddate, 1, 10),
     source_expiry_date = str_sub(licenseexpireddate, 1, 10)
   ) |>
@@ -112,7 +111,7 @@ source_licenses |>
   mutate(
     birth_year_exclusion_agrees = (record_status == "excluded_birth_year") == expected_birth_year_exclusion,
     five_fields_agree = name == normalized_source_name & sex == animalgender &
-      birth_year == expected_birth_year & breed == breedname & zipcode == normalized_source_zip
+      birth_year == expected_birth_year & breed == breedname & zipcode == zipcode_source
   ) ->
   mapped_licenses
 
@@ -134,7 +133,7 @@ included_licenses |>
   expected_dog_ids
 
 excluded_birth_year_licenses |>
-  distinct(normalized_source_name, animalgender, animalbirth, breedname, normalized_source_zip) |>
+  distinct(normalized_source_name, animalgender, animalbirth, breedname, zipcode_source) |>
   nrow() ->
   excluded_birth_year_dog_count
 
@@ -335,8 +334,8 @@ checks <- tribble(
   !any(license_selection$outranks_retained),
   "all five key fields agree",
   all(included_licenses$five_fields_agree),
-  "ZIP codes are five-character text",
-  is.character(dog_handoff$zipcode) && all(str_detect(dog_handoff$zipcode, "^[0-9]{5}$")),
+  "selected NYC ZIPs are five-character text",
+  is.character(income_dogs$zipcode) && all(str_detect(income_dogs$zipcode, "^[0-9]{5}$")),
   "source missingness reconciles by ZIP",
   sum(missing_by_zip$source_license_records) == nrow(source_licenses) &&
     sum(missing_by_zip$missing_name_records) == nrow(missing_licenses),
