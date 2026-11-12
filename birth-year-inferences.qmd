@@ -1,6 +1,5 @@
 ---
 title: "Reference: six birth-year inferences"
-format: html
 execute:
   echo: true
   message: false
