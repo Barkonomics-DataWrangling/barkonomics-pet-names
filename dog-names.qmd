@@ -1,17 +1,4 @@
----
-title: "Prepare NYC dog names"
-execute:
-  echo: true
-  message: false
----
-
 Count and exclude licenses with missing names or unusable birth years, then prepare one row per estimated dog from the 2024 NYC licenses.
-
-## Packages and helpers
-```{r}
-library(tidyverse)
-source("helpers.R")
-```
 
 ## Read the license records
 Read the fields as text so ZIPs remain identifiers and recorded birth years can be inspected before conversion. The source uses six labels for missing names. `na = missing_name_labels` reads all six as R missing values so they receive the same treatment. The saved source CSV retains the recorded labels.
@@ -86,6 +73,9 @@ licenses |>
   arrange(zipcode) ->
   missing_by_zip
 
+missing_by_zip |>
+  preview()
+
 licenses |>
   filter(!name_missing) ->
   named_licenses
@@ -94,10 +84,10 @@ licenses |>
 ## Count and exclude unusable birth years
 Keep recorded years from 1990 through 2024. `1990:2024` makes that sequence, and `as.character()` writes the years as text to match the imported column. Membership in this list also requires the four-digit spelling. Count the rejected years, preserve those licenses in an exclusion report, and continue with the usable records.
 
-The optional [birth-year inference reference](birth-year-inferences.qmd) preserves six considered corrections and the operation that applied them. Exclusion gives us one consistent rule without guessing a birth year.
+The optional [birth-year inference reference](appendices/birth-year-inferences.qmd) preserves six considered corrections and the operation that applied them. Exclusion gives us one consistent rule without guessing a birth year.
 ```{r}
 #| label: exclude-unusable-birth-years
-# Count and exclude records with unusable birth years. Keeping the six inferred corrections would change any existing chart share by at most 0.007 percentage points; see birth-year-inferences.qmd.
+# Count and exclude records with unusable birth years. Keeping the six inferred corrections would change any existing chart share by at most 0.007 percentage points; see appendices/birth-year-inferences.qmd.
 usable_birth_years <- as.character(1990:2024)
 
 named_licenses |>
@@ -123,7 +113,7 @@ named_licenses |>
 This excludes 45 named licenses before name formatting, date conversion or dog grouping. Together with the 5,810 missing-name exclusions, it leaves 100,119 licenses for preparation.
 
 ## Record the remaining cleaning details
-Identify compound names before removing their separators, and record unknown breeds for the cleaning report. These report fields do not cause exclusions or appear in the exported dog tables. Unknown breeds remain as recorded. There are no missing ZIPs in this snapshot, so there is no missing-ZIP filter.
+Identify compound names before removing their separators, and record unknown breeds for the cleaning report. These report fields do not cause exclusions or appear in the dog table used for comparisons. Unknown breeds remain as recorded. There are no missing ZIPs in this snapshot, so there is no missing-ZIP filter.
 ```{r}
 #| label: prepare-cleaning-report-fields
 usable_licenses |>
@@ -172,7 +162,6 @@ licenses_with_dates |>
 We treat licenses with the same full name after formatting, sex, birth year, breed and ZIP as one estimated dog. Within each group, sort the newest issue date first. A tie goes to the later expiry date, then to the earlier source row. `slice_head(n = 1)` keeps the first license in each sorted group. `license_record_count` records how many licenses that row represents. For example, the two matching TOTORO licenses were issued in 2019 and 2024. The 2024 row represents both.
 ```{r}
 #| label: estimate-individual-dogs
-dog_key <- c("name", "sex", "birth_year", "breed", "zipcode")
 licenses_with_dates |>
   group_by(name, sex, birth_year, breed, zipcode) |>
   mutate(
@@ -208,39 +197,8 @@ dogs_estimated |>
   dogs_prepared
 ```
 
-## Trace source records to dogs
-Map the usable licenses to their retained dog row. Keep every source row in the audit, including the early exclusions. Excluded licenses have their source row and reason, but no dog ID because they do not enter grouping.
-```{r}
-#| label: trace-source-records-to-dogs
-dogs_prepared |>
-  select(all_of(dog_key), estimated_dog_id, retained_source_row_id = source_row_id) ->
-  dog_identity_lookup
-
-licenses_with_dates |>
-  left_join(dog_identity_lookup, by = dog_key) |>
-  select(source_row_id, estimated_dog_id, retained_source_row_id) ->
-  usable_license_mapping
-
-excluded_birth_year_licenses |>
-  pull(source_row_id) ->
-  excluded_birth_year_source_rows
-
-licenses |>
-  select(source_row_id) |>
-  left_join(usable_license_mapping, by = "source_row_id") |>
-  mutate(
-    record_status = case_when(
-      is.element(source_row_id, excluded_birth_year_source_rows) ~ "excluded_birth_year",
-      is.na(estimated_dog_id) ~ "missing_name",
-      source_row_id == retained_source_row_id ~ "retained",
-      TRUE ~ "consolidated"
-    )
-  ) ->
-  license_audit
-```
-
 ## Cleaning summary
-The source uses six labels for missing names: `UNKNOWN`, `NAME NOT PROVIDED`, `NONE`, `NA`, `.`, and `NONAME`. The report combines them into one missing-name count across all source licenses and also reports missingness by recorded ZIP; it does not distinguish which label was used. Formatting and breed findings describe the usable licenses and their estimated dogs. The birth-year exclusion count describes the 45 named licenses removed before grouping. The separate exclusion CSV preserves their recorded fields for inspection.
+The source uses six labels for missing names: `UNKNOWN`, `NAME NOT PROVIDED`, `NONE`, `NA`, `.`, and `NONAME`. The report combines them into one missing-name count across all source licenses and also reports missingness by recorded ZIP; it does not distinguish which label was used. Formatting and breed findings describe the usable licenses and their estimated dogs. The birth-year exclusion count describes the 45 named licenses removed before grouping. The excluded_birth_year_licenses table keeps their recorded fields available during the session.
 ```{r}
 #| label: summarize-cleaning
 missing_by_zip |>
@@ -278,18 +236,6 @@ license_quality_counts |>
   quality_summary
 
 quality_summary
-```
-
-## Save the prepared dogs
-```{r}
-#| label: save-dogs
-# Create the folder for these tables if needed.
-dir.create("data/derived", showWarnings = FALSE)
-write_csv(dogs_prepared, "data/derived/dogs_prepared_2024.csv", na = "")
-write_csv(license_audit, "data/derived/license_to_dog.csv", na = "")
-write_csv(missing_by_zip, "data/derived/missing_names_by_zip.csv", na = "")
-write_csv(excluded_birth_year_licenses, "data/derived/excluded_birth_year_licenses.csv", na = "")
-write_csv(quality_summary, "data/derived/quality_flags.csv", na = "")
 ```
 
 Different dogs can share all five identifying fields. A change in a dog's recorded details can also split its licenses into several groups. These are estimates of individual dogs.

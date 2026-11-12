@@ -24,7 +24,7 @@ These are inferences, not verified birth dates. The source row identifies the sp
 library(tidyverse)
 
 birth_year_corrections <- read_csv(
-  "data/lookups/birth_year_corrections.csv",
+  "appendices/birth_year_corrections.csv",
   col_types = cols(.default = col_character(), source_row_id = col_integer())
 )
 dogs_raw <- read_csv(

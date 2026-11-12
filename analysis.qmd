@@ -20,17 +20,19 @@ library(tidyverse)
 source("helpers.R")
 ```
 
-## Read the prepared tables
+# Prepare dog names
+
+{{< include dog-names.qmd >}}
+
+# Prepare baby names
+
+{{< include baby-names.qmd >}}
+
+# Compare names and neighborhood income
+## Read the temporary income input
+The income lookup is a temporary snapshot reproduced from Shweta's [unmerged PR #9](https://github.com/Barkonomics-DataWrangling/barkonomics-pet-names/pull/9), at commit `eb7ecc0`. Her script was run separately using the official HRSA crosswalk and ACS 2024 income data. The dog and baby-name preparation above runs directly from the saved sources; the income preparation still needs to be integrated before this becomes the complete submission pipeline.
 ```{r}
-#| label: read-prepared-tables
-dogs_prepared <- read_csv(
-  "data/derived/dogs_prepared_2024.csv", na = "",
-  col_types = cols(
-    zipcode = col_character(),
-    birth_year = col_character(), .default = col_guess()
-  )
-)
-ssa_reference <- read_csv("data/derived/ssa_name_reference.csv", na = "", show_col_types = FALSE)
+#| label: read-income-inputs
 zip_income <- read_csv(
   "data/lookups/zip_zcta_income_ny_acs2024.csv", na = "",
   col_types = cols(zip_code = col_character(), zcta = col_character(), .default = col_guess())
@@ -383,27 +385,3 @@ In this selected 2024 licensed-dog sample, neighborhood income is associated wit
 Overall recognition is broader than a judgment that a name sounds human. For example, ROCKY, LUCKY and BUDDY all occur in the SSA reference. The four-percentage-point recognition gap therefore measures overlap with published baby names, not owners' intentions.
 
 The charts cannot choose between diffusion, continuing use of classic names, revivals, or other differences between neighborhoods. We have no parents' income data, no record of how owners chose names, and no history of when each name became a dog name. The observed associations are descriptive; they do not establish a causal effect, statistical significance, or a pattern covering unlicensed dogs. The next review concerns whether the code and explanations make these measured comparisons clear and whether the collaborators agree on their use.
-
-## Save the charts
-Save a PNG copy of each chart in `figures` for review without rendering HTML. `dir.create()` makes that output folder if it does not already exist.
-```{r}
-#| label: save-name-comparison-charts
-dir.create("figures", showWarnings = FALSE)
-ggsave("figures/baby-name-decades-by-income.png", plot = decade_comparison_plot, width = 12, height = 7, dpi = 180, bg = "white")
-ggsave("figures/baby-name-recognition-by-income.png", plot = overall_recognition_plot, width = 10, height = 6, dpi = 180, bg = "white")
-```
-
-## Save the matched dogs and comparisons
-```{r}
-#| label: save-matched-dogs
-write_csv(dogs, "data/derived/dogs_2024.csv", na = "")
-write_csv(dogs_for_income_comparison, "data/derived/dogs_income_2024.csv", na = "")
-write_csv(income_exclusions, "data/derived/income_exclusions.csv", na = "")
-write_csv(income_comparison_counts, "data/derived/income_comparison_counts.csv", na = "")
-write_csv(income_group_counts, "data/derived/income_group_counts.csv", na = "")
-write_csv(matching_comparison, "data/derived/matching_by_counting_unit.csv", na = "")
-write_csv(name_matches_by_income, "data/derived/name_matches_by_income.csv", na = "")
-write_csv(dog_names_by_income, "data/derived/dog_names_by_income.csv", na = "")
-write_csv(decade_name_contributions, "data/derived/decade_name_contributions.csv", na = "")
-write_csv(name_matches_by_neighborhood, "data/derived/name_matches_by_neighborhood.csv", na = "")
-```
