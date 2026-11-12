@@ -37,7 +37,7 @@ dogs_raw <- read_csv(
 ```
 
 ## Give the license fields clear names
-Rename once to the working names. The source row number lets us find each recorded license in the saved CSV after filtering and grouping.
+Give the city's columns clear working names. This changes the headings without changing their values.
 ```{r}
 #| label: name-license-columns
 dogs_raw |>
@@ -48,7 +48,15 @@ dogs_raw |>
     breed = breedname,
     license_issue_date = licenseissueddate,
     license_expiry_date = licenseexpireddate
-  ) |>
+  ) ->
+  licenses_renamed
+```
+
+## Number the source records
+Number the licenses before filtering or sorting. `source_row_id` lets us find each recorded license in the saved CSV after later transformations. `row_number()` assigns 1, 2, 3 and so on in the current row order.
+```{r}
+#| label: number-source-records
+licenses_renamed |>
   mutate(source_row_id = row_number()) ->
   licenses
 
