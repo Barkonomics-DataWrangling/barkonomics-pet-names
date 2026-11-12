@@ -19,7 +19,7 @@ source("helpers.R")
 ```
 
 ## Read the license records
-Read the fields as text so ZIPs remain identifiers and recorded birth years can be inspected before conversion. The source uses six labels for missing names. `na = missing_name_labels` reads all six as R missing values; they receive the same treatment, while `BABY` remains a name. The saved source CSV retains the recorded labels.
+Read the fields as text so ZIPs remain identifiers and recorded birth years can be inspected before conversion. The source uses six labels for missing names. `na = missing_name_labels` reads all six as R missing values so they receive the same treatment. The saved source CSV retains the recorded labels.
 
 Keep ZIP strings as supplied. In this snapshot, all dogs selected for the NYC income comparison already have five-digit ZIPs. The 40 named-license records with short ZIPs are outside that comparison, so restoring their zeros would not change the selected dogs.
 ```{r}
