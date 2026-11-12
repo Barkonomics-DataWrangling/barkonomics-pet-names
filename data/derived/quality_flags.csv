@@ -1,12 +1,9 @@
 unit,flag,count
-named_license_record,breed_unknown,8287
-named_license_record,birth_year_suspect,45
+named_license_record,breed_unknown,8284
 named_license_record,zipcode_padded,40
 named_license_record,compound_name,299
-estimated_dog,breed_unknown,7732
-estimated_dog,birth_year_suspect,42
+estimated_dog,breed_unknown,7729
 estimated_dog,zipcode_padded,40
 estimated_dog,compound_name,275
 estimated_dog,latest_issue_ties,773
-estimated_dog,excluded_birth_year,36
-named_license_record,excluded_birth_year,39
+named_license_record,excluded_birth_year,45

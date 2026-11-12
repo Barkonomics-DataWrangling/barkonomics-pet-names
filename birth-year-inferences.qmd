@@ -1,0 +1,73 @@
+---
+title: "Reference: six birth-year inferences"
+format: html
+execute:
+  echo: true
+  message: false
+---
+
+This optional notebook preserves six considered birth-year replacements and the lookup operation that applied them. The main preparation excludes these records under the same year rule as all other licenses. Running this reference only displays a comparison; it does not write or change any prepared tables.
+
+## The six proposed replacements
+These are inferences, not verified birth dates. The source row identifies the specific license. HONEY and BROWNIE are separate dogs.
+
+| Source row | Name | Recorded year | Inferred year | Basis considered |
+| --- | --- | --- | --- | --- |
+| 61720 | ROCKY | 223 | 2023 | Matching name, Poodle breed and sex on another license with a compatible year. |
+| 62878 | SIMBA | 222 | 2022 | Matching name, Miniature Poodle breed and sex on another license with a compatible year. |
+| 63559 | BILLIE | 202 | 2020 | Matching name, Pit Bull breed and sex on another license with a compatible year. |
+| 99337 | MILO | 204 | 2024 | Matching name, Havanese Crossbreed and sex on another license with a compatible year. |
+| 101787 | BROWNIE | 1022 | 2022 | Likely first-digit typo; shares HONEY's recorded error, breed, ZIP and license dates. Weaker evidence than a same-named counterpart. |
+| 102214 | HONEY | 1022 | 2022 | Matching name, Yorkshire Terrier breed and sex on another license recorded as 2022. |
+
+## Read the lookup and source
+```{r}
+library(tidyverse)
+
+birth_year_corrections <- read_csv(
+  "data/lookups/birth_year_corrections.csv",
+  col_types = cols(.default = col_character(), source_row_id = col_integer())
+)
+dogs_raw <- read_csv(
+  "data/raw/nyc-dogs-2024.csv",
+  col_types = cols(.default = col_character()),
+  na = character(), trim_ws = FALSE
+)
+```
+
+## Select the reviewed examples
+Each reviewed record represented one license and one estimated dog in the earlier grouping. This small example uses those six source rows. It does not search for new corrections or merge dogs across ZIPs.
+```{r}
+birth_year_corrections |>
+  pull(source_row_id) ->
+  reviewed_source_rows
+
+dogs_raw |>
+  mutate(source_row_id = row_number()) |>
+  filter(is.element(source_row_id, reviewed_source_rows)) |>
+  select(source_row_id, name = animalname, breed = breedname, sex = animalgender, birth_year = animalbirth, zipcode) ->
+  dogs
+```
+
+## Preserved correction operation
+The join requires the source row, name, breed, sex and recorded birth year to agree with the lookup. A missing lookup result leaves the recorded year unchanged. In the earlier preparation this operation followed grouping, so it could not change which licenses belonged to a dog.
+```{r}
+birth_year_corrections
+
+dogs |>
+  left_join(
+    birth_year_corrections,
+    by = c("source_row_id", "name", "breed", "sex", "birth_year" = "original_birth_year")
+  ) |>
+  mutate(has_birth_year_correction = !is.na(inferred_birth_year)) |>
+  mutate(birth_year = if_else(has_birth_year_correction, inferred_birth_year, birth_year)) |>
+  select(-inferred_birth_year, -has_birth_year_correction) ->
+  dogs_with_year_corrections
+
+dogs_with_year_corrections
+```
+
+## Why the main preparation excludes these records
+A single exclusion rule is easier to explain than six uncertain exceptions. On the fixed 2024 snapshot, excluding these six additional dogs changes the prepared dog count from 92,927 to 92,921 and the selected income-comparison count from 92,547 to 92,541. Across the 60 income-group/name measures, the largest absolute change is 0.006989 percentage points, about 0.007. It is the lowest-income group's overall recognition share: 78.075207% with the inferences versus 78.068218% without them.
+
+That comparison describes the consequence of the cleaning choice; preserving a particular statistical outcome is not the reason for the choice. The main notebook uses the uniform rule and reports the exclusions. The inference lookup remains available here as a reference.

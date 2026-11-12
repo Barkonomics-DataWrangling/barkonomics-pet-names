@@ -79,7 +79,7 @@ dog_handoff |>
 ```
 
 ## Compare source and saved identities
-Trace every source license to its representative and compare the five identifying fields, allowing the explicitly approved birth-year inferences. State the expected replacements here independently of the preparation lookup.
+Trace usable source licenses to their representatives and compare the five identifying fields. Check early exclusions against the recorded birth year without applying inferred corrections.
 
 ```{r}
 #| label: compare-source-and-saved-identities
@@ -101,17 +101,7 @@ source_licenses |>
     source_issue_date = as.Date(source_issue_date),
     source_expiry_date = as.Date(source_expiry_date)
   ) |>
-  mutate(
-    expected_birth_year = case_when(
-      source_row_id == 61720 ~ "2023",
-      source_row_id == 62878 ~ "2022",
-      source_row_id == 63559 ~ "2020",
-      source_row_id == 99337 ~ "2024",
-      source_row_id == 101787 ~ "2022",
-      source_row_id == 102214 ~ "2022",
-      .default = animalbirth
-    )
-  ) |>
+  mutate(expected_birth_year = animalbirth) |>
   mutate(
     expected_birth_year_has_four_digits = str_detect(expected_birth_year, "^[0-9]{4}$"),
     expected_birth_year_number = as.integer(expected_birth_year)
@@ -144,7 +134,7 @@ included_licenses |>
   expected_dog_ids
 
 excluded_birth_year_licenses |>
-  distinct(estimated_dog_id) |>
+  distinct(normalized_source_name, animalgender, animalbirth, breedname, normalized_source_zip) |>
   nrow() ->
   excluded_birth_year_dog_count
 
@@ -324,12 +314,14 @@ checks <- tribble(
   "five-field dog keys unique",
   !anyDuplicated(dog_handoff[c("name", "sex", "birth_year", "breed", "zipcode")]),
   "source names classified before normalization",
-  all(is.na(mapped_licenses$estimated_dog_id) == mapped_licenses$source_name_missing),
+  all((mapped_licenses$record_status == "missing_name") == mapped_licenses$source_name_missing),
   "5810 missing-name records excluded only from name analysis",
   nrow(missing_licenses) == 5810 && all(missing_licenses$record_status == "missing_name"),
-  "all named rows assigned",
-  !anyNA(named_licenses$estimated_dog_id),
-  "audit birth-year exclusions agree with source years and approved corrections",
+  "only usable named rows assigned to dogs",
+  !anyNA(included_licenses$estimated_dog_id) &&
+    all(is.na(excluded_birth_year_licenses$estimated_dog_id)) &&
+    all(is.na(excluded_birth_year_licenses$retained_source_row_id)),
+  "audit birth-year exclusions agree with recorded source years",
   all(mapped_licenses$birth_year_exclusion_agrees),
   "dog CSV contains exactly the eligible estimated dogs",
   setequal(expected_dog_ids, dog_handoff$estimated_dog_id),

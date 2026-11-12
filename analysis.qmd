@@ -142,7 +142,7 @@ dogs_with_comparison_status |>
 income_comparison_counts
 ```
 
-This retains 92,547 estimated dogs, including 364 with incomes reported as $250,000+. The other 380 are recorded in the exclusion table. An outside-city ZIP does not tell us whether the owner moved, has another residence, or supplied a different address. These exclusions limit which dogs our findings describe.
+This retains 92,541 estimated dogs, including 364 with incomes reported as $250,000+. The other 380 are recorded in the exclusion table. An outside-city ZIP does not tell us whether the owner moved, has another residence, or supplied a different address. These exclusions limit which dogs our findings describe.
 
 ## Group neighborhoods by income
 Use four bands of area median household income: under $50,000, $50,000–99,999, $100,000–149,999 and $150,000+. An estimate exactly on a boundary enters the higher band. Handle open-ended amounts first so the $250,000+ cases remain in the highest group despite having no exact numeric estimate. These bands describe areas, not individual owners' incomes or social classes.
@@ -244,7 +244,7 @@ decade_matches |>
     subtitle = "Share of dogs matching each decade's U.S. top 100 baby names",
     x = "Baby-name decade (starting year)", y = "Share of dogs in the income group",
     color = "Area median household income", linetype = "Area median household income",
-    caption = "2024 NYC-area licenses | 92,547 estimated dogs | Each dog counts equally.\nA dog can match several decades; these percentages do not add to 100%."
+    caption = "2024 NYC-area licenses | 92,541 estimated dogs | Each dog counts equally.\nA dog can match several decades; these percentages do not add to 100%."
   ) +
   theme_minimal(base_size = 13) +
   theme(
@@ -280,7 +280,7 @@ overall_recognition |>
     title = "Most dogs have a name found in the baby-name reference",
     subtitle = "Share matching any published U.S. baby name from 1880–2019",
     x = "Area median household income", y = "Share of dogs in the income group",
-    caption = "2024 NYC-area licenses | 92,547 estimated dogs | Each dog counts equally.\nThis includes uncommon baby names, not only the top 100."
+    caption = "2024 NYC-area licenses | 92,541 estimated dogs | Each dog counts equally.\nThis includes uncommon baby names, not only the top 100."
   ) +
   theme_minimal(base_size = 13) +
   theme(
