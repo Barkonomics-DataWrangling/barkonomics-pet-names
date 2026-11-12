@@ -15,7 +15,7 @@ Prepare one row per estimated dog from the 2024 NYC licenses. Keep the recorded 
 ## Packages and helpers
 ```{r}
 library(tidyverse)
-source("R/helpers.R")
+source("helpers.R")
 ```
 
 ## From licenses to estimated dogs

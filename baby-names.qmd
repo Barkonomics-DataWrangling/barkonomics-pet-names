@@ -15,7 +15,7 @@ Which names were popular in each generation? We use U.S. birth counts for the 14
 ## Packages and helpers
 ```{r}
 library(tidyverse)
-source("R/helpers.R")
+source("helpers.R")
 ```
 
 ## Read the annual files

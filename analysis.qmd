@@ -17,7 +17,7 @@ The motivating idea is that names might move between social groups and eventuall
 ## Packages and helpers
 ```{r}
 library(tidyverse)
-source("R/helpers.R")
+source("helpers.R")
 ```
 
 ## Read the prepared tables

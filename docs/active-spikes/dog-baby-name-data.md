@@ -1,13 +1,13 @@
 ---
 attention: live
-reviewed: 2026-11-09
+reviewed: 2026-11-12
 tags: [barkonomics, dog-data, baby-names, r]
 ---
 # Dog and baby-name data
 ## Purpose and ownership
 Prepare Aslan's dog-license and SSA baby-name portion under [issue #1](https://github.com/Barkonomics-DataWrangling/barkonomics-pet-names/issues/1), starting in R. This spike belongs to the agent working in the current planning conversation. [Tasks and evidence](dog-baby-name-data.todo.md) track execution. Shweta owns income and ZIP–ZCTA preparation under [issue #2](https://github.com/Barkonomics-DataWrangling/barkonomics-pet-names/issues/2); shared research definitions and the integration contract remain joint decisions.
 
-Aslan authorized completing the first handoff after selecting the research and cleaning rules, including retaining recorded identifying attributes and reporting preparation findings separately. The R contribution uses simple, explainable course techniques for his individual interview. The user requires branch-based work, spike records, and eventual publication through an issue-linked PR that makes changes, review and acceptance inspectable to Shweta. The [three notebooks](../../data/README.md#generate-and-check-the-handoff) contain the implementation, with checks in a separate notebook; issue #1 and its eventual PR own coordination and review. This does not establish that Shweta has reviewed or accepted any choices.
+Aslan authorized completing the first handoff after selecting the research and cleaning rules, including retaining recorded identifying attributes and reporting preparation findings separately. The R contribution uses simple, explainable course techniques for his individual interview. The assignment prioritizes demonstrating data cleaning and preparation; finding a statistical association is not required. The user requires branch-based work, spike records, and eventual publication through an issue-linked PR that makes changes, review and acceptance inspectable to Shweta. The [three notebooks](../../data/README.md#generate-and-check-the-handoff) contain the implementation, with checks in a separate notebook; issue #1 and its eventual PR own coordination and review. This does not establish that Shweta has reviewed or accepted any choices.
 ## Research frame
 Ask whether dog names differ across higher- and lower-income NYC neighborhoods, and whether their names match different baby-name decades. Diffusion between socioeconomic groups and eventually to dog names is the motivating hypothesis. The available national baby-name counts and 2024 dog licenses can describe generational associations. They do not identify a historical sequence of naming by household income.
 
@@ -31,7 +31,7 @@ dog-names.qmd        # Prepare estimated dogs.
 baby-names.qmd       # Prepare baby-name decades.
 analysis.qmd         # Match names and compare areas.
 dog-names-checks.qmd # Independently check saved results.
-R/helpers.R         # Shared table preview function.
+helpers.R           # Shared table preview and ZIP-formatting functions.
 ```
 
 Keep fixed source snapshots and generated results in Git. The dog CSV is 11,139,556 bytes. All 146 annual SSA text files and the source readme are saved directly in data/raw/ssa/, totaling 28,255,978 bytes. Analysis reads those files directly. Acquisition details are in the data README and source inventory.
@@ -299,3 +299,12 @@ LUNA ranks first in all four groups. CHARLIE ranks ninth in the lowest band and 
 Neighborhood median shares increase across the four bands for the 1880s (2.99%, 4.29%, 5.28%, 6.73%) and 1920s (1.58%, 2.14%, 2.48%, 4.06%). Neighborhoods overlap and a few have very small dog counts. A separate one-area-at-a-time omission inspection leaves the 1880s share between 3.15% and 3.53% in the lowest band and between 6.97% and 7.11% in the highest; corresponding 1920s ranges are 1.53%–1.88% and 4.15%–4.26%. This rules out any single neighborhood accounting for those pooled differences; it is not a significance test and does not adjust for other neighborhood characteristics.
 
 The broad SSA measure also recognizes ROCKY, LUCKY and BUDDY. Its 4.07-percentage-point income-band gap is an overlap measure, not a classification of human-sounding names or owners' intentions. The record supports descriptive naming differences associated with neighborhood income. It does not distinguish diffusion from continuing use of classic names, revivals or other neighborhood differences; no causal explanation has been adopted. The descriptive R pass is ready for Aslan's readability walkthrough and shared review; course synonym handling and cross-language implementations remain outside this completed pass.
+
+## Preparation walkthrough — November 12
+Aslan requested moving helpers.R to the repository root and questioned the need for import missing-value handling, intermediate original_ columns, ZIP preparation and the six bespoke birth-year corrections. The helper move and simplified ZIP formatter preserve results. All 105,974 source ZIP values contain one to five digits, so the formatter can directly pad to five characters without a separate validity test. There are no blank or missing-marker ZIPs. Short ZIP strings occur in 56 raw licenses and 40 named licenses; all 40 named cases are outside the selected income-comparison cohort.
+
+The source has 423 dog-name cells containing the text NA. read_csv's default converts those to R missing values before the six-label membership check, so simply deleting na = character() would change exclusion behavior. Preserving the supplied text lets one agreed label list count and remove all 5,810 missing-name records. An alternative could convert all six labels during import and count missing values, but would lose the per-label breakdown unless separately retained. No import rule changed during this inspection.
+
+A single rename directly to short working column names could replace the original_-then-short naming sequence. Raw values would remain in dogs_raw and the saved source, linked by source_row_id. Report fields that require an unmodified name or ZIP could be computed before replacing those values. This remains a proposed simplification while the walkthrough discusses its structure.
+
+Removing the six inferred birth-year replacements would exclude ROCKY, SIMBA, BILLIE, MILO, BROWNIE and HONEY under the existing year rule. Each represents one license. Total year exclusions would be 42 estimated dogs and 45 named licenses, leaving 92,921 prepared dogs and 92,541 income-comparison dogs. Across all 60 income-group/name measures, the largest absolute share change is 0.006989 percentage points, for overall recognition in the lowest income band. Removing these bespoke inferences is the recommended simplification; no recorded year, selection rule or analysis output changed in this inspection. The main reason is a uniform, explainable cleaning rule, rather than preservation of a particular statistical result.

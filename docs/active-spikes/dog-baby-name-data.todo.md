@@ -1,6 +1,6 @@
 ---
 attention: live
-reviewed: 2026-11-09
+reviewed: 2026-11-12
 tags: [barkonomics, dog-data, baby-names, r]
 ---
 # Dog and baby-name data tasks
@@ -19,6 +19,7 @@ The [dog notebook](../../dog-names.qmd) on `aslan/dog-name-review` prepares 92,9
 - Aslan: walk through the named R transformations and inspect original-to-retained examples using the lineage CSV. Confirm the explanation is comfortable for the interview; the automated checks do not establish human understanding.
 - Shweta: review the CSV interface and the shared assumptions, confirm ZIP–ZCTA/income column names, and record acceptance or requested changes through issue #1 and the eventual PR. The conceptual spike holds the unpublished issue/PR preparation; no message or review request has been sent.
 ## Done
+- November 12. Moved helpers.R to the repository root and updated all three notebook imports and current documentation links. Simplified ZIP formatting to direct zero-padding after verifying every source ZIP is a one-to-five-digit string. The complete dog preparation and independent comparison confirm unchanged helper behavior on the source data and unchanged saved outputs. Inspected missing-value import behavior and quantified dropping the six birth-year inferences; those selection and column-naming changes remain proposals for the walkthrough.
 - November 9. Completed the authorized descriptive follow-up with 24,864 observed name/income-group rows, 1,153 name/decade gap contributions and 2,850 neighborhood/measure rows. Independently verified every count, rank, share and contribution, reconciled all 14 gaps, and confirmed all 18 existing CSVs and both charts remain unchanged. The largest five name contributions explain about 41%–42% of the two displayed old-decade gaps; no single neighborhood accounts for them. Preserved distinctions among observed association, effect size and untested explanations. No inferential model or new research rule was introduced.
 - November 9. Added separate decade and overall-recognition charts using ggplot2 in the analysis notebook, with consistent income colors, percentages, zero-based axes and equal dog weights. Saved PNG copies without rendering HTML. Executed all analysis chunks, visually inspected both charts, and confirmed every derived CSV remains byte-identical to the prior checkpoint. No causal or diffusion inference is adopted.
 - November 9. Applied Aslan's approval of equal weight per estimated dog within each income band. Saved the 60 income-group/name-measure counts and shares, using all selected dogs in the band as denominator and preserving overlapping decade memberships. Explained the difference between historical name popularity and wealthy parents' naming choices. Existing 28 checks pass; an independent calculation verifies every numerator, denominator and share. Input and existing output tables remain unchanged.
