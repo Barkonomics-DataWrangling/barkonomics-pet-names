@@ -47,37 +47,30 @@ licenses |>
 ```
 
 ## Count and exclude missing names
-The six source labels have already become missing values during import. `is.na()` answers TRUE for a missing name and FALSE for a recorded name. Keep those answers in source-row order for counting and filtering.
-```{r}
-#| label: identify-missing-names
-licenses |>
-  pull(name) |>
-  is.na() ->
-  name_missing
-```
-
-Report missing names by ZIP before excluding them. The temporary `name_missing` column is used only for this summary. `sum()` counts TRUE answers; dividing by all licenses in the ZIP gives the missing-name share. ZIPs are grouped using their recorded text.
+The six source labels have already become missing values during import. For the report, `is.na(name)` marks each missing name TRUE and each recorded name FALSE. Group by the recorded ZIP, count all licenses with `n()`, and count the TRUE answers with `sum()`. Dividing the missing-name count by all licenses in the ZIP gives the missing-name share. The temporary `name_missing` column is used only inside this report pipeline.
 ```{r}
 #| label: summarize-missingness-by-zip
 licenses |>
-  mutate(name_missing = name_missing) |>
-  group_by(extract_year, zipcode) |>
+  mutate(name_missing = is.na(name)) |>
+  group_by(zipcode) |>
   summarise(
     source_license_records = n(),
-    missing_name_records = sum(name_missing),
-    named_license_records = source_license_records - missing_name_records,
-    missing_name_share = missing_name_records / source_license_records,
-    .groups = "drop"
+    missing_name_records = sum(name_missing)
   ) |>
-  mutate(extract_year = as.integer(extract_year)) |>
-  arrange(zipcode) ->
+  mutate(
+    missing_name_share = missing_name_records / source_license_records
+  ) ->
   missing_by_zip
 
 missing_by_zip |>
   preview()
+```
 
+Keep licenses with recorded names for the remaining preparation. `drop_na(name)` removes rows whose name is missing.
+```{r}
+#| label: exclude-missing-names
 licenses |>
-  filter(!name_missing) ->
+  drop_na(name) ->
   named_licenses
 ```
 

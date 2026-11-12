@@ -29,7 +29,7 @@ The five-field group key uses `name`, `sex`, the recorded `birth_year`, `breed` 
 | ssa_reference | One formatted name | Recognition and 14 decade measures; each dog joins to at most one row. |
 | ssa_cutoffs | One decade | Names and birth counts at ranks 100 and 101. |
 | excluded_birth_year_licenses | One excluded named license | The 45 recorded rows with unusable years. |
-| missing_by_zip | One extract/recorded ZIP | License counts and missing-name shares, combining the six agreed labels. |
+| missing_by_zip | One recorded ZIP | Source-license counts, missing-name counts and missing-name shares for the 2024 extract, combining the six agreed labels. |
 | quality_summary | One unit/measure | Counts of unknown breeds, compound names, excluded years and tied latest licenses. |
 
 The cleaning report contains these measures; their per-record fields are left out of the comparison tables.
