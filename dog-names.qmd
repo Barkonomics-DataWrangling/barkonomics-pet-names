@@ -3,7 +3,7 @@ Count and exclude licenses with missing names or unusable birth years, then prep
 ## Read the license records
 Read the fields as text so ZIPs remain identifiers and recorded birth years can be inspected before conversion. The source uses six labels for missing names. `na = missing_name_labels` reads all six as R missing values so they receive the same treatment. The saved source CSV retains the recorded labels.
 
-Keep ZIP strings as supplied. In this snapshot, all dogs selected for the NYC income comparison already have five-digit ZIPs. The 40 named-license records with short ZIPs are outside that comparison, so restoring their zeros would not change the selected dogs.
+Keep ZIP strings as supplied. Geographic matching belongs to the later income work.
 ```{r}
 #| label: read-license-records
 missing_name_labels <- c(
@@ -87,7 +87,7 @@ Keep recorded years from 1990 through 2024. `1990:2024` makes that sequence, and
 The optional [birth-year inference reference](appendices/birth-year-inferences.qmd) preserves six considered corrections and the operation that applied them. Exclusion gives us one consistent rule without guessing a birth year.
 ```{r}
 #| label: exclude-unusable-birth-years
-# Count and exclude records with unusable birth years. Keeping the six inferred corrections would change any existing chart share by at most 0.007 percentage points; see appendices/birth-year-inferences.qmd.
+# Count and exclude records with unusable birth years. The six considered corrections are preserved for reference in appendices/birth-year-inferences.qmd.
 usable_birth_years <- as.character(1990:2024)
 
 named_licenses |>
