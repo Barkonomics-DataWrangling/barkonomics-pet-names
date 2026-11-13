@@ -1,4 +1,4 @@
-Which names were popular in each generation? We use U.S. birth counts for the 14 complete decades from 1880–2019.
+Which names were popular in each generation? We use published U.S. birth counts for the 14 complete decades from 1880–2019.
 
 ## Read the annual files
 Each annual file has a name, sex and birth count. Build the filenames for 1880–2019, then combine those files with `read_csv()`. Keep the source filename so we can identify each row’s year.
@@ -36,7 +36,7 @@ ssa_raw |>
 ```
 
 ## Count names in each decade
-Add births across all years and both sex categories. This measures how many babies received each name during the period.
+Add the published birth counts across all years and both sex categories. These counts cover the births represented in the SSA files, with the suppression and historical coverage limits described below.
 ```{r}
 #| label: count-baby-names
 ssa_yearly |>
@@ -65,9 +65,10 @@ A name may belong to the top 100 in several decades. Put those results in separa
 ```{r}
 #| label: make-baby-name-reference
 ssa_decades |>
+  select(name, decade, top100) |>
   pivot_wider(
-    names_from = decade, values_from = c(births, share, rank, top100),
-    values_fill = list(births = 0, share = 0, top100 = FALSE)
+    names_from = decade, values_from = top100,
+    names_prefix = "top100_", values_fill = FALSE
   ) |>
   mutate(ssa_recognized = TRUE) |>
   arrange(name, .locale = "C") ->
@@ -79,6 +80,7 @@ Compare the birth counts for the last name inside each top 100 and the first nam
 
 ```{r}
 #| label: inspect-the-top-100-cutoff
+# DECISION: Keep this cutoff comparison in the final report, or leave it as a development inspection.
 ssa_decades |>
   filter(rank %in% c(100L, 101L)) |>
   select(decade, rank, name, births) |>

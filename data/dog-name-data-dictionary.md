@@ -10,7 +10,7 @@ The notebook reads the six missing-name labels as missing values, gives fields c
 | `extract_year` | Integer | Selected NYC extract, 2024; not necessarily the license issue year. |
 | `name` | Text | Full name uppercased with spaces and hyphens removed; no first-token, nickname or title substitution. |
 | `sex` | Text | Recorded dog sex (`F` or `M` in this snapshot). Dog sex does not constrain SSA name matching. |
-| `birth_year` | Text | Recorded birth year, with no inferred replacements. Only four-digit years from 1990–2024 enter grouping. |
+| `birth_year` | Text | Recorded birth year, with no inferred replacements. The current range is 1990–2024; its lower limit is provisional. Only matching four-digit years enter grouping. |
 | `breed` | Text | Recorded breed, including `Unknown`; no breed-alias consolidation. |
 | `zipcode` | Text | Recorded ZIP string, without added zeros or a geographic lookup. |
 | `license_issue_date` | Date | Issue date of the retained license, `YYYY-MM-DD`. |
@@ -26,7 +26,7 @@ The five-field group key uses `name`, `sex`, the recorded `birth_year`, `breed` 
 | dogs_prepared | One estimated dog | Cleaned fields before baby-name matching. |
 | dogs | One estimated dog | Dog fields plus SSA recognition and decade matches. |
 | ssa_decades | One name/decade | Combined birth counts, ranks and shares before making a wide reference. |
-| ssa_reference | One formatted name | Recognition and 14 decade measures; each dog joins to at most one row. |
+| ssa_reference | One formatted name | Recognition and 14 top-100 decade flags; each dog joins to at most one row. |
 | ssa_cutoffs | One decade | Names and birth counts at ranks 100 and 101. |
 | excluded_birth_year_licenses | One excluded named license | The 45 recorded rows with unusable years. |
 | missing_by_zip | One recorded ZIP | Source-license counts, missing-name counts and missing-name shares for the 2024 extract, combining the six agreed labels. |
@@ -41,4 +41,4 @@ The cleaning report contains these measures; their per-record fields are left ou
 | `compound_name` | Recorded name contains internal whitespace or an internal ASCII hyphen. For estimated dogs, this uses the retained license. |
 | `latest_issue_ties` | Number of estimated dogs with multiple licenses sharing their latest issue date. The expiry-date and source-row sorting resolves the tie. This measure is reported only at dog level. |
 
-In the SSA tables, `births` sums published counts across sex and all ten years in that decade. `share` divides by the decade's total published counts; suppressed names are not part of that denominator. `rank` orders descending counts and then alphabetically in C locale. `top100` is `rank <= 100`. The wide table uses decade suffixes from `_1880` through `_2010`; an absent decade has zero births/share, false membership and an empty rank. Every reference row has `ssa_recognized = TRUE`.
+In ssa_decades, `births` sums published counts across sex and all ten years in that decade. `share` divides by the decade's total published counts; suppressed names are not part of that denominator. `rank` orders descending counts and then alphabetically in C locale. `top100` is `rank <= 100`. The wide ssa_reference table contains the name, overall recognition and 14 top-100 flags with decade suffixes from `_1880` through `_2010`. An absent name/decade combination has false membership; it does not establish zero actual births. Every reference row has `ssa_recognized = TRUE`.

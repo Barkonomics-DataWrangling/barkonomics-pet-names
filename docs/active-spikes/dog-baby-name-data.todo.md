@@ -1,6 +1,6 @@
 ---
 attention: live
-reviewed: 2026-11-12
+reviewed: 2026-11-13
 tags: [barkonomics, dog-data, baby-names, r]
 ---
 # Dog and baby-name data tasks
@@ -11,8 +11,9 @@ The contribution asks whether dog names and generational associations differ acr
 ## Current state
 [analysis.qmd](../../analysis.qmd) includes dog and baby-name preparation, keeps tables in memory and renders one HTML containing the cleaning and name matches. It produces 92,921 estimated dogs after excluding 5,810 missing-name licenses and 45 unusable-year licenses. No copied income input, city-area selection or dependent comparisons remain. The optional birth-year reference and its small lookup are under appendices/.
 
-Income work is deferred until later collaboration with Shweta. The chunk-by-chunk walkthrough and shared acceptance continue under issue #1 and PR #10. Policy and workflow contributions remain separate.
+Income integration is deferred until Aslan and Shweta meet and pair program. The chunk-by-chunk walkthrough and shared acceptance continue under issue #1 and PR #10. Policy and workflow contributions remain separate.
 ## To Do
+- Resolve the notebook's DECISION comments: the provisional lower birth-year limit, the two dog identifiers, cleaning-summary presentation and whether to retain the cutoff diagnostic in the final report.
 - When Aslan resumes income work, review Shweta’s contribution and agree its integration. Do not restore a copied output as an interim dependency.
 - Settle which recognition/generation choices need joint agreement and identify the course synonym requirement's concrete treatment. Aslan has selected broader SSA recognition and overlapping top-100 decade flags; shared review and the synonym requirement remain pending.
 - Prepare an inspectable issue-linked draft PR with the spike records, source reproducibility instructions, validation evidence and remaining acceptance. Publication, commits and integration retain their actual authorization boundaries. The local combined report is ready for continued code review; actual GitHub publication remains separate.
@@ -20,6 +21,7 @@ Income work is deferred until later collaboration with Shweta. The chunk-by-chun
 - Aslan: continue the named R transformations one chunk at a time and use source_row_id to inspect source licenses. Confirm the explanations are comfortable for the interview.
 - Shared acceptance: review the dog and baby-name preparation and matching through issue #1 and its PR. Income integration is deferred.
 ## Done
+- November 13. Applied the conservative notebook fixes: isolated the appendix's example objects, clarified that SSA counts represent published records, narrowed the wide reference to recognition and top-100 flags, and removed the unused inventory import. Added DECISION comments while preserving all current selection and matching rules. Temporary checks verify unchanged values in 15 main tables, the same 92,921 dogs and their matches, and unchanged main-pipeline objects after running the appendix. The six reference corrections are unchanged, and the final analysis HTML renders successfully.
 - November 12. Simplified missing-name reporting to one table pipeline with a temporary boolean column, grouped counts and a calculated share. Exclusion uses drop_na(name) in its own chunk. Removed the separate row-aligned name_missing vector and redundant report columns. Temporary comparisons confirm all 493 ZIP counts/shares and the 100,164 named licenses are unchanged.
 - November 12. Removed the reproduced income lookup, dependent city-area input, source-inventory entries and all income-dependent report sections at Aslan’s request. Kept dog and baby-name preparation and matching in the single-report workflow. Shweta’s PR/branch remain untouched; income integration is deferred. The report renders successfully from the two retained datasets, and all eight dog/SSA tables remain unchanged.
 - November 12. Connected dog and baby-name preparation through Quarto includes in analysis.qmd, removed all 21 generated CSVs and both standalone chart images, and removed the checks notebook and unused source-audit export plumbing. Moved the optional birth-year reference and lookup into appendices/. Rendered one self-contained HTML containing preparation and charts. Temporary comparisons verify all 17 retained working tables against the prior results, and the appendix runs successfully. Confirmed Shweta’s PR #9 is unmerged; documented the provenance and temporary status of its separately reproduced income input. No remote writes.

@@ -5,7 +5,7 @@ execute:
   message: false
 ---
 
-This optional notebook preserves six considered birth-year replacements and the lookup operation that applied them. The main preparation excludes these records under the same year rule as all other licenses. Running this reference only displays a comparison; it does not write or change any prepared tables.
+This optional notebook preserves six considered birth-year replacements and the lookup operation that applied them. The main preparation excludes these records under the same year rule as all other licenses. This reference uses separate example tables, leaves the main preparation tables unchanged and writes no files.
 
 ## The six proposed replacements
 These are inferences, not verified birth dates. The source row identifies the specific license. HONEY and BROWNIE are separate dogs.
@@ -27,7 +27,7 @@ birth_year_corrections <- read_csv(
   "appendices/birth_year_corrections.csv",
   col_types = cols(.default = col_character(), source_row_id = col_integer())
 )
-dogs_raw <- read_csv(
+reference_dogs_raw <- read_csv(
   "data/raw/nyc-dogs-2024.csv",
   col_types = cols(.default = col_character()),
   na = character(), trim_ws = FALSE
@@ -41,11 +41,11 @@ birth_year_corrections |>
   pull(source_row_id) ->
   reviewed_source_rows
 
-dogs_raw |>
+reference_dogs_raw |>
   mutate(source_row_id = row_number()) |>
   filter(is.element(source_row_id, reviewed_source_rows)) |>
   select(source_row_id, name = animalname, breed = breedname, sex = animalgender, birth_year = animalbirth, zipcode) ->
-  dogs
+  birth_year_examples
 ```
 
 ## Preserved correction operation
@@ -53,7 +53,7 @@ The join requires the source row, name, breed, sex and recorded birth year to ag
 ```{r}
 birth_year_corrections
 
-dogs |>
+birth_year_examples |>
   left_join(
     birth_year_corrections,
     by = c("source_row_id", "name", "breed", "sex", "birth_year" = "original_birth_year")
@@ -61,9 +61,9 @@ dogs |>
   mutate(has_birth_year_correction = !is.na(inferred_birth_year)) |>
   mutate(birth_year = if_else(has_birth_year_correction, inferred_birth_year, birth_year)) |>
   select(-inferred_birth_year, -has_birth_year_correction) ->
-  dogs_with_year_corrections
+  birth_year_examples_corrected
 
-dogs_with_year_corrections
+birth_year_examples_corrected
 ```
 
 ## Why the main preparation excludes these records
