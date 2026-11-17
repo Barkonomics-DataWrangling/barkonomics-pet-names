@@ -203,3 +203,6 @@ After the current GitHub collaboration testing is complete, assess how Barknomom
 
 Revisit after the GitHub collaboration pilot in Agent Hands. Capture only for now; consumer discovery and integration have not started.
 ````
+
+## Branch naming maintenance — November 5
+Renamed the remote integration branch to aslan/barkonomics-github-integration while preserving commit 7426a5b9e2a00efc475c5174f7f5769dc0992092. No open PR used the old ref. Maintained historical references use the current branch name; Git commit identities and existing merged-PR metadata remain unchanged.
