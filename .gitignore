@@ -12,8 +12,17 @@ Thumbs.db
 *.pem
 *.key
 
-# Downloaded and generated data; re-create with the R scripts.
-/data/
+# Ignore generated data; retain only the two supplied income source snapshots.
+/data/*
+!/data/raw/
+/data/raw/*
+!/data/raw/ZIPCodetoZCTACrosswalk2024UDS.xlsx
+!/data/raw/acs5_2024_b19013_zcta.json
 
 # Agent Hands' private GitHub operation journal; shared .github files stay tracked.
 /.github/project-collaboration/
+
+# Local Quarto output
+/.quarto/
+/final-analysis.html
+/final-analysis_files/
