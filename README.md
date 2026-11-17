@@ -44,6 +44,6 @@ For manual restoration on a checkout containing the adoption:
 git submodule update --init --recursive
 ```
 
-Main contains the integrated setup. A fresh anonymous recursive clone of main and its exact child pin has been verified. The child uses an exact detached shared-source pin with project settings in [docs/workflow.toml](docs/workflow.toml). Preserve a dirty or active child checkout. Use [Update Project Workflows](project-workflows/update-project-workflows/SKILL.md) for verified exact shared-source upgrades that preserve project-owned configuration and copied assets.
+Main contains the integrated setup. A fresh anonymous recursive clone of main and its exact child pin has been verified. The child uses an exact detached shared-source pin with project settings in [docs/project-workflows.toml](docs/project-workflows.toml). Preserve a dirty or active child checkout. Use [Update Project Workflows](project-workflows/update-project-workflows/SKILL.md) for verified exact shared-source upgrades that preserve project-owned configuration and copied assets.
 
 Reused workflow files and robot artwork retain their [source and license notice](NOTICE.md).

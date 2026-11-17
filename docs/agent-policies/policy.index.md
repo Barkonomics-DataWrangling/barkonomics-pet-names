@@ -1,5 +1,5 @@
 # Barkonomics agent policies
-Aslan adopted these nine project-owned records and the [AGENTS.md](../../AGENTS.md) routing on 2026-11-02. Read applicable adopted policies with their complete prerequisite closures. Policy changes do not alter GitHub permissions, runner settings, human research decisions or collaborator access.
+Aslan adopted the nine original project-owned records and the [AGENTS.md](../../AGENTS.md) routing on 2026-11-02. Read applicable adopted policies with their complete prerequisite closures. Policy changes do not alter GitHub permissions, runner settings, human research decisions or collaborator access.
 
 <!-- agent-policies:start -->
 | ID | Policy | Type | Scope | Status | Revised |
@@ -11,6 +11,7 @@ Aslan adopted these nine project-owned records and the [AGENTS.md](../../AGENTS.
 | FOLLOW-WORKFLOWS | [Follow the selected workflow source](FOLLOW-WORKFLOWS-follow-the-selected-workflow-source.md) | operational | Agent selection of project workflow sources and work records. | adopted | 2026-11-03 |
 | PRESERVE-COMMITS | [Honor scoped Git authority](PRESERVE-COMMITS-honor-scoped-git-authority.md) | operational | Agent checkpoints, Git history and publication. | adopted | 2026-11-02 |
 | PROTECT-CONTEXT | [Keep private context with its owner](PROTECT-CONTEXT-keep-private-context-with-its-owner.md) | operational | Agent access to private context and shared project records. | adopted | 2026-11-02 |
+| READABLE-R | [Write readable, explainable R](READABLE-R-write-readable-explainable-r.md) | operational | Agent-authored R analysis and validation code in Barkonomics. | proposed | 2026-11-05 |
 | SELECT-TOOLING | [Use the project-selected GitHub tools](SELECT-TOOLING-use-the-project-selected-github-tools.md) | operational | Agent selection and use of external GitHub tooling. | adopted | 2026-11-02 |
 | VALIDATE-CHANGES | [Check the affected workflow artifacts](VALIDATE-CHANGES-check-the-affected-workflow-artifacts.md) | operational | Agent validation of workflow changes. | adopted | 2026-11-02 |
 <!-- agent-policies:end -->
