@@ -1,0 +1,224 @@
+::: why
+**Why this part:** the decade flags say *whether* a name was popular in a decade. To answer Q2 sharply we want one number for how old a name is. To answer Q3 we want the actual names that differ between areas. And before trusting any pattern, we check that it does not depend on how we define a "human name" (Q4).
+
+**Transforms:** grouping (with a weighted average), windowing, lookup joins, nesting and unnesting, wider, cross join, recoding.
+:::
+
+## How old is each name?
+The **namesake year** is the average birth year of everyone with a name: a weighted average of the year, with births as the weights. One grouped pipeline also keeps each name's total births, so we can test stricter definitions of a "human name" later. A **window** within each name finds its peak decade, the decade where its share was highest.
+```{r}
+#| label: make-name-ages
+ssa_yearly |>
+  group_by(name) |>
+  summarise(
+    total_births = sum(births),
+    namesake_year = sum(as.numeric(year) * births) / sum(births)  # numeric avoids overflow
+  ) |>
+  left_join(
+    ssa_decades |>
+      group_by(name) |>
+      slice_max(share, n = 1, with_ties = FALSE) |>   # window: the top decade per name
+      ungroup() |>
+      select(name, peak_decade = decade),
+    by = "name"
+  ) ->
+  ssa_name_ages
+
+ssa_name_ages |>
+  filter(name %in% c("DOROTHY", "JENNIFER", "LUNA", "MAX")) |>
+  arrange(namesake_year)
+```
+
+```{r}
+#| label: name-age-facts
+#| include: false
+namesake <- function(n) round(ssa_name_ages$namesake_year[ssa_name_ages$name == n])
+```
+
+::: takeaway
+The measure matches common sense: the average Dorothy was born in `r namesake("DOROTHY")`, the average Jennifer in `r namesake("JENNIFER")`, and the average Luna in `r namesake("LUNA")`.
+:::
+
+## Do richer areas choose older names?
+Every compared dog gets its name's age through a **lookup**. A dog counts as having a human name if its name has at least 100 births. This is stricter than appearing in the SSA records at all, because a name given to only five babies in one year is not a common human name. We then group the dogs by area.
+
+To measure the link with income, we fit the same weighted regression to two measures. **Nesting** puts each measure's data into one cell of a list column, `map()` fits a model to each, and **unnesting** brings the results back as rows. Using `log2(income)` means the slope is the change for each doubling of area income.
+```{r}
+#| label: name-ages-by-area
+dogs_by_income_group |>
+  left_join(ssa_name_ages, by = "name") |>
+  mutate(
+    total_births = replace_na(total_births, 0),
+    human_name = total_births >= 100
+  ) ->
+  dogs_with_name_ages
+
+dogs_with_name_ages |>
+  group_by(zcta, income_group) |>
+  summarise(
+    dogs = n(),
+    human_name_dogs = sum(human_name),
+    median_income = first(income),
+    human_name_share = mean(human_name),
+    namesake_year = mean(namesake_year[human_name]),   # human names only
+    .groups = "drop"
+  ) ->
+  area_name_ages
+
+area_name_ages |>
+  mutate(log2_income = log2(median_income)) |>
+  pivot_longer(c(human_name_share, namesake_year), names_to = "measure", values_to = "value") |>
+  mutate(weight = if_else(measure == "namesake_year", human_name_dogs, dogs)) |>
+  nest(.by = measure) |>                                  # one data frame per measure
+  mutate(
+    model = map(data, \(d) lm(value ~ log2_income, data = d, weights = weight)),
+    results = map(model, \(m) broom::tidy(m, conf.int = TRUE)),
+    r2 = map_dbl(model, \(m) summary(m)$r.squared)
+  ) |>
+  select(measure, results, r2) |>
+  unnest(results) |>                                      # back to one row per term
+  filter(term == "log2_income") |>
+  select(measure, slope = estimate, conf.low, conf.high, p.value, r2) ->
+  income_models
+
+income_models
+```
+
+```{r}
+#| label: model-facts
+#| include: false
+m_human <- income_models |> filter(measure == "human_name_share")
+m_age <- income_models |> filter(measure == "namesake_year")
+```
+
+```{r}
+#| label: plot-namesake-year
+#| fig-width: 8
+#| fig-height: 5
+area_name_ages |>
+  ggplot(aes(x = median_income, y = namesake_year)) +
+  geom_point(aes(size = human_name_dogs, colour = human_name_share), alpha = 0.7) +
+  geom_smooth(aes(weight = human_name_dogs), method = "lm", se = TRUE, colour = "#6b46c1") +
+  scale_x_log10(labels = scales::label_dollar()) +
+  scale_colour_viridis_c(labels = scales::label_percent(), end = 0.9) +
+  labs(
+    title = "In richer areas, dogs' human namesakes are older",
+    subtitle = "Average birth year of people who share the dog's name; one point per NYC area",
+    x = "Median household income, ACS 2024 (log scale)",
+    y = "Average namesake birth year",
+    size = "Dogs with a\nhuman name", colour = "Share of\nhuman names"
+  ) +
+  theme_minimal()
+```
+
+::: takeaway
+For each doubling of area income, the share of dogs with a human name changes by `r round(100 * m_human$slope, 1)` percentage points (95% CI `r round(100 * m_human$conf.low, 1)` to `r round(100 * m_human$conf.high, 1)`). The people who share the dog's name were born `r round(abs(m_age$slope), 1)` years `r if (m_age$slope < 0) "earlier" else "later"` (R² = `r round(m_age$r2, 2)`). `r if (m_age$slope < 0) "Richer areas lean toward older human names." else "Richer areas do not lean toward older human names."`
+:::
+
+## Which names set rich and poor areas apart?
+The most popular names (Luna, Max, Bella) are popular everywhere, so they hide differences. Instead we compare each name's share of dogs in the richest group with its share in the poorest:
+
+- Going **wider** puts the two counts side by side.
+- A log2 ratio of +1 means "twice as common in the richest areas".
+- We add 1 to each count to avoid dividing by zero, and keep names with at least 30 dogs.
+- A lookup and a **recode** label each name by when it peaked.
+```{r}
+#| label: distinctive-names
+#| fig-width: 8
+#| fig-height: 6
+dogs_with_name_ages |>
+  filter(income_group %in% c("Q1 lowest income", "Q5 highest income")) |>
+  count(income_group, name) |>
+  pivot_wider(names_from = income_group, values_from = n, values_fill = 0) |>
+  rename(q1_dogs = `Q1 lowest income`, q5_dogs = `Q5 highest income`) |>
+  filter(q1_dogs + q5_dogs >= 30) |>
+  mutate(log2_ratio = log2(((q5_dogs + 1) / sum(q5_dogs + 1)) /
+                           ((q1_dogs + 1) / sum(q1_dogs + 1)))) |>
+  left_join(ssa_name_ages |> select(name, total_births, peak_decade), by = "name") |>
+  mutate(name_type = case_when(
+    replace_na(total_births, 0) < 100 ~ "not a common human name",
+    peak_decade < 1950 ~ "human name, peaked before 1950",
+    peak_decade < 1990 ~ "human name, peaked 1950–1989",
+    .default = "human name, peaked 1990 or later"
+  )) ->
+  distinctive_names
+
+bind_rows(
+  distinctive_names |> slice_max(log2_ratio, n = 10, with_ties = FALSE),
+  distinctive_names |> slice_min(log2_ratio, n = 10, with_ties = FALSE)
+) ->
+  distinctive_top
+
+distinctive_top |>
+  mutate(name = fct_reorder(str_to_title(name), log2_ratio)) |>
+  ggplot(aes(x = log2_ratio, y = name, fill = name_type)) +
+  geom_col() +
+  geom_vline(xintercept = 0, colour = "grey40") +
+  scale_fill_manual(values = c(
+    "human name, peaked before 1950" = "#6b46c1",
+    "human name, peaked 1950–1989" = "#a0aec0",
+    "human name, peaked 1990 or later" = "#2c7a7b",
+    "not a common human name" = "#ed8936"
+  )) +
+  labs(
+    title = "Most over-represented names in the richest vs poorest areas",
+    x = "← more common in poorest areas        more common in richest areas →",
+    y = NULL, fill = NULL
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+```{r}
+#| label: distinctive-facts
+#| include: false
+rich_side <- distinctive_top |> filter(log2_ratio > 0) |> arrange(desc(log2_ratio))
+poor_side <- distinctive_top |> filter(log2_ratio < 0) |> arrange(log2_ratio)
+```
+
+::: takeaway
+The richest areas over-represent names such as `r str_c(str_to_title(head(rich_side$name, 5)), collapse = ", ")`; the poorest over-represent names such as `r str_c(str_to_title(head(poor_side$name, 5)), collapse = ", ")`. `r sum(rich_side$name_type == "human name, peaked before 1950")` of the 10 rich-side names peaked before 1950, against `r sum(poor_side$name_type == "human name, peaked before 1950")` on the poor side.
+:::
+
+## Does our definition of a human name matter?
+Our results use a threshold of 100 births, and we should check whether that choice creates the income gap. A **cross join** repeats every dog once per threshold, so one grouping gives the human-name rate of every income group at every threshold. The lowest threshold, 5 births, is the same as appearing in the SSA records at all.
+```{r}
+#| label: threshold-curve
+#| fig-width: 8
+#| fig-height: 4.5
+dogs_with_name_ages |>
+  cross_join(tibble(threshold = c(5, 20, 100, 500, 1000, 5000))) |>
+  group_by(threshold, income_group) |>
+  summarise(human_name_rate = mean(total_births >= threshold), .groups = "drop") ->
+  threshold_curve
+
+threshold_curve |>
+  ggplot(aes(x = threshold, y = human_name_rate, colour = income_group)) +
+  geom_line(linewidth = 1) +
+  geom_point() +
+  scale_x_log10(labels = scales::label_comma()) +
+  scale_y_continuous(labels = scales::label_percent()) +
+  scale_colour_viridis_d(end = 0.9) +
+  labs(
+    title = "Does the income gap depend on our threshold?",
+    x = "Births needed to count as a human name (log scale)",
+    y = "Dogs with a human name", colour = NULL
+  ) +
+  theme_minimal()
+```
+
+```{r}
+#| label: threshold-facts
+#| include: false
+gap_at <- function(t) {
+  rates <- threshold_curve |> filter(threshold == t)
+  rates$human_name_rate[rates$income_group == "Q5 highest income"] -
+    rates$human_name_rate[rates$income_group == "Q1 lowest income"]
+}
+gaps <- map_dbl(unique(threshold_curve$threshold), gap_at)
+gap_is_stable <- all(gaps > 0) | all(gaps < 0)
+```
+
+::: takeaway
+The gap between the richest and poorest groups is `r round(100 * gap_at(5), 1)` points at 5 births, `r round(100 * gap_at(100), 1)` at 100 and `r round(100 * gap_at(5000), 1)` at 5,000. `r if (gap_is_stable) "A stricter threshold lowers every rate, but the gap keeps the same direction at every threshold, so the comparison between areas does not depend on where we draw the line." else "The gap changes direction across thresholds, so the result depends on how we define a human name."`
+:::
