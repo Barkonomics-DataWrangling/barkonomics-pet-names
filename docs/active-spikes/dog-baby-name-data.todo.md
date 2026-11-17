@@ -11,7 +11,7 @@ The contribution asks whether dog names and generational associations differ acr
 ## Current state
 [analysis.qmd](../../analysis.qmd) includes dog and baby-name preparation, keeps tables in memory and renders one HTML containing the cleaning and name matches. It produces 92,921 estimated dogs after excluding 5,810 missing-name licenses and 45 unusable-year licenses. No copied income input, city-area selection or dependent comparisons remain. The optional birth-year reference and its small lookup are under appendices/.
 
-Income integration is deferred until Aslan and Shweta meet and pair program. The chunk-by-chunk walkthrough and shared acceptance continue under issue #1 and PR #10. Policy and workflow contributions remain separate.
+Income integration is deferred until Aslan and Shweta meet and pair program. The chunk-by-chunk walkthrough and shared acceptance continue under issue #1 and PR #11. Policy and workflow contributions remain separate.
 ## To Do
 - Resolve the notebook's DECISION comments: the provisional lower birth-year limit, the two dog identifiers, cleaning-summary presentation and whether to retain the cutoff diagnostic in the final report.
 - When Aslan resumes income work, review Shweta’s contribution and agree its integration. Do not restore a copied output as an interim dependency.
