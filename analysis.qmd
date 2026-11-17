@@ -12,12 +12,6 @@ execute:
 
 Prepare the 2024 dog-license records and the national baby-name reference, then match each estimated dog to the complete baby-name decades from 1880–2019. Neighborhood-income work is deferred to a separate collaboration step.
 
-## Packages and helpers
-```{r}
-library(tidyverse)
-source("helpers.R")
-```
-
 # Prepare dog names
 
 {{< include dog-names.qmd >}}

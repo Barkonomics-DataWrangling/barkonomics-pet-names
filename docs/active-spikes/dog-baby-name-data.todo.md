@@ -1,6 +1,6 @@
 ---
 attention: live
-reviewed: 2026-11-13
+reviewed: 2026-11-16
 tags: [barkonomics, dog-data, baby-names, r]
 ---
 # Dog and baby-name data tasks
@@ -21,6 +21,7 @@ Income integration is deferred until Aslan and Shweta meet and pair program. The
 - Aslan: continue the named R transformations one chunk at a time and use source_row_id to inspect source licenses. Confirm the explanations are comfortable for the interview.
 - Shared acceptance: review the dog and baby-name preparation and matching through issue #1 and its PR. Income integration is deferred.
 ## Done
+- November 16. Restored explicit tidyverse/helper setup in both preparation notebooks after direct execution of dog-names.qmd failed on read_csv in a fresh R session. Removed the redundant parent setup. Separate fresh R sessions now run both notebooks successfully, producing 92,921 estimated dogs and 99,538 SSA reference names. Transformation code is unchanged; only analysis.qmd remains the project HTML render target.
 - November 13. Applied the conservative notebook fixes: isolated the appendix's example objects, clarified that SSA counts represent published records, narrowed the wide reference to recognition and top-100 flags, and removed the unused inventory import. Added DECISION comments while preserving all current selection and matching rules. Temporary checks verify unchanged values in 15 main tables, the same 92,921 dogs and their matches, and unchanged main-pipeline objects after running the appendix. The six reference corrections are unchanged, and the final analysis HTML renders successfully.
 - November 12. Simplified missing-name reporting to one table pipeline with a temporary boolean column, grouped counts and a calculated share. Exclusion uses drop_na(name) in its own chunk. Removed the separate row-aligned name_missing vector and redundant report columns. Temporary comparisons confirm all 493 ZIP counts/shares and the 100,164 named licenses are unchanged.
 - November 12. Removed the reproduced income lookup, dependent city-area input, source-inventory entries and all income-dependent report sections at Aslan’s request. Kept dog and baby-name preparation and matching in the single-report workflow. Shweta’s PR/branch remain untouched; income integration is deferred. The report renders successfully from the two retained datasets, and all eight dog/SSA tables remain unchanged.

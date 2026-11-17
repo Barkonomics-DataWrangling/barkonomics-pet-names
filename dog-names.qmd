@@ -1,5 +1,12 @@
 Count and exclude licenses with missing names or birth years outside the current range, then prepare one row per estimated dog from the 2024 NYC licenses.
 
+## Packages and helpers
+```{r}
+#| label: dog-preparation-setup
+library(tidyverse)
+source("helpers.R")
+```
+
 ## Read the license records
 Read the fields as text so ZIPs remain identifiers and recorded birth years can be inspected before conversion. The source uses six labels for missing names. `na = missing_name_labels` reads all six as R missing values so they receive the same treatment. The saved source CSV retains the recorded labels.
 
