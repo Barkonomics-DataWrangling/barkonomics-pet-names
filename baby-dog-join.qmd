@@ -1,0 +1,13 @@
+## Match baby names to dogs
+This step uses `dogs_prepared` from dog-names.qmd and `ssa_reference` from baby-names.qmd in the same R session. Use all complete decades in the reference. Keep a separate yes/no result for each decade so a name can match several generations. `left_join()` keeps every dog and adds the reference columns for its name. Unmatched names receive missing lookup values. `across()` applies the same helper to each recognition/decade column: `missing_means_false()` uses `replace_na(FALSE)` to turn missing matches into FALSE while preserving existing TRUE/FALSE results. The helper is defined in `helpers.R`.
+```{r}
+#| label: match-dogs-to-baby-names
+dogs_prepared |>
+  left_join(ssa_reference, by = "name") |>
+  mutate(across(c(ssa_recognized, starts_with("top100_")), missing_means_false)) ->
+  dogs
+
+dogs |>
+  select(name, ssa_recognized, starts_with("top100_")) |>
+  preview()
+```

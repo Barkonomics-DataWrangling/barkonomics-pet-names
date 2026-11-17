@@ -1,5 +1,5 @@
 # Dog-name data dictionary
-These are R tables created during one execution of analysis.qmd; they are not exported CSVs. dogs_prepared contains 92,908 eligible named estimated dogs after early exclusion of missing names and unusable birth years. dogs adds baby-name matches to those same rows. There is no geographic or income selection in this pipeline.
+These are R tables created during one execution of final-analysis.qmd; they are not exported CSVs. dogs_prepared contains 92,908 eligible named estimated dogs after early exclusion of missing names and unusable birth years. dogs adds baby-name matches to those same rows. There is no geographic or income selection in this pipeline.
 
 The notebook imports ZIP codes as text and infers the other types, using standard missing-value and whitespace handling, numbers source rows, gives fields clear working names, and converts the remaining missing-name labels before reporting and excluding them. It records compound names before formatting. ZIP strings stay as recorded. source_row_id points to the original license in the source CSV. No duplicate original_ columns are carried through the comparison tables.
 ## Dog columns

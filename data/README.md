@@ -22,12 +22,12 @@ The optional [birth-year inference reference](../appendices/birth-year-inference
 From the repository root, render the dog and baby-name preparation and matching:
 
 ```sh
-quarto render analysis.qmd
+quarto render final-analysis.qmd
 ```
 
-[analysis.qmd](../analysis.qmd) loads tidyverse and [helpers.R](../helpers.R), includes [dog preparation](../dog-names.qmd), includes [baby-name preparation](../baby-names.qmd), and then matches their R tables by name. The include lines insert the sections and execute their code in the same R session. The project renders only analysis.qmd. Its single self-contained analysis.html contains the preparation, explanations, cleaning summaries and name matches. It reads only the dog and SSA source snapshots; income work is deferred.
+[final-analysis.qmd](../final-analysis.qmd) loads tidyverse and [helpers.R](../helpers.R), includes [dog preparation](../dog-names.qmd), includes [baby-name preparation](../baby-names.qmd), and includes [baby-dog matching](../baby-dog-join.qmd) to join their R tables by name. The include lines insert the sections and execute their code in the same R session. The project renders only final-analysis.qmd. Its single self-contained final-analysis.html contains the preparation, explanations, cleaning summaries and name matches. It reads only the dog and SSA source snapshots; income work is deferred.
 
-Intermediate tables stay in memory. No dog handoff, report CSVs, separate chart PNGs or checks notebook are part of this workflow. For an interactive walkthrough, run dog-names.qmd from its packages-and-helpers chunk downward, then baby-names.qmd from its setup chunk downward, and finally the name-matching chunk in analysis.qmd, all in one R session.
+Intermediate tables stay in memory. No dog handoff, report CSVs, separate chart PNGs or checks notebook are part of this workflow. For an interactive walkthrough, run dog-names.qmd from its packages-and-helpers chunk downward, then baby-names.qmd from its setup chunk downward, and finally baby-dog-join.qmd, all in one R session.
 
 The optional [birth-year reference](../appendices/birth-year-inferences.qmd) and its small correction lookup live in appendices/. The reference is outside the main report and changes no analysis tables. Run its chunks from the repository root when inspecting those examples.
 

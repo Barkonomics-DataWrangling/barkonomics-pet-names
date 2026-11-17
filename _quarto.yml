@@ -1,4 +1,4 @@
 project:
   render:
-    - analysis.qmd
+    - final-analysis.qmd
   execute-dir: project
