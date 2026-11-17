@@ -11,11 +11,11 @@ The files were extracted byte for byte from the official national archive downlo
 
 The baby-name notebook reads the 140 annual files for 1880–2019 directly. All rankings and overall name recognition use those 14 complete decades.
 
-The character vector `missing_name_labels` beside the import in [dog-names.qmd](../dog-names.qmd#read-the-license-records) contains the six agreed labels: `UNKNOWN`, `NAME NOT PROVIDED`, `NONE`, `NA`, `.`, and `NONAME`. The import reads all six as missing values. Report one combined missing-name count overall and by recorded ZIP, then exclude those licenses before formatting names and dates or adding report fields. The source CSV retains the original labels.
+The character vector `missing_name_labels` in the [missing-name cleanup step](../dog-names.qmd#normalize-missing-name-labels) contains the six agreed labels: `UNKNOWN`, `NAME NOT PROVIDED`, `NONE`, `NA`, `.`, and `NONAME`. Import uses the standard missing-value and whitespace handling: "NA" and empty fields become missing values, and surrounding spaces are trimmed. The cleanup step converts the remaining labels to missing values. Report one combined missing-name count overall and by recorded ZIP, then exclude those licenses before formatting names or adding report fields. The source CSV retains the original labels.
 
 Keep ZIP strings as recorded. Geographic matching and income integration are deferred.
 
-Count and exclude named licenses whose recorded birth year is not a four-digit year from 1990–2024 before formatting or grouping. This removes 45 licenses and leaves 92,921 estimated dogs representing 100,119 named licenses. The in-memory excluded_birth_year_licenses table preserves the 45 recorded rows under short column names. Each retained dog has a source_row_id pointing to the corresponding row in the unchanged input CSV.
+Count and exclude named licenses whose approximate age at issuance (issue year minus recorded birth year) falls outside 0–25 before formatting or grouping. The maximum is a judgment call, not a biological limit. This removes 59 licenses and leaves 92,908 estimated dogs representing 100,105 named licenses. The in-memory excluded_birth_year_licenses table preserves the 59 excluded rows and their age calculations. Each retained dog has a source_row_id pointing to the corresponding row in the unchanged input CSV.
 
 The optional [birth-year inference reference](../appendices/birth-year-inferences.qmd) preserves the six considered replacements, their rationale and the original lookup operation. [birth_year_corrections.csv](../appendices/birth_year_corrections.csv) is used only by that reference. It does not affect the main preparation.
 ## Run the analysis
@@ -27,7 +27,7 @@ quarto render analysis.qmd
 
 [analysis.qmd](../analysis.qmd) loads tidyverse and [helpers.R](../helpers.R), includes [dog preparation](../dog-names.qmd), includes [baby-name preparation](../baby-names.qmd), and then matches their R tables by name. The include lines insert the sections and execute their code in the same R session. The project renders only analysis.qmd. Its single self-contained analysis.html contains the preparation, explanations, cleaning summaries and name matches. It reads only the dog and SSA source snapshots; income work is deferred.
 
-Intermediate tables stay in memory. No dog handoff, report CSVs, separate chart PNGs or checks notebook are part of this workflow. For an interactive walkthrough, run the packages chunk in analysis.qmd, the dog and baby-name chunks, and then the name-matching chunk in that order in one R session.
+Intermediate tables stay in memory. No dog handoff, report CSVs, separate chart PNGs or checks notebook are part of this workflow. For an interactive walkthrough, run dog-names.qmd from its packages-and-helpers chunk downward, then baby-names.qmd from its setup chunk downward, and finally the name-matching chunk in analysis.qmd, all in one R session.
 
 The optional [birth-year reference](../appendices/birth-year-inferences.qmd) and its small correction lookup live in appendices/. The reference is outside the main report and changes no analysis tables. Run its chunks from the repository root when inspecting those examples.
 

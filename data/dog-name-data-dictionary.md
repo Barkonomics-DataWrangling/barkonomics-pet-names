@@ -1,20 +1,20 @@
 # Dog-name data dictionary
-These are R tables created during one execution of analysis.qmd; they are not exported CSVs. dogs_prepared contains 92,921 eligible named estimated dogs after early exclusion of missing names and unusable birth years. dogs adds baby-name matches to those same rows. There is no geographic or income selection in this pipeline.
+These are R tables created during one execution of analysis.qmd; they are not exported CSVs. dogs_prepared contains 92,908 eligible named estimated dogs after early exclusion of missing names and unusable birth years. dogs adds baby-name matches to those same rows. There is no geographic or income selection in this pipeline.
 
-The notebook reads the six missing-name labels as missing values, gives fields clear working names, and records compound names before formatting. ZIP strings stay as recorded. source_row_id points to the original license in the source CSV. No duplicate original_ columns are carried through the comparison tables.
+The notebook imports ZIP codes as text and infers the other types, using standard missing-value and whitespace handling, numbers source rows, gives fields clear working names, and converts the remaining missing-name labels before reporting and excluding them. It records compound names before formatting. ZIP strings stay as recorded. source_row_id points to the original license in the source CSV. No duplicate original_ columns are carried through the comparison tables.
 ## Dog columns
 | Column | Type | Meaning |
 | --- | --- | --- |
 | `estimated_dog_id` | Text | `dog2024-` plus the retained source row number, padded to six digits. Stable within this snapshot and rule, not an official ID or a cross-year identity. |
 | `source_row_id` | Integer | One-based data row of the retained license in the raw CSV, excluding its header. |
-| `extract_year` | Integer | Selected NYC extract, 2024; not necessarily the license issue year. |
+| `extract_year` | Number | Selected NYC extract, 2024; not necessarily the license issue year. |
 | `name` | Text | Full name uppercased with spaces and hyphens removed; no first-token, nickname or title substitution. |
 | `sex` | Text | Recorded dog sex (`F` or `M` in this snapshot). Dog sex does not constrain SSA name matching. |
-| `birth_year` | Text | Recorded birth year, with no inferred replacements. The current range is 1990–2024; its lower limit is provisional. Only matching four-digit years enter grouping. |
+| `birth_year` | Number | Recorded birth year, with no inferred replacements. Issue year minus recorded birth year must be from 0 through 25. This approximate-age cutoff is a judgment call. |
 | `breed` | Text | Recorded breed, including `Unknown`; no breed-alias consolidation. |
 | `zipcode` | Text | Recorded ZIP string, without added zeros or a geographic lookup. |
-| `license_issue_date` | Date | Issue date of the retained license, `YYYY-MM-DD`. |
-| `license_expiry_date` | Date | Expiry date of the retained license, `YYYY-MM-DD`. |
+| `license_issue_date` | Date-time | Issue date and time of the retained license, as read from the source. |
+| `license_expiry_date` | Date-time | Expiry date and time of the retained license, as read from the source. |
 | `license_record_count` | Integer | Number of named source license records assigned to this estimated dog. |
 | `ssa_recognized` | Boolean | Full normalized name appears in a published SSA record in any selected year: 1880–2019. |
 | `top100_1880` … `top100_2010` | Boolean | One column per complete decade. True when the name is among its 100 largest combined-sex birth counts. |
@@ -28,7 +28,7 @@ The five-field group key uses `name`, `sex`, the recorded `birth_year`, `breed` 
 | ssa_decades | One name/decade | Combined birth counts, ranks and shares before making a wide reference. |
 | ssa_reference | One formatted name | Recognition and 14 top-100 decade flags; each dog joins to at most one row. |
 | ssa_cutoffs | One decade | Names and birth counts at ranks 100 and 101. |
-| excluded_birth_year_licenses | One excluded named license | The 45 recorded rows with unusable years. |
+| excluded_birth_year_licenses | One excluded named license | The 59 excluded licenses, with recorded fields and approximate ages. |
 | missing_by_zip | One recorded ZIP | Source-license counts, missing-name counts and missing-name shares for the 2024 extract, combining the six agreed labels. |
 | quality_summary | One unit/measure | Counts of unknown breeds, compound names, excluded years and tied latest licenses. |
 
@@ -36,8 +36,8 @@ The cleaning report contains these measures; their per-record fields are left ou
 
 | Measure | Meaning |
 | --- | --- |
-| `breed_unknown` | Breed is `Unknown` or blank, ignoring case and outer whitespace. |
-| `excluded_birth_year` | Named licenses whose recorded years are not four digits within 1990–2024: 45 licenses excluded before grouping. |
+| `breed_unknown` | Breed is recorded as `Unknown`, the only unknown-breed spelling in this snapshot. |
+| `excluded_birth_year` | Named licenses whose issue year minus recorded birth year falls outside 0–25: 59 licenses excluded before grouping. |
 | `compound_name` | Recorded name contains internal whitespace or an internal ASCII hyphen. For estimated dogs, this uses the retained license. |
 | `latest_issue_ties` | Number of estimated dogs with multiple licenses sharing their latest issue date. The expiry-date and source-row sorting resolves the tie. This measure is reported only at dog level. |
 

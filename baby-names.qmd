@@ -8,37 +8,38 @@ source("helpers.R")
 ```
 
 ## Read the annual files
-Each annual file has a name, sex and birth count. Build the filenames for 1880–2019, then combine those files with `read_csv()`. Keep the source filename so we can identify each row’s year.
+Each annual file has a name, sex and birth count. Build the filenames for 1880–2019, then combine those files with `read_csv()`. `read_csv()` reads the supplied vector of paths as one table. It infers names and sex as text and birth counts as numbers. `id = "source_file"` keeps the source path so we can identify each row’s year.
 ```{r}
 #| label: read-baby-names
 ssa_years <- 1880:2019
 ssa_file_paths <- str_c("data/raw/ssa/yob", ssa_years, ".txt")
 ssa_raw <- read_csv(
   ssa_file_paths,
-  col_names = c("original_name", "sex", "births"),
-  col_types = cols(original_name = col_character(), sex = col_character(), births = col_integer()),
-  id = "source_file", na = character()
+  col_names = c("name", "sex", "births"),
+  id = "source_file"
 )
 ```
 
+## Read the year and assign its decade
+`basename()` keeps just the filename from a path. In `yob1924.txt`, characters 4 through 7 are `1924`; read them as a number. Integer division (`%/%`) drops the remainder: 1924 divided by 10 gives 192, and multiplying by 10 gives the decade 1920.
+```{r}
+#| label: prepare-baby-name-years
+ssa_raw |>
+  mutate(source_filename = basename(source_file)) |>
+  mutate(year = str_sub(source_filename, 4, 7)) |>
+  mutate(year = as.integer(year)) |>
+  mutate(decade = (year %/% 10) * 10) |>
+  select(name, sex, year, decade, births) ->
+  ssa_with_decades
+```
+
 ## Give names the same matching format as the dogs
-Extract the year from the filename. For example, `yob1924.txt` supplies 1924. Integer division by ten groups years into decades, so 1924 belongs to 1920.
+Uppercase the names, then remove spaces and hyphens using the same two steps as dog preparation. Keep each full name rather than splitting it into words.
 ```{r}
 #| label: format-baby-names
-ssa_raw |>
-  mutate(
-    source_filename = basename(source_file),
-    name = str_to_upper(original_name, locale = "en")
-  ) |>
-  mutate(
-    year = str_extract(source_filename, "[0-9]{4}"),
-    name = str_remove_all(name, "[\\s-]")
-  ) |>
-  mutate(
-    year = as.integer(year),
-    decade = (year %/% 10) * 10
-  ) |>
-  select(name, sex, year, decade, births) ->
+ssa_with_decades |>
+  mutate(name = str_to_upper(name, locale = "en")) |>
+  mutate(name = str_remove_all(name, "[\\s-]")) ->
   ssa_yearly
 ```
 
@@ -48,18 +49,21 @@ Add the published birth counts across all years and both sex categories. These c
 #| label: count-baby-names
 ssa_yearly |>
   group_by(name, decade) |>
-  summarise(births = sum(births), .groups = "drop") ->
+  summarise(births = sum(births)) |>
+  ungroup() ->
   ssa_decade_counts
 ```
 
 ## Rank names within each decade
-Order names by birth count, breaking ties alphabetically. Each decade gets exactly 100 top names. A name’s share divides its birth count by the decade’s total published births.
+Order names by birth count, breaking ties alphabetically. Each decade gets exactly 100 top names. A name’s share divides its birth count by the decade’s total published births. `.by_group = TRUE` sorts within each decade; `.locale = "C"` fixes the alphabetical tie-break order across computers. `row_number()` then numbers that sorted order.
 ```{r}
 #| label: rank-baby-names
 ssa_decade_counts |>
   group_by(decade) |>
   arrange(desc(births), name, .by_group = TRUE, .locale = "C") |>
-  mutate(rank = row_number(), share = births / sum(births), top100 = rank <= 100) |>
+  mutate(rank = row_number()) |>
+  mutate(share = births / sum(births)) |>
+  mutate(top100 = rank <= 100) |>
   ungroup() ->
   ssa_decades
 
@@ -89,7 +93,7 @@ Compare the birth counts for the last name inside each top 100 and the first nam
 #| label: inspect-the-top-100-cutoff
 # DECISION: Keep this cutoff comparison in the final report, or leave it as a development inspection.
 ssa_decades |>
-  filter(rank %in% c(100L, 101L)) |>
+  filter(rank == 100 | rank == 101) |>
   select(decade, rank, name, births) |>
   pivot_wider(names_from = rank, values_from = c(name, births)) |>
   mutate(cutoff_tied = births_100 == births_101) ->
