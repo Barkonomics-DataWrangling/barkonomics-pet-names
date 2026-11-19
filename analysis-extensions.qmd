@@ -1,0 +1,229 @@
+These sections are **proposals**, kept apart from the agreed pipeline so nothing here changes the core tables. Each one adds something Shweta tried in her own version of the project. Keep the ones that help tell the story, and drop the rest before the final report.
+
+| | |
+|---|---|
+| **Uses** | `dogs`, `ssa_yearly`, `ssa_decades` (Aslan) and `dogs_by_income_group` (areas and income) |
+| **Creates** | `ssa_name_ages`, `ssa_peak_decades`, `dogs_with_name_ages`, `threshold_curve`, `area_name_ages`, `income_models`, `distinctive_names` |
+| **Transforms** | grouping (weighted average), windowing, cross join, nesting and unnesting, wider, lookup, recoding |
+
+## Decisions to agree on
+Our two versions made some choices differently. The first chunk counts how many of Aslan's estimated dogs each difference affects, so we can decide with numbers.
+
+| Topic | Aslan's pipeline | Shweta's version |
+|---|---|---|
+| Missing-name labels | 6 labels: UNKNOWN, NAME NOT PROVIDED, NONE, NA, ".", NONAME | also NAME, UNNAMED, N/A, NOT PROVIDED, and titles or single letters on their own (MR., MRS., MS., DR., A, NOT) |
+| Name formatting | upper case, spaces and hyphens removed | upper case, periods, hyphens and apostrophes removed, spaces kept |
+| "Human name" | appears in any SSA record, 1880–2019 (5+ births in some year) | 100+ births in total |
+| Birth year | licenses outside 1990–2024 excluded | kept; birth year is only part of the dog key |
+| Area | not yet included | NYC ZIPs only; dogs grouped by Census area |
+
+```{r}
+#| label: count-decision-effects
+# placeholders in Shweta's version that are not among Aslan's six labels
+# (names are already upper case with spaces removed, so "NOT PROVIDED" is "NOTPROVIDED")
+candidate_missing_labels <- c("NAME", "UNNAMED", "N/A", "NOTPROVIDED",
+                              "MR.", "MRS.", "MS.", "DR.", "A", "NOT")
+
+dogs |>
+  summarise(
+    estimated_dogs = n(),
+    candidate_missing_labels = sum(name %in% candidate_missing_labels),
+    names_with_periods_or_apostrophes = sum(str_detect(name, "[.']")),
+    not_in_ssa = sum(!ssa_recognized)
+  ) |>
+  pivot_longer(everything(), names_to = "check", values_to = "estimated_dogs")
+```
+
+Both differences in name cleaning affect well under 1% of dogs, so either choice is defensible. What matters is that we state one rule.
+
+## Extension 1: How old is each name?
+The top-100 flags say *whether* a name was popular in a decade. A single number can say *how old* a name is. The **namesake year** is the average birth year of everyone with that name: a weighted average of the year, with births as the weights. The average Dorothy was born around 1930; the average Luna was born after 2010.
+
+We also keep each name's total births, so we can test stricter definitions of a "human name", and its **peak decade**, the decade where its share was highest.
+```{r}
+#| label: make-name-ages
+# grouping: one row per name, with a weighted average birth year
+ssa_yearly |>
+  group_by(name) |>
+  summarise(
+    total_births = sum(births),
+    namesake_year = sum(as.numeric(year) * births) / sum(births)
+  ) ->
+  ssa_name_ages
+
+# window: within each name, keep the decade with the highest share
+ssa_decades |>
+  group_by(name) |>
+  slice_max(share, n = 1, with_ties = FALSE) |>
+  ungroup() |>
+  select(name, peak_decade = decade) ->
+  ssa_peak_decades
+
+ssa_name_ages |>
+  left_join(ssa_peak_decades, by = "name") |>
+  filter(name %in% c("DOROTHY", "JENNIFER", "LUNA", "MAX")) |>
+  arrange(namesake_year)
+```
+
+Give every comparable dog its name's age. Names not in the SSA reference get 0 births and no namesake year.
+```{r}
+#| label: add-name-ages-to-dogs
+dogs_by_income_group |>
+  left_join(ssa_name_ages, by = "name") |>
+  left_join(ssa_peak_decades, by = "name") |>
+  mutate(
+    total_births = replace_na(total_births, 0),
+    human_name_100 = total_births >= 100
+  ) ->
+  dogs_with_name_ages
+```
+
+## Extension 2: Does the definition of a "human name" matter?
+A **cross join** repeats every dog once for each threshold, so one `group_by()` gives the human-name rate of every income group at every threshold. The first threshold, 5 births, is the same as `ssa_recognized`.
+```{r}
+#| label: threshold-curve
+#| fig-width: 8
+#| fig-height: 4.5
+# cross join: every dog appears once per threshold (6 copies), then we group
+dogs_with_name_ages |>
+  cross_join(tibble(threshold = c(5, 20, 100, 500, 1000, 5000))) |>
+  group_by(threshold, income_group) |>
+  summarise(human_name_rate = mean(total_births >= threshold), .groups = "drop") ->
+  threshold_curve
+
+threshold_curve |>
+  ggplot(aes(x = threshold, y = human_name_rate, colour = income_group)) +
+  geom_line(linewidth = 1) +
+  geom_point() +
+  scale_x_log10(labels = scales::label_comma()) +
+  scale_y_continuous(labels = scales::label_percent()) +
+  scale_colour_viridis_d(end = 0.9) +
+  labs(
+    title = "Is the income gap an artifact of our threshold?",
+    x = "Births needed to count as a human name (log scale)",
+    y = "Dogs with a human name", colour = NULL
+  ) +
+  theme_minimal()
+```
+
+If the lines stay in the same order at every threshold, the income pattern does not depend on where we draw the line.
+
+## Extension 3: Older names in richer areas?
+Group the dogs by area and average the namesake year of the dogs with a human name (100+ births). This gives one number per area that we can set against income.
+```{r}
+#| label: area-name-ages
+dogs_with_name_ages |>
+  group_by(zcta, income_group) |>
+  summarise(
+    dogs = n(),
+    human_name_dogs = sum(human_name_100),
+    median_income = first(income),
+    human_name_share = mean(human_name_100),
+    namesake_year = mean(namesake_year[human_name_100]),   # human names only
+    .groups = "drop"
+  ) ->
+  area_name_ages
+
+area_name_ages |>
+  ggplot(aes(x = median_income, y = namesake_year)) +
+  geom_point(aes(size = human_name_dogs, colour = human_name_share), alpha = 0.7) +
+  geom_smooth(aes(weight = human_name_dogs), method = "lm", se = TRUE, colour = "#6b46c1") +
+  scale_x_log10(labels = scales::label_dollar()) +
+  scale_colour_viridis_c(labels = scales::label_percent(), end = 0.9) +
+  labs(
+    title = "In richer areas, dogs' human namesakes are older",
+    subtitle = "Average birth year of people who share the dog's name; one point per NYC area",
+    x = "Median household income, ACS 2024 (log scale)",
+    y = "Average namesake birth year",
+    size = "Dogs with a\nhuman name", colour = "Share of\nhuman names"
+  ) +
+  theme_minimal()
+```
+
+## Extension 4: One model per measure
+We fit the same weighted regression to two measures. **Nesting** puts each measure's data into one cell of a list column, `map()` fits a model to each, and **unnesting** brings the results back as rows. Using `log2(income)` means the slope is the change for each doubling of area income.
+```{r}
+#| label: income-models
+area_name_ages |>
+  mutate(log2_income = log2(median_income)) |>
+  pivot_longer(c(human_name_share, namesake_year), names_to = "measure", values_to = "value") |>
+  mutate(weight = if_else(measure == "namesake_year", human_name_dogs, dogs)) |>
+  nest(.by = measure) |>                                    # nest: one data frame per measure
+  mutate(
+    model = map(data, \(d) lm(value ~ log2_income, data = d, weights = weight)),
+    results = map(model, \(m) broom::tidy(m, conf.int = TRUE)),
+    r2 = map_dbl(model, \(m) summary(m)$r.squared)
+  ) |>
+  select(measure, results, r2) |>
+  unnest(results) |>                                        # unnest: one row per model term
+  filter(term == "log2_income") |>
+  select(measure, slope = estimate, conf.low, conf.high, p.value, r2) ->
+  income_models
+
+income_models
+```
+
+In Shweta's version the namesake year moved about 3.5 years earlier for each doubling of income (R² ≈ 0.5), the strongest result in the project.
+
+## Extension 5: Which names set rich and poor areas apart?
+The most popular names (Luna, Max, Bella) are popular everywhere. We compare each name's share of dogs in the richest group with its share in the poorest:
+
+- Going **wider** puts the two counts side by side.
+- A log2 ratio of +1 means "twice as common in the richest areas".
+- Adding 1 to each count avoids dividing by zero.
+- We keep names with at least 30 dogs in the two groups together.
+```{r}
+#| label: distinctive-names
+#| fig-width: 8
+#| fig-height: 6
+dogs_with_name_ages |>
+  filter(income_group %in% c("Q1 lowest income", "Q5 highest income")) |>
+  count(income_group, name) |>
+  pivot_wider(names_from = income_group, values_from = n, values_fill = 0) |>  # wider: Q1 and Q5 side by side
+  rename(q1_dogs = `Q1 lowest income`, q5_dogs = `Q5 highest income`) |>
+  filter(q1_dogs + q5_dogs >= 30) |>
+  mutate(log2_ratio = log2(((q5_dogs + 1) / sum(q5_dogs + 1)) /
+                           ((q1_dogs + 1) / sum(q1_dogs + 1)))) |>
+  left_join(ssa_name_ages |> select(name, total_births), by = "name") |>
+  left_join(ssa_peak_decades, by = "name") |>
+  mutate(name_type = case_when(
+    replace_na(total_births, 0) < 100 ~ "not a human name",
+    peak_decade < 1950 ~ "human name, peaked before 1950",
+    peak_decade < 1990 ~ "human name, peaked 1950–1989",
+    .default = "human name, peaked 1990 or later"
+  )) ->
+  distinctive_names
+
+bind_rows(
+  distinctive_names |> slice_max(log2_ratio, n = 10, with_ties = FALSE),
+  distinctive_names |> slice_min(log2_ratio, n = 10, with_ties = FALSE)
+) ->
+  distinctive_top
+
+distinctive_top |>
+  mutate(name = fct_reorder(str_to_title(name), log2_ratio)) |>
+  ggplot(aes(x = log2_ratio, y = name, fill = name_type)) +
+  geom_col() +
+  geom_vline(xintercept = 0, colour = "grey40") +
+  scale_fill_manual(values = c(
+    "human name, peaked before 1950" = "#6b46c1",
+    "human name, peaked 1950–1989" = "#a0aec0",
+    "human name, peaked 1990 or later" = "#2c7a7b",
+    "not a human name" = "#ed8936"
+  )) +
+  labs(
+    title = "Most over-represented names in the richest vs poorest areas",
+    x = "← more common in poorest areas        more common in richest areas →",
+    y = NULL, fill = NULL
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+In Shweta's version, the rich side held classic names (Henry, George, Franklin, Otto) and the poor side held recent brand and status names (Dior, Chanel, Diamond, Princess).
+
+## More ideas we could add
+- **A second extract year:** re-running the same steps on the 2023 extract tests whether the pattern holds in another year. In Shweta's version it did. This needs a 2023 snapshot in `data/raw/`.
+- **Name variety:** the chance that two dogs in an area have different names was about 0.998 everywhere, a null result worth one sentence.
+- **Rare names:** the share of dogs whose name is shared by 5 or fewer NYC dogs was slightly lower in richer areas.
+- **Data audit:** Shweta's audit of all four raw sources (missing values, dates, duplicates, borough coverage, income precision, unmatched names) can become a short "How we checked the data" section.
