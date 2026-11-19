@@ -18,6 +18,9 @@ ssa_raw <- read_csv(
   col_names = c("name", "sex", "births"),
   id = "source_file"
 )
+
+ssa_raw |>
+  preview()
 ```
 
 ## Read the year and assign its decade
@@ -30,6 +33,9 @@ ssa_raw |>
   mutate(decade = (year %/% 10) * 10) |>
   select(name, sex, year, decade, births) ->
   ssa_with_decades
+
+ssa_with_decades |>
+  preview()
 ```
 
 ## Give names the same matching format as the dogs
@@ -40,6 +46,9 @@ ssa_with_decades |>
   mutate(name = str_to_upper(name)) |>
   mutate(name = str_remove_all(name, "[\\s-]")) ->
   ssa_yearly
+
+ssa_yearly |>
+  preview()
 ```
 
 ## Total births by name and decade
@@ -51,6 +60,9 @@ ssa_yearly |>
   summarise(births = sum(births)) |>
   ungroup() ->
   ssa_decade_counts
+
+ssa_decade_counts |>
+  preview()
 ```
 
 ## Rank names within each decade
@@ -77,6 +89,9 @@ ssa_decades |>
   filter(top100) |>
   select(decade, name) ->
   ssa_top100_names
+
+ssa_top100_names |>
+  preview()
 ```
 
 ## Make a list of all recorded SSA names
@@ -87,6 +102,10 @@ ssa_yearly |>
   distinct(name) |>
   pull(name) ->
   ssa_all_names
+
+# Display a few names as a table.
+tibble(name = ssa_all_names) |>
+  preview()
 ```
 
 SSA omits names reported fewer than five times for a sex and year. Early birth years have less complete coverage because many people born before 1937 never applied for a Social Security card. These limits affect the historical comparisons.
