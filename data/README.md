@@ -1,5 +1,5 @@
 # Source snapshots
-Preserve raw source files unchanged. All implementations should read the same snapshots. The R pipeline keeps cleaned and joined tables in memory and renders one HTML report. [sources.csv](sources.csv) records input origins, selections, row counts, sizes and available acquisition metadata.
+Preserve raw source files unchanged. All implementations should read the same snapshots. The R pipeline keeps preparation tables and name lists in memory and renders one HTML report. Matching awaits review. [sources.csv](sources.csv) records input origins, selections, row counts, sizes and available acquisition metadata.
 
 The initial snapshot is [raw/nyc-dogs-2024.csv](raw/nyc-dogs-2024.csv): 105,974 NYC dog-license records with `extract_year` equal to 2024, all eight published columns, and 11,139,556 bytes. It is a selected CSV export from the [NYC Dog Licensing Dataset](https://data.cityofnewyork.us/Health/NYC-Dog-Licensing-Dataset/nu7n-tubp). The explicit 200,000-row request limit exceeds the independently checked extract count; the saved CSV has the expected 105,974 rows, rather than a default-limited sample.
 
@@ -19,15 +19,15 @@ Count and exclude named licenses whose approximate age at issuance (issue year m
 
 The optional [birth-year inference reference](../appendices/birth-year-inferences.qmd) preserves the six considered replacements, their rationale and the original lookup operation. [birth_year_corrections.csv](../appendices/birth_year_corrections.csv) is used only by that reference. It does not affect the main preparation.
 ## Run the analysis
-From the repository root, render the dog and baby-name preparation and matching:
+From the repository root, render the dog and baby-name preparation:
 
 ```sh
 quarto render final-analysis.qmd
 ```
 
-[final-analysis.qmd](../final-analysis.qmd) loads tidyverse and [helpers.R](../helpers.R), includes [dog preparation](../dog-names.qmd), includes [baby-name preparation](../baby-names.qmd), and includes [baby-dog matching](../baby-dog-join.qmd) to join their R tables by name. The include lines insert the sections and execute their code in the same R session. The project renders only final-analysis.qmd. Its single self-contained final-analysis.html contains the preparation, explanations, cleaning summaries and name matches. It reads only the dog and SSA source snapshots; income work is deferred.
+[final-analysis.qmd](../final-analysis.qmd) loads tidyverse and [helpers.R](../helpers.R), includes [dog preparation](../dog-names.qmd), includes [baby-name preparation](../baby-names.qmd), and includes the [matching review section](../baby-dog-join.qmd), whose code is not executed while it awaits review against the separate name lists. The include lines insert the sections and execute their code in the same R session. The project renders only final-analysis.qmd. Its single self-contained final-analysis.html contains the preparation, explanations, cleaning summaries and pending matching section. It reads only the dog and SSA source snapshots; income work is deferred.
 
-Intermediate tables stay in memory. No dog handoff, report CSVs, separate chart PNGs or checks notebook are part of this workflow. For an interactive walkthrough, run dog-names.qmd from its packages-and-helpers chunk downward, then baby-names.qmd from its setup chunk downward, and finally baby-dog-join.qmd, all in one R session.
+Intermediate tables stay in memory. No dog handoff, report CSVs, separate chart PNGs or checks notebook are part of this workflow. For an interactive walkthrough, run dog-names.qmd from its packages-and-helpers chunk downward, then baby-names.qmd from its setup chunk downward, all in one R session. Review baby-dog-join.qmd before running its matching code; it expects an object that preparation does not produce.
 
 The optional [birth-year reference](../appendices/birth-year-inferences.qmd) and its small correction lookup live in appendices/. The reference is outside the main report and changes no analysis tables. Run its chunks from the repository root when inspecting those examples.
 

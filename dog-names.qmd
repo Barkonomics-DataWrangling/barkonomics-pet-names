@@ -142,97 +142,80 @@ Uppercase the whole name, then remove spaces and hyphens. These are the spelling
 ```{r}
 #| label: format-names
 licenses_for_formatting |>
-  mutate(name = str_to_upper(name, locale = "en")) |>
+  mutate(name = str_to_upper(name)) |>
   mutate(name = str_remove_all(name, "[\\s-]")) ->
   licenses_with_matching_names
 ```
 
 ## Estimate individual dogs
-We treat licenses with the same full name after formatting, sex, birth year, breed and ZIP as one estimated dog. The license dates were read as date-times during import, so they are ready to sort. Within each group, sort the newest issue date first. A tie goes to the later expiry date, then to the earlier source row. `slice_head(n = 1)` keeps the first license in each sorted group. `license_record_count` records how many licenses that row represents. For example, the two matching TOTORO licenses were issued in 2019 and 2024. The 2024 row represents both.
+We treat licenses with the same full name after formatting, sex, birth year, breed and ZIP as one estimated dog. The license dates were read as date-times during import, so they are ready to sort. Within each group, sort the newest issue date first. If issue dates tie, keep the first license in source-file order. `.by_group = TRUE` puts each dog group together before sorting its licenses by issue date. `slice_head(n = 1)` keeps the first license in each sorted group. For example, the two matching TOTORO licenses were issued in 2019 and 2024. The 2024 row represents both.
 ```{r}
 #| label: estimate-individual-dogs
 licenses_with_matching_names |>
   group_by(name, sex, birth_year, breed, zipcode) |>
-  mutate(
-    license_record_count = n(),
-    latest_issue_date = max(license_issue_date)
-  ) |>
-  mutate(latest_issue_ties = sum(license_issue_date == latest_issue_date)) |>
-  arrange(desc(license_issue_date), desc(license_expiry_date), source_row_id, .by_group = TRUE) |>
+  arrange(desc(license_issue_date), .by_group = TRUE) |>
   slice_head(n = 1) |>
-  ungroup() |>
-  # DECISION: Keep both estimated_dog_id and source_row_id, or use the source row number alone.
-  mutate(retained_row_label = str_pad(source_row_id, width = 6, pad = "0")) |>
-  mutate(estimated_dog_id = str_c("dog2024-", retained_row_label)) |>
-  arrange(source_row_id) ->
-  dogs_estimated
+  ungroup() ->
+  dogs_consolidated
 
-dogs_estimated |>
-  select(estimated_dog_id, name, license_record_count) |>
+dogs_consolidated |>
+  select(source_row_id, name, license_issue_date) |>
   preview()
 ```
 
 ## Keep the dog fields
-Pass the working fields to analysis. The source row number links each dog to its recorded values. Leave report fields out of this table.
+Keep name and ZIP for matching, and sex, birth year and breed for possible further comparisons. The source row number links each dog to its recorded values. Leave the extract year, license dates and report fields out of this analysis table.
 ```{r}
 #| label: select-dog-fields
-dogs_estimated |>
-  select(
-    estimated_dog_id, source_row_id, extract_year, name,
-    sex, birth_year, breed, zipcode,
-    license_issue_date, license_expiry_date, license_record_count
-  ) ->
+dogs_consolidated |>
+  select(source_row_id, name, sex, birth_year, breed, zipcode) ->
   dogs_prepared
 ```
 
 ## Cleaning summary
-The source uses six labels for missing names: `UNKNOWN`, `NAME NOT PROVIDED`, `NONE`, `NA`, `.`, and `NONAME`. The report combines them into one missing-name count across all source licenses and also reports missingness by recorded ZIP; it does not distinguish which label was used. Formatting and breed findings describe the usable licenses and their estimated dogs. The birth-year exclusion count describes the 59 named licenses removed before grouping. The excluded_birth_year_licenses table keeps their recorded fields available during the session. Each `sum()` counts TRUE answers. `bind_rows()` stacks the license and dog summaries; `pivot_longer()` puts each measure on its own row so the final report has a unit, measure and count.
+### Effect of consolidating licenses
+Compare the number of eligible licenses with the number of estimated dogs. The difference counts additional license records consolidated, not dogs excluded. `nrow()` counts table rows; no per-dog license-count column is needed.
 ```{r}
-#| label: summarize-cleaning
-# DECISION: Keep one combined cleaning summary, or present these same counts in separate tables.
+#| label: summarize-license-consolidation
+licenses_with_matching_names |>
+  nrow() ->
+  eligible_license_count
+
+dogs_prepared |>
+  nrow() ->
+  estimated_dog_count
+
+tibble(
+  eligible_license_records = eligible_license_count,
+  estimated_dogs = estimated_dog_count,
+  additional_license_records_consolidated = eligible_license_count - estimated_dog_count
+) ->
+  consolidation_summary
+
+consolidation_summary
+```
+
+### Missing names overall
+Add the earlier per-ZIP counts to report missing names across all source licenses. Divide the missing-name count by the source-license count to get the overall share. The six missing-name labels are counted together.
+```{r}
+#| label: summarize-missing-names-overall
 missing_by_zip |>
   summarise(
     source_license_records = sum(source_license_records),
     missing_name_records = sum(missing_name_records),
     missing_name_share = missing_name_records / source_license_records
   )
+```
 
-licenses_with_matching_names |>
+### Unknown breeds and compound names
+Count these characteristics among the estimated dogs, using each dog's retained license. Each `sum()` counts TRUE answers in the report fields recorded before formatting names. These counts describe the prepared dogs; they do not exclude any dogs.
+```{r}
+#| label: summarize-dog-characteristics
+dogs_consolidated |>
   summarise(
-    breed_unknown = sum(breed_unknown),
-    compound_name = sum(compound_name)
-  ) |>
-  mutate(unit = "named_license_record") ->
-  license_quality_counts
-
-dogs_estimated |>
-  summarise(
-    breed_unknown = sum(breed_unknown),
-    compound_name = sum(compound_name)
-  ) |>
-  mutate(unit = "estimated_dog") ->
-  dog_quality_counts
-
-dogs_estimated |>
-  filter(latest_issue_ties > 1) |>
-  summarise(unit = "estimated_dog", flag = "latest_issue_ties", count = n()) ->
-  latest_issue_tie_count
-
-excluded_birth_year_licenses |>
-  summarise(unit = "named_license_record", flag = "excluded_birth_year", count = n()) ->
-  birth_year_exclusion_total
-
-license_quality_counts |>
-  bind_rows(dog_quality_counts) |>
-  pivot_longer(
-    cols = c(breed_unknown, compound_name),
-    names_to = "flag", values_to = "count"
-  ) |>
-  select(unit, flag, count) |>
-  bind_rows(latest_issue_tie_count, birth_year_exclusion_total) ->
-  quality_summary
-
-quality_summary
+    dogs_with_unknown_breed = sum(breed_unknown),
+    dogs_with_compound_names = sum(compound_name)
+  )
 ```
 
 Different dogs can share all five identifying fields. A change in a dog's recorded details can also split its licenses into several groups. These are estimates of individual dogs.

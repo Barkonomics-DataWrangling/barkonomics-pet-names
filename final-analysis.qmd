@@ -10,7 +10,7 @@ execute:
   message: false
 ---
 
-Prepare the 2024 dog-license records and the national baby-name reference, then match each estimated dog to the complete baby-name decades from 1880–2019. Neighborhood-income work is deferred to a separate collaboration step.
+Prepare the 2024 dog-license records, the top 100 baby names for each complete decade from 1880–2019, and the list of all recorded SSA names in those years. Matching is awaiting review and is not executed. Neighborhood-income work is deferred to a separate collaboration step.
 
 # Prepare dog names
 

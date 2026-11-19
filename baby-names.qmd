@@ -21,12 +21,11 @@ ssa_raw <- read_csv(
 ```
 
 ## Read the year and assign its decade
-`basename()` keeps just the filename from a path. In `yob1924.txt`, characters 4 through 7 are `1924`; read them as a number. Integer division (`%/%`) drops the remainder: 1924 divided by 10 gives 192, and multiplying by 10 gives the decade 1920.
+`str_extract()` finds the four-digit year in each source path. The pattern `[0-9]{4}` means four consecutive digits; in our paths, such as `data/raw/ssa/yob1924.txt`, those digits are the year. `as.integer()` turns the extracted text into a number. Integer division (`%/%`) keeps the whole-number part: 1924 divided by 10 gives 192, and multiplying by 10 gives the decade 1920. Every year from 1920 through 1929 receives that same decade label.
 ```{r}
 #| label: prepare-baby-name-years
 ssa_raw |>
-  mutate(source_filename = basename(source_file)) |>
-  mutate(year = str_sub(source_filename, 4, 7)) |>
+  mutate(year = str_extract(source_file, "[0-9]{4}")) |>
   mutate(year = as.integer(year)) |>
   mutate(decade = (year %/% 10) * 10) |>
   select(name, sex, year, decade, births) ->
@@ -38,12 +37,12 @@ Uppercase the names, then remove spaces and hyphens using the same two steps as 
 ```{r}
 #| label: format-baby-names
 ssa_with_decades |>
-  mutate(name = str_to_upper(name, locale = "en")) |>
+  mutate(name = str_to_upper(name)) |>
   mutate(name = str_remove_all(name, "[\\s-]")) ->
   ssa_yearly
 ```
 
-## Count names in each decade
+## Total births by name and decade
 Add the published birth counts across all years and both sex categories. These counts cover the births represented in the SSA files, with the suppression and historical coverage limits described below.
 ```{r}
 #| label: count-baby-names
@@ -55,14 +54,13 @@ ssa_yearly |>
 ```
 
 ## Rank names within each decade
-Order names by birth count, breaking ties alphabetically. Each decade gets exactly 100 top names. A name’s share divides its birth count by the decade’s total published births. `.by_group = TRUE` sorts within each decade; `.locale = "C"` fixes the alphabetical tie-break order across computers. `row_number()` then numbers that sorted order.
+Within each decade, put the largest birth counts first, breaking ties alphabetically. `.by_group = TRUE` keeps each decade together while sorting. `row_number()` numbers the sorted names starting at 1 for each decade. Mark ranks 1 through 100 as TRUE in `top100` and the remaining ranks as FALSE. Keep the full ranked table for inspection; the next step selects its top-100 rows. The final display shows the first five names per decade.
 ```{r}
 #| label: rank-baby-names
 ssa_decade_counts |>
   group_by(decade) |>
-  arrange(desc(births), name, .by_group = TRUE, .locale = "C") |>
+  arrange(desc(births), name, .by_group = TRUE) |>
   mutate(rank = row_number()) |>
-  mutate(share = births / sum(births)) |>
   mutate(top100 = rank <= 100) |>
   ungroup() ->
   ssa_decades
@@ -71,35 +69,24 @@ ssa_decades |>
   filter(rank <= 5)
 ```
 
-## Make one reference row per name
-A name may belong to the top 100 in several decades. Put those results in separate columns so matching that name adds one reference row to each dog. Overall recognition means the name appears in any published record during the complete decades, 1880–2019.
+## Keep the top 100 names for each decade
+Keep the rows marked TRUE in `top100`, then keep just the decade and name. This gives 100 names for each of the 14 decades: 1,400 rows in all. A name can appear in more than one decade's list.
 ```{r}
-#| label: make-baby-name-reference
+#| label: select-top-100-names
 ssa_decades |>
-  select(name, decade, top100) |>
-  pivot_wider(
-    names_from = decade, values_from = top100,
-    names_prefix = "top100_", values_fill = FALSE
-  ) |>
-  mutate(ssa_recognized = TRUE) |>
-  arrange(name, .locale = "C") ->
-  ssa_reference
+  filter(top100) |>
+  select(decade, name) ->
+  ssa_top100_names
 ```
 
-## Inspect the top-100 cutoff
-Compare the birth counts for the last name inside each top 100 and the first name outside it.
-
+## Make a list of all recorded SSA names
+Use the formatted annual records so this list includes names outside the top 100. `distinct(name)` keeps each name once. `pull(name)` takes that column out of the table as a character vector: a list of name strings. This is the list for checking whether a dog name appears anywhere in the selected 1880–2019 SSA records.
 ```{r}
-#| label: inspect-the-top-100-cutoff
-# DECISION: Keep this cutoff comparison in the final report, or leave it as a development inspection.
-ssa_decades |>
-  filter(rank == 100 | rank == 101) |>
-  select(decade, rank, name, births) |>
-  pivot_wider(names_from = rank, values_from = c(name, births)) |>
-  mutate(cutoff_tied = births_100 == births_101) ->
-  ssa_cutoffs
-
-ssa_cutoffs
+#| label: list-all-ssa-names
+ssa_yearly |>
+  distinct(name) |>
+  pull(name) ->
+  ssa_all_names
 ```
 
 SSA omits names reported fewer than five times for a sex and year. Early birth years have less complete coverage because many people born before 1937 never applied for a Social Security card. These limits affect the historical comparisons.

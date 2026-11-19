@@ -11,7 +11,9 @@ Aslan authorized completing the first handoff after selecting the research and c
 ## Research frame
 Ask whether dog names differ across higher- and lower-income NYC neighborhoods, and whether their names match different baby-name decades. Diffusion between socioeconomic groups and eventually to dog names is the motivating hypothesis. The available national baby-name counts and 2024 dog licenses can describe generational associations. They do not identify a historical sequence of naming by household income.
 
-Use the top 100 names in every complete SSA decade from 1880–2019. Sum across years and sex, rank by birth count and break ties alphabetically. A name may match multiple decades. Overall recognition uses published records across those complete decades. Keep one reference row per formatted name when joining to dogs.
+Use the top 100 names in every complete SSA decade from 1880–2019. Sum across years and sex, rank by birth count and break ties alphabetically. A name may match multiple decades. Overall recognition uses published records across those complete decades. Keep the top-100 table by decade and the separate character vector of all recorded names; review matching independently.
+
+Use only the 2024 dog extract. For comparisons over time, use the recorded birth_year directly as a proxy for when a dog was named. Describe the groups as dog birth cohorts represented in the 2024 extract, with naming year approximated by birth year. Develop cohort grouping and comparisons with baby-name decades in a separate working notebook for now; move the agreed dog–baby analysis into final-analysis.qmd during Thursday reconciliation. The preparation retains birth_year without inventing a separate naming-date field.
 ## Contribution context
 The contribution branch is `aslan/dog-baby-name-data`, reviewed through [PR #11](https://github.com/Barkonomics-DataWrangling/barkonomics-pet-names/pull/11). The existing issue is the shared outcome and acceptance record; this spike holds the detailed reasoning and execution evidence. Keep public-source findings and project decisions here; private meeting material remains with its owner.
 
@@ -28,12 +30,12 @@ data/
   raw/               # Preserved dog and SSA sources.
 dog-names.qmd        # Included dog preparation.
 baby-names.qmd       # Included baby-name preparation.
-analysis.qmd         # Executes preparation and comparisons; renders one HTML.
+final-analysis.qmd   # Executes preparation; matching awaits review; renders one HTML.
 helpers.R            # Shared table preview function.
 appendices/          # Optional birth-year reference and its six-row lookup.
 ```
 
-Keep source snapshots in Git. Prepared tables remain in memory; analysis.html shows cleaning and name matching. No generated CSVs, separate chart images or checks notebook are retained. The dog CSV is 11,139,556 bytes. All 146 annual SSA files and the source readme remain in data/raw/ssa/, totaling 28,255,978 bytes; the reference uses the 140 complete-decade files. Income work and its dependencies are deferred.
+Keep source snapshots in Git. Prepared objects remain in memory; final-analysis.html shows cleaning, preparation and the pending matching section. No generated CSVs, separate chart images or checks notebook are retained. The dog CSV is 11,139,556 bytes. All 146 annual SSA files and the source readme remain in data/raw/ssa/, totaling 28,255,978 bytes; the reference uses the 140 complete-decade files. Income work and its dependencies are deferred.
 
 Use 2024 as the starting dog extract, following Aslan's November 5 direction. This is the initial working choice, not a decision to pool years or claim unique dogs. For SSA, the national bulk download offers the reference source; preserve its readme and derive the chosen time window explicitly. Initial profiling should report schema, row counts, missingness and duplicate-looking records before adopting irreversible cleaning assumptions.
 ## Implementation approach
@@ -83,17 +85,19 @@ Of the repeated five-attribute groups, 6,255 contain more than one issued/expiry
 
 A further date inspection found a male Shih Tzu named `MAX`, born in 2013, in ZIP `10456`, with periods issued February 25, 2019 and expiring February 25, 2024, and issued January 30, 2024 and expiring February 25, 2027. The second period beginning near the first expiry is consistent with renewal, without proving identity. All extract records expire in 2024 or later, while issue years range from 2017 through 2024; selecting only licenses issued in 2024 would exclude older licenses still represented in the chosen extract. No rows were removed.
 ## Selected overlapping decade matches
-Keep a separate membership flag for each complete decade from 1880–2019. A name can match several decades. Each dog still contributes one row to the joined table.
+Keep the top 100 names for each complete decade from 1880–2019 in a table with decade and name columns. A name can appear in several decade lists. The separate ranked table retains birth counts and ranks for inspection.
 
-For an initial area comparison, report each decade's matching share among eligible named estimated dogs. The same estimated dog can contribute to multiple decade numerators while appearing only once in the table and denominator; the percentages therefore need not sum to 100%. Retain ranks or proportions in the SSA reference for later examination of relative popularity. Overall SSA recognition uses the separate rule below.
+For an initial area comparison, report each decade's matching share among eligible named estimated dogs. The same dog can contribute to several decade numerators while counting once in each denominator; the percentages therefore need not sum to 100%. The matching implementation remains for review and must follow this question rather than dictate the preparation layout.
 ## Selected overall human-name recognition rule
-Set ssa_recognized when a formatted dog name appears in any published SSA record from 1880–2019. The fourteen top-100 flags describe popularity by decade. A name can be recognized while missing every top-100 list.
+Overall recognition means a formatted dog name appears in any published SSA record from 1880–2019. Keep those distinct names as the character vector ssa_all_names, separate from the decade-specific top-100 table. A name can be recognized while missing every top-100 list.
 
-Read the 140 annual files for the 14 complete decades from 1880–2019. Each name has one reference row for joining to dogs.
+Aslan selected this separate-list representation during the walkthrough. Neither question requires a wide table or a join; review membership checks when moving on to matching.
 ## Selected execution and collaboration interface
-Render analysis.qmd as one report that includes dog-names.qmd and baby-names.qmd and uses their R objects directly. Keep source_row_id for tracing the prepared dog back to its source license. Reports and intermediate tables stay in memory; no dog CSV is needed to coordinate modules in the same pipeline.
+Aslan selected developing dog–baby analysis separately while reviewing the code, then moving the agreed analysis into final-analysis.qmd when reconciling contributions with Shweta on Thursday. The separate analysis notebook is a development workspace, not a permanent additional report layer. Keep preparation conceptually separate and include each preparation sequence once in the final report. Do not include standalone analysis notebooks that repeat the same preparation. Remove the migrated working analysis from the final report’s include list; settle the rest of the shared report structure with Shweta. This records a future migration, not authorization to combine the contribution branches now.
 
-The active pipeline stops at matching dogs to the SSA reference. Income data, city-area selection and dependent comparisons are deferred to later work with Shweta. Do not copy her unmerged outputs into this contribution as a substitute for that integration.
+Render final-analysis.qmd as one report including dog-names.qmd and baby-names.qmd and using their R objects directly. Keep source_row_id for tracing each prepared dog to its retained source license. Reports and intermediate tables stay in memory; no dog CSV is needed to coordinate modules in the same pipeline.
+
+The active pipeline currently stops at preparing the dogs and the two SSA name lists. The matching section is retained for review with execution disabled. Income data, city-area selection and dependent comparisons are deferred to later work with Shweta. Do not copy her unmerged outputs into this contribution as a substitute for that integration.
 ## Selected uncertainty treatment
 The major source, name-reference, counting and output choices are selected. A further read-only inspection of the 100,164 named source records found 8,287 with breed exactly `Unknown`, 33 with birth years that are not four digits, 12 with four-digit birth years before 1990, and 40 with numeric ZIP strings shorter than five digits. There are no empty sex, birth-year, breed, ZIP or license-date strings among these records; sex values are `F` and `M`. Among the unknown-breed records, the five raw attributes form 7,732 groups, with 555 records beyond the first; these are not normalized or verified dog identities.
 
@@ -159,7 +163,7 @@ The R policy proposal is a separate contribution with its own commit and eventua
 Run checks temporarily when implementing a change; do not retain a checks notebook or its CSV outputs. For the in-memory refactor, compare the R objects with the preceding saved results from a temporary backup, render from source without data/derived, and confirm that preparation and name matching appear in the same self-contained HTML. Keep source acquisition provenance in the inventory and data README. This does not add validation steps to the analysis narrative.
 
 ## Quarto implementation
-[analysis.qmd](../../analysis.qmd) is the single report entry point. It loads tidyverse and helpers, then includes [dog-names.qmd](../../dog-names.qmd) and [baby-names.qmd](../../baby-names.qmd) before matching dog names to the SSA reference. Quarto includes execute in one R session; intermediate objects need no CSV serialization. Only analysis.html is rendered. The optional [birth-year reference](../../appendices/birth-year-inferences.qmd) is outside the report. Income preparation remains a separate, unmerged collaborator contribution.
+[final-analysis.qmd](../../final-analysis.qmd) is the current report entry point. It includes [dog-names.qmd](../../dog-names.qmd), [baby-names.qmd](../../baby-names.qmd) and the disabled matching section in [baby-dog-join.qmd](../../baby-dog-join.qmd). Quarto includes execute in one R session; intermediate objects need no CSV serialization. Only final-analysis.html is rendered. The selected Thursday migration will place the agreed dog–baby analysis directly in the final report. The optional [birth-year reference](../../appendices/birth-year-inferences.qmd) is outside the report. Income preparation remains a separate, unmerged collaborator contribution.
 
 Issue #1 and its PR own shared review and acceptance. Policy contributions remain separate, and consumer workflow pins remain unchanged.
 
