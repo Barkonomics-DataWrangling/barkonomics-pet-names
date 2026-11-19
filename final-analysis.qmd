@@ -57,8 +57,10 @@ Income describes the surrounding Census area, not the owner's household, so our 
 
 The license table is the center. It links to the other sources by two keys, and both need wrangling before they can be joined:
 
-- **Dog name → baby names.** Names must be cleaned the same way in both tables before they can match (Parts 1–3).
+- **Dog name → baby names.** Names must be cleaned the same way in both tables before they can match (Parts 1–3; the match itself runs in Part 5).
 - **Dog ZIP code → Census area → income.** A ZIP code is not a Census area, so a crosswalk translates one into the other before income can be attached (Parts 4–5).
+
+Every join is a **left join** unless stated otherwise: it keeps every dog even when a lookup finds nothing, so we can count what each step loses instead of losing rows silently.
 
 Part 6 then looks closer at the names, and the report ends with what we found so far and what we will refine.
 
@@ -87,39 +89,18 @@ fmt_pct <- function(x, accuracy = 0.1) scales::percent(x, accuracy = accuracy)
 # Part 2 · Prepare the baby names
 
 ::: why
-**Why this part:** to know whether a dog's name is a human name, and which generation it belongs to, we need a reference with one row per name, recording whether the name was among the 100 most popular in each decade.
+**Why this part:** to know whether a dog's name is a human name, and which generation it belongs to, we need the yearly birth counts, the 100 most popular names in each decade, and a list of every recorded name.
 :::
 
 {{< include baby-names.qmd >}}
 
 # Part 3 · Match dog and baby names
 
-## Match baby names to dogs
-Use all complete decades in the reference. Keep a separate yes/no result for each decade so a name can match several generations.
-```{r}
-#| label: match-dogs-to-baby-names
-ssa_reference |>
-  select(name, ssa_recognized, starts_with("top100_")) ->
-  ssa_name_flags
-
-ssa_name_flags |>
-  select(-name) |>
-  names() ->
-  name_flags
-
-dogs_prepared |>
-  left_join(ssa_name_flags, by = "name") |>
-  mutate(across(all_of(name_flags), function(name_matches) replace_na(name_matches, FALSE))) ->
-  dogs
-
-dogs |>
-  select(name, ssa_recognized, starts_with("top100_")) |>
-  preview()
-```
-
-::: takeaway
-`r fmt_pct(mean(dogs$ssa_recognized))` of the `r fmt_n(nrow(dogs))` estimated dogs have a name that appears in the SSA records. Each dog now carries its name's history; next it needs a place and an income.
+::: why
+**Why this part:** the plan for matching each dog's name to the baby-name lists. This step is still being reviewed, so its code is shown but not run; Part 5 does the matching it needs with joins in long form.
 :::
+
+{{< include baby-dog-join.qmd >}}
 
 # Part 4 · Prepare neighborhood areas and income
 
@@ -136,7 +117,7 @@ dogs |>
 # Findings so far
 
 1. **Human names and income (Q1).** `r fmt_pct(q1$recognized_share)` of dogs in the poorest fifth of areas have a name found in the SSA records, against `r fmt_pct(q5$recognized_share)` in the richest fifth.
-2. **Older names in richer areas (Q2).** With each doubling of area income, the people who share a dog's human name were born about `r round(abs(m_age$slope), 1)` years `r if (m_age$slope < 0) "earlier" else "later"` (R² = `r round(m_age$r2, 2)`).
+2. **Older names in richer areas (Q2).** Across areas, the correlation between log income and the average birth year of a dog's human namesakes is `r round(namesake_test$estimate, 2)` (p = `r format.pval(namesake_test$p.value, digits = 2)`).
 3. **Names that set areas apart (Q3).** The richest areas over-represent names such as `r str_c(str_to_title(head(rich_side$name, 3)), collapse = ", ")`, and the poorest over-represent names such as `r str_c(str_to_title(head(poor_side$name, 3)), collapse = ", ")`.
 4. **Robustness (Q4).** `r if (gap_is_stable) "The income gap in human names keeps the same direction at every threshold from 5 to 5,000 births." else "The income gap in human names changes direction across thresholds, so it depends on the definition."`
 
@@ -149,6 +130,8 @@ dogs |>
 
 # What we aim to work on next
 
+- **Matching.** Finish reviewing the dog–baby-name match in Part 3 and use one version of it throughout.
+- **Course techniques.** Replace the remaining functions we have not covered in class (for example `pull()` and `is.element()`) with joins, grouping and counting, which carry over directly to SQL and pandas.
 - **Shared cleaning rules.** Agree on one list of placeholder names (titles or single letters on their own, such as "MR." or "A") and one rule for punctuation in names, and settle the birth-year cut-off.
 - **A second year.** Repeat the comparison on the 2023 extract to check that the pattern is not a one-year accident.
 - **Data checks.** Add a short section summarising our audit of the raw files: missing values, duplicates, borough coverage, income precision and unmatched names.
