@@ -1,0 +1,3 @@
+dataset,file,source_url,retrieved_at_utc,selection,rows,bytes,sha256
+NYC Dog Licensing Dataset,raw/nyc-dogs-2024.csv,https://data.cityofnewyork.us/resource/nu7n-tubp.csv?%24where=extract_year%3D%272024%27&%24limit=200000&%24order=%3Aid,2026-11-05T06:13:04.833946+00:00,extract_year = 2024; all eight published columns,105974,11139556,b4f05b3b04a18d3c9765590ab3a75c08f7e23990c7462619d7e735a3b83538ce
+SSA national baby names,raw/ssa/,https://www.ssa.gov/oact/babynames/names.zip,2026-11-05T14:58:55.985862+00:00,"146 unmodified annual files for 1880–2025 and NationalReadMe.pdf; analysis uses the 140 annual files for 1880–2019",2181032,28255978,

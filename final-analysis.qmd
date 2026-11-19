@@ -1,0 +1,25 @@
+---
+title: "Dog names and baby-name generations"
+format:
+  html:
+    embed-resources: true
+    toc: true
+    df-print: paged
+execute:
+  echo: true
+  message: false
+---
+
+Prepare the 2024 dog-license records, the top 100 baby names for each complete decade from 1880–2019, and the list of all recorded SSA names in those years. Matching is awaiting review and is not executed. Neighborhood-income work is deferred to a separate collaboration step.
+
+# Prepare dog names
+
+{{< include dog-names.qmd >}}
+
+# Prepare baby names
+
+{{< include baby-names.qmd >}}
+
+# Match dog and baby names
+
+{{< include dog-baby-analysis.qmd >}}

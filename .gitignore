@@ -14,3 +14,21 @@ Thumbs.db
 
 # Agent Hands' private GitHub operation journal; shared .github files stay tracked.
 /.github/project-collaboration/
+
+# Local R sessions are not project inputs.
+.Rhistory
+.RData
+.Ruserdata
+
+# Local Quarto rendering artifacts; source QMDs and input snapshots are tracked.
+/.quarto/
+/dog-names.html
+/dog-names_files/
+/baby-names.html
+/baby-names_files/
+/analysis.html
+/analysis_files/
+/appendices/birth-year-inferences.html
+/appendices/birth-year-inferences_files/
+
+**/*.quarto_ipynb

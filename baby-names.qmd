@@ -1,0 +1,111 @@
+Which names were popular in each generation? We use published U.S. birth counts for the 14 complete decades from 1880–2019.
+
+## Packages and helpers
+```{r}
+#| label: baby-preparation-setup
+library(tidyverse)
+source("helpers.R")
+```
+
+## Read the annual files
+Each annual file has a name, sex and birth count. Build the filenames for 1880–2019, then combine those files with `read_csv()`. `read_csv()` reads the supplied vector of paths as one table. It infers names and sex as text and birth counts as numbers. `id = "source_file"` keeps the source path so we can identify each row’s year.
+```{r}
+#| label: read-baby-names
+ssa_years <- 1880:2019
+ssa_file_paths <- str_c("data/raw/ssa/yob", ssa_years, ".txt")
+ssa_raw <- read_csv(
+  ssa_file_paths,
+  col_names = c("name", "sex", "births"),
+  id = "source_file"
+)
+
+ssa_raw |>
+  preview()
+```
+
+## Read the year and assign its decade
+`str_extract()` finds the four-digit year in each source path. The pattern `[0-9]{4}` means four consecutive digits; in our paths, such as `data/raw/ssa/yob1924.txt`, those digits are the year. `as.integer()` turns the extracted text into a number. Integer division (`%/%`) keeps the whole-number part: 1924 divided by 10 gives 192, and multiplying by 10 gives the decade 1920. Every year from 1920 through 1929 receives that same decade label.
+```{r}
+#| label: prepare-baby-name-years
+ssa_raw |>
+  mutate(year = str_extract(source_file, "[0-9]{4}")) |>
+  mutate(year = as.integer(year)) |>
+  mutate(decade = (year %/% 10) * 10) |>
+  select(name, sex, year, decade, births) ->
+  ssa_with_decades
+
+ssa_with_decades |>
+  preview()
+```
+
+## Give names the same matching format as the dogs
+Uppercase the names, then remove spaces and hyphens using the same two steps as dog preparation. Keep each full name rather than splitting it into words.
+```{r}
+#| label: format-baby-names
+ssa_with_decades |>
+  mutate(name = str_to_upper(name)) |>
+  mutate(name = str_remove_all(name, "[\\s-]")) ->
+  ssa_yearly
+
+ssa_yearly |>
+  preview()
+```
+
+## Total births by name and decade
+Add the published birth counts across all years and both sex categories. These counts cover the births represented in the SSA files, with the suppression and historical coverage limits described below.
+```{r}
+#| label: count-baby-names
+ssa_yearly |>
+  group_by(name, decade) |>
+  summarise(births = sum(births)) |>
+  ungroup() ->
+  ssa_decade_counts
+
+ssa_decade_counts |>
+  preview()
+```
+
+## Rank names within each decade
+Within each decade, put the largest birth counts first, breaking ties alphabetically. `.by_group = TRUE` keeps each decade together while sorting. `row_number()` numbers the sorted names starting at 1 for each decade. Mark ranks 1 through 100 as TRUE in `top100` and the remaining ranks as FALSE. Keep the full ranked table for inspection; the next step selects its top-100 rows. The final display shows the first five names per decade.
+```{r}
+#| label: rank-baby-names
+ssa_decade_counts |>
+  group_by(decade) |>
+  arrange(desc(births), name, .by_group = TRUE) |>
+  mutate(rank = row_number()) |>
+  mutate(top100 = rank <= 100) |>
+  ungroup() ->
+  ssa_decades
+
+ssa_decades |>
+  filter(rank <= 5)
+```
+
+## Keep the top 100 names for each decade
+Keep the rows marked TRUE in `top100`, then keep just the decade and name. This gives 100 names for each of the 14 decades: 1,400 rows in all. A name can appear in more than one decade's list.
+```{r}
+#| label: select-top-100-names
+ssa_decades |>
+  filter(top100) |>
+  select(decade, name) ->
+  ssa_top100_names
+
+ssa_top100_names |>
+  preview()
+```
+
+## Make a list of all recorded SSA names
+Use the formatted annual records so this list includes names outside the top 100. `distinct(name)` keeps each name once. `pull(name)` takes that column out of the table as a character vector: a list of name strings. This is the list for checking whether a dog name appears anywhere in the selected 1880–2019 SSA records.
+```{r}
+#| label: list-all-ssa-names
+ssa_yearly |>
+  distinct(name) |>
+  pull(name) ->
+  ssa_all_names
+
+# Display a few names as a table.
+tibble(name = ssa_all_names) |>
+  preview()
+```
+
+SSA omits names reported fewer than five times for a sex and year. Early birth years have less complete coverage because many people born before 1937 never applied for a Social Security card. These limits affect the historical comparisons.

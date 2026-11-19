@@ -1,0 +1,15 @@
+## Match baby names to dogs
+Matching awaits review against `ssa_top100_names` and `ssa_all_names` from baby-names.qmd. The code below is retained for review and is not executed; it expects a wide `ssa_reference` table that preparation does not produce.
+```{r}
+#| label: match-dogs-to-baby-names
+#| eval: false
+# DECISION: Review membership checks against the separate decade and overall name lists before implementing matching.
+dogs_prepared |>
+  left_join(ssa_reference, by = "name") |>
+  mutate(across(c(ssa_recognized, starts_with("top100_")), missing_means_false)) ->
+  dogs
+
+dogs |>
+  select(name, ssa_recognized, starts_with("top100_")) |>
+  preview()
+```

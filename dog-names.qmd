@@ -1,0 +1,278 @@
+Count and exclude licenses with missing names or implausible age estimates, then prepare one row per estimated dog from the 2024 NYC licenses.
+
+## Packages and helpers
+
+```{r}
+#| label: dog-preparation-setup
+library(tidyverse)
+source("helpers.R")
+```
+
+## Read the license records
+
+Read ZIP codes as text because they are identifiers. Let `read_csv()` infer the other column types: birth and extract years become numbers, and license dates become date-times. `read_csv()` normally reads empty fields and the text "NA" as missing values and trims surrounding spaces. We convert the remaining missing-name labels in a separate step below.
+
+Keep ZIP strings as supplied. Geographic matching belongs to the later income work.
+
+```{r}
+#| label: read-license-records
+dogs_raw <- read_csv(
+  "data/raw/nyc-dogs-2024.csv",
+  col_types = cols(zipcode = col_character())
+)
+
+dogs_raw |>
+  preview()
+```
+
+## Number the source records
+
+Number the licenses before filtering or sorting. `source_row_id` lets us find each recorded license in the saved CSV after later transformations. `row_number()` assigns 1, 2, 3 and so on in the current row order.
+
+```{r}
+#| label: number-source-records
+dogs_raw |>
+  mutate(source_row_id = row_number()) ->
+  licenses_numbered
+
+licenses_numbered |>
+  preview()
+```
+
+## Give the license fields clear names
+
+Give the city's columns clear working names. This changes the headings without changing their values.
+
+```{r}
+#| label: name-license-columns
+licenses_numbered |>
+  rename(
+    name = animalname,
+    sex = animalgender,
+    birth_year = animalbirth,
+    breed = breedname,
+    license_issue_date = licenseissueddate,
+    license_expiry_date = licenseexpireddate
+  ) ->
+  licenses_renamed
+
+licenses_renamed |>
+  preview()
+```
+
+## Normalize missing-name labels
+
+The city uses six text labels when a name is not recorded. Import has already converted "NA" to a missing value. `is.element()` checks each name against the full list so we can convert the remaining labels. `case_when()` replaces a matching label with a missing text value (`NA_character_`). Its final `TRUE ~ name` line keeps every other name unchanged. This changes the name values; it does not remove license rows.
+
+```{r}
+#| label: normalize-missing-names
+missing_name_labels <- c(
+  "UNKNOWN", "NAME NOT PROVIDED", "NONE", "NA", ".", "NONAME"
+)
+
+licenses_renamed |>
+  mutate(
+    name = case_when(
+      is.element(name, missing_name_labels) ~ NA_character_,
+      TRUE ~ name
+    )
+  ) ->
+  licenses
+
+licenses |>
+  preview()
+```
+
+## Report missing names by ZIP
+
+After import and the preceding cleanup step, all six source labels are missing values; their license rows are still present. `group_by(zipcode)` makes the following counts separately for each ZIP. `summarise()` produces one row per ZIP: `n()` counts all licenses, and `sum(is.na(name))` counts licenses with a missing name. Divide the missing count by the total to get the missing-name share. This report lets us see whether some areas have less complete name information. It does not remove licenses.
+
+```{r}
+#| label: summarize-missingness-by-zip
+licenses |>
+  group_by(zipcode) |>
+  summarise(
+    source_license_records = n(),
+    missing_name_records = sum(is.na(name))
+  ) |>
+  mutate(
+    missing_name_share = missing_name_records / source_license_records
+  ) ->
+  missing_by_zip
+
+missing_by_zip |>
+  preview()
+```
+
+## Exclude licenses without names
+
+Keep licenses with recorded names for the remaining preparation. `drop_na(name)` removes rows whose name is missing.
+
+```{r}
+#| label: exclude-missing-names
+licenses |>
+  drop_na(name) ->
+  named_licenses
+
+named_licenses |>
+  preview()
+```
+
+## Count and exclude implausible ages
+
+Estimate age when the license was issued by subtracting the recorded birth year from the issue year. Because we do not know the birthday, this is the age the dog turns that calendar year, not its exact age on the issue date. Keeping estimates from 0 through 25 is a judgment call, not a biological maximum; it may exclude genuine exceptionally old dogs.
+
+`year()` extracts the year from the imported license date. It comes from lubridate, included in tidyverse. The birth year is already numeric, so subtract it directly. In this snapshot, the malformed birth years also produce ages outside the accepted range, so no separate four-digit check is needed. `between()` includes both endpoints.
+
+The optional [birth-year inference reference](appendices/birth-year-inferences.qmd) preserves six considered corrections. We exclude those records rather than guess their birth years.
+
+```{r}
+#| label: exclude-unusable-birth-years
+named_licenses |>
+  mutate(issue_year = year(license_issue_date)) |>
+  mutate(age_at_issue = issue_year - birth_year) ->
+  licenses_with_age
+
+licenses_with_age |>
+  filter(!between(age_at_issue, 0, 25)) ->
+  excluded_birth_year_licenses
+
+excluded_birth_year_licenses |>
+  count(birth_year, age_at_issue, name = "source_license_records", sort = TRUE) ->
+  birth_year_exclusion_counts
+
+birth_year_exclusion_counts
+
+licenses_with_age |>
+  filter(between(age_at_issue, 0, 25)) |>
+  select(-issue_year, -age_at_issue) ->
+  usable_licenses
+
+usable_licenses |>
+  preview()
+```
+
+This excludes 59 named licenses: 33 with malformed birth years and 26 with age estimates above 25 from four-digit birth years. Together with the 5,810 missing-name exclusions, it leaves 100,105 licenses for preparation.
+
+## Record compound names and unknown breeds
+
+Count these details in the cleaning report without excluding the dogs. Record compound names before removing spaces and hyphens. All unknown breeds in this snapshot are written as `Unknown`, so compare directly with that value.
+
+The pattern below has two alternatives separated by `|`: whitespace between non-whitespace characters, or a hyphen with a non-whitespace, non-hyphen character on each side. It flags `MARY JANE` and `WALL-E`, but not a trailing hyphen such as `CHLOE-`. `str_detect()` returns TRUE when a name matches the pattern. Both report columns are left out of the final dog table.
+
+```{r}
+#| label: prepare-cleaning-report-fields
+internal_name_separator <- "\\S\\s+\\S|[^\\s-]-[^\\s-]"
+
+usable_licenses |>
+  mutate(
+    compound_name = str_detect(name, internal_name_separator),
+    breed_unknown = breed == "Unknown"
+  ) ->
+  licenses_for_formatting
+
+licenses_for_formatting |>
+  preview()
+```
+
+## Format names for matching
+
+Uppercase the whole name, then remove spaces and hyphens. These are the spelling differences we agreed to ignore when matching. For example, `WALL-E` becomes `WALLE`. The compound-name report field already records whether the unmodified name contained separators.
+
+```{r}
+#| label: format-names
+licenses_for_formatting |>
+  mutate(name = str_to_upper(name)) |>
+  mutate(name = str_remove_all(name, "[\\s-]")) ->
+  licenses_with_matching_names
+
+licenses_with_matching_names |>
+  preview()
+```
+
+## Estimate individual dogs
+
+We treat licenses with the same full name after formatting, sex, birth year, breed and ZIP as one estimated dog. The license dates were read as date-times during import, so they are ready to sort. Within each group, sort the newest issue date first. If issue dates tie, keep the first license in source-file order. `.by_group = TRUE` puts each dog group together before sorting its licenses by issue date. `slice_head(n = 1)` keeps the first license in each sorted group. For example, the two matching TOTORO licenses were issued in 2019 and 2024. The 2024 row represents both.
+
+```{r}
+#| label: estimate-individual-dogs
+licenses_with_matching_names |>
+  group_by(name, sex, birth_year, breed, zipcode) |>
+  arrange(desc(license_issue_date), .by_group = TRUE) |>
+  slice_head(n = 1) |>
+  ungroup() ->
+  dogs_consolidated
+
+dogs_consolidated |>
+  select(source_row_id, name, license_issue_date) |>
+  preview()
+```
+
+## Keep the dog fields
+
+Keep name and ZIP for matching, and sex, birth year and breed for possible further comparisons. The source row number links each dog to its recorded values. Leave the extract year, license dates and report fields out of this analysis table.
+
+```{r}
+#| label: select-dog-fields
+dogs_consolidated |>
+  select(source_row_id, name, sex, birth_year, breed, zipcode) ->
+  dogs_prepared
+
+dogs_prepared |>
+  preview()
+```
+
+## Cleaning summary
+
+### Effect of consolidating licenses
+
+Compare the number of eligible licenses with the number of estimated dogs. The difference counts additional license records consolidated, not dogs excluded. `nrow()` counts table rows; no per-dog license-count column is needed.
+
+```{r}
+#| label: summarize-license-consolidation
+licenses_with_matching_names |>
+  nrow() ->
+  eligible_license_count
+
+dogs_prepared |>
+  nrow() ->
+  estimated_dog_count
+
+tibble(
+  eligible_license_records = eligible_license_count,
+  estimated_dogs = estimated_dog_count,
+  additional_license_records_consolidated = eligible_license_count - estimated_dog_count
+) ->
+  consolidation_summary
+
+consolidation_summary
+```
+
+### Missing names overall
+
+Add the earlier per-ZIP counts to report missing names across all source licenses. Divide the missing-name count by the source-license count to get the overall share. The six missing-name labels are counted together.
+
+```{r}
+#| label: summarize-missing-names-overall
+missing_by_zip |>
+  summarise(
+    source_license_records = sum(source_license_records),
+    missing_name_records = sum(missing_name_records),
+    missing_name_share = missing_name_records / source_license_records
+  )
+```
+
+### Unknown breeds and compound names
+
+Count these characteristics among the estimated dogs, using each dog's retained license. Each `sum()` counts TRUE answers in the report fields recorded before formatting names. These counts describe the prepared dogs; they do not exclude any dogs.
+
+```{r}
+#| label: summarize-dog-characteristics
+dogs_consolidated |>
+  summarise(
+    dogs_with_unknown_breed = sum(breed_unknown),
+    dogs_with_compound_names = sum(compound_name)
+  )
+```
+
+Different dogs can share all five identifying fields. A change in a dog's recorded details can also split its licenses into several groups. These are estimates of individual dogs.
