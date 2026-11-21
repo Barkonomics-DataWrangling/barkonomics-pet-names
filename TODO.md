@@ -11,3 +11,6 @@ Use the existing `codex/barkonomics-github-integration` branch and `project/bark
 
 ## Later QA
 - **Agent policy use in a normal contribution:** at the next authorized task, verify a fresh agent discovers the policy index, loads applicable prerequisites once and preserves issue → branch → agent-owned spike → PR review safeguards. Record actual evidence with that contribution; do not run service mutations solely for this check. Migration provenance is in the archived pair above.
+
+## Income preparation review example
+[Suggestions spike](docs/active-spikes/income-preparation-suggestions.md) and [tasks](docs/active-spikes/income-preparation-suggestions.todo.md): illustrative preparation changes for Shweta’s review, separate from both contributor branches and final analysis.
