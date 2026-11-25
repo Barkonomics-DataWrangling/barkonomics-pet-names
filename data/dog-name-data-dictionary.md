@@ -17,9 +17,10 @@ The provisional consolidation removes repeated identity/date records, then prior
 | R object | One row represents | Purpose |
 | --- | --- | --- |
 | dogs_prepared | One estimated dog | Cleaned fields before baby-name matching. |
-| ssa_decades | One name/decade | Combined birth counts and ranks. |
-| ssa_all_names | One recorded SSA name | 99,538 distinct formatted names in a one-column table, including names outside the top 100. |
-| ssa_top100_names | One name in one decade's top 100 | 1,400 rows containing only decade and name. |
+| baby_names_yearly_prepared | One published name/sex/year record | Formatted name, year, decade and published birth count. |
+| baby_names_rank_by_decade_prepared | One name/decade | Combined birth counts and ranks. |
+| all_distinct_baby_names | One recorded SSA name | 99,538 distinct formatted names in a one-column table, including names outside the top 100. |
+| baby_names_top100_by_decade_prepared | One name in one decade's top 100 | 1,400 rows containing only decade and name. |
 | excluded_birth_year_licenses | One excluded named license | The 59 excluded licenses, with recorded fields and approximate ages. |
 | missing_by_zip | One recorded ZIP | Source-license counts, missing-name counts and missing-name shares for the 2024 extract, combining the six agreed labels. |
 | license_links | One candidate link | Reason, dates, ZIP agreement, competing-candidate counts and whether the working rule accepts it. |
@@ -39,4 +40,4 @@ The dog-level cleaning summary counts these characteristics on each estimated do
 | `dogs_with_unknown_breed` | Number of estimated dogs whose breed is recorded as `Unknown`, the only unknown-breed spelling in this snapshot. |
 | `dogs_with_compound_names` | Number of estimated dogs whose recorded name contains internal whitespace or an internal ASCII hyphen, counted before name formatting. |
 
-In ssa_decades, `births` sums published counts across sex and all ten years in that decade. `rank` numbers names within each decade after sorting by descending birth count and then alphabetically. ssa_top100_names keeps rows with `rank <= 100`, retaining just the decade and name.
+In baby_names_rank_by_decade_prepared, `births` sums published counts across sex and all ten years in that decade. `rank` numbers names within each decade after sorting by descending birth count and then alphabetically. baby_names_top100_by_decade_prepared keeps rows with `rank <= 100`, retaining just the decade and name.

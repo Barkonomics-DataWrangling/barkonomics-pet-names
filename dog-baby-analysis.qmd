@@ -1,5 +1,5 @@
 ## Match baby names to dogs
-Matching awaits review against `ssa_top100_names` and `ssa_all_names` from baby-names.qmd. The code below is retained for review and is not executed; it expects a wide `ssa_reference` table that preparation does not produce.
+Matching awaits review against `baby_names_top100_by_decade_prepared` and `all_distinct_baby_names` from baby-names.qmd. The code below is retained for review and is not executed; it expects a wide `ssa_reference` table that preparation does not produce.
 ```{r}
 #| label: match-dogs-to-baby-names
 #| eval: false

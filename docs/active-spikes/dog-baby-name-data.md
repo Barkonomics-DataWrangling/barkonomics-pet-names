@@ -89,7 +89,7 @@ Keep the top 100 names for each complete decade from 1880–2019 in a table with
 
 For an initial area comparison, report each decade's matching share among eligible named estimated dogs. The same dog can contribute to several decade numerators while counting once in each denominator; the percentages therefore need not sum to 100%. The matching implementation remains for review and must follow this question rather than dictate the preparation layout.
 ## Selected overall human-name recognition rule
-Overall recognition means a formatted dog name appears in any published SSA record from 1880–2019. Keep those distinct names as the one-column table ssa_all_names, separate from the decade-specific top-100 table. A name can be recognized while missing every top-100 list.
+Overall recognition means a formatted dog name appears in any published SSA record from 1880–2019. Keep those distinct names as the one-column table all_distinct_baby_names, separate from the decade-specific top-100 table. A name can be recognized while missing every top-100 list.
 
 Aslan selected this separate-list representation during the walkthrough. Neither question requires a wide table or a join; review membership checks when moving on to matching.
 ## Selected execution and collaboration interface

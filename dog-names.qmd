@@ -531,13 +531,23 @@ plot_license_connections <- function(connections, example_steps) {
     filter(display_order %in% example_steps) |>
     arrange(display_order) |>
     mutate(
+      issue_date_a_text = format(license_issue_date_a, "%Y-%m-%d"),
+      expiry_date_a_text = format(license_expiry_date_a, "%Y-%m-%d"),
+      issue_date_b_text = format(license_issue_date_b, "%Y-%m-%d"),
+      expiry_date_b_text = format(license_expiry_date_b, "%Y-%m-%d")
+    ) |>
+    mutate(
       display_row = n() - row_number() + 1,
-      record_a = str_c(name, " · row ", source_row_id_a, " · ZIP ", zipcode_a,
-                       "\nIssued ", format(license_issue_date_a, "%Y-%m-%d"),
-                       "\nExpires ", format(license_expiry_date_a, "%Y-%m-%d")),
-      record_b = str_c(name, " · row ", source_row_id_b, " · ZIP ", zipcode_b,
-                       "\nIssued ", format(license_issue_date_b, "%Y-%m-%d"),
-                       "\nExpires ", format(license_expiry_date_b, "%Y-%m-%d")),
+      record_a = str_glue(
+        "{name} · row {source_row_id_a} · ZIP {zipcode_a}
+        Issued {issue_date_a_text}
+        Expires {expiry_date_a_text}"
+      ),
+      record_b = str_glue(
+        "{name} · row {source_row_id_b} · ZIP {zipcode_b}
+        Issued {issue_date_b_text}
+        Expires {expiry_date_b_text}"
+      ),
       outcome = case_when(
         link_accepted ~ "CONNECT",
         .default = "LEAVE UNRESOLVED"
@@ -967,8 +977,8 @@ bind_rows(scooper_before_connections,
           scooper_after_first_round,
           scooper_after_second_round) |>
   mutate(
-    license_label = str_c("Source row ", source_row_id),
-    tile_label = str_c("Group ", example_group),
+    license_label = str_glue("Source row {source_row_id}"),
+    tile_label = str_glue("Group {example_group}"),
     group_color = factor(example_group)
   ) ->
   scooper_group_stages

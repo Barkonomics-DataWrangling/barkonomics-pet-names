@@ -278,7 +278,7 @@ licenses_unique |>
   arrange(name, license_issue_date) |>
   mutate(record_outcome = if_else(source_row_id %in% dogs_prepared$source_row_id,
                                   "Retained", "Consolidated")) |>
-  mutate(license_label = str_c(source_row_id, " | ZIP ", zipcode)) ->
+  mutate(license_label = str_glue("{source_row_id} | ZIP {zipcode}")) ->
   license_timeline_records
 
 license_timeline_records |>
@@ -311,7 +311,7 @@ The timeline shows overlaps; this grid shows their consequences. Each row is the
 bind_rows(rule_example_outcomes) |>
   arrange(rule_order) |>
   mutate(rule = fct_inorder(rule),
-         license_label = str_c(source_row_id, " | ZIP ", zipcode)) ->
+         license_label = str_glue("{source_row_id} | ZIP {zipcode}")) ->
   consolidation_example_outcomes
 
 consolidation_example_outcomes |>
