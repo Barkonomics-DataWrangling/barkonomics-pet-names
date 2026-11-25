@@ -25,7 +25,7 @@ find_license_pairs(licenses_unique) ->
 ```
 
 ## Compare the license-term-change window
-The main preparation first combines likely term changes: the same name, sex, birth year, breed and ZIP, shared expiry month/day, a later expiry year, and issues within fourteen days. It retains the later license before applying the renewal rules. The table below changes only this first-stage window; the later rules stay at 30 days within a ZIP, seven days across ZIPs and five days for other possible corrections. These are sensitivity choices, not confidence intervals. Fourteen days is the adopted setting.
+The main preparation first combines likely term changes: the same name, sex, birth year, breed and ZIP, shared expiry month/day, a later expiry year, and issues within fourteen days. It retains the later license before applying the renewal rules. The table below changes only this first-stage window; the later rules stay at 30 days within a ZIP, seven days across ZIPs and five days for other possible corrections. Accepted same-ZIP connections take priority before cross-ZIP candidates are assessed. These are sensitivity choices, not confidence intervals. Fourteen days is the adopted setting.
 
 ```{r}
 #| label: compare-license-term-change-windows
@@ -43,6 +43,25 @@ bind_rows(term_change_summaries) |>
   term_change_sensitivity
 
 term_change_sensitivity
+```
+
+### Compare whether same-ZIP connections take priority
+Keep the fourteen-day term-change step and all date windows fixed. Change only whether unambiguous same-ZIP connections are accepted before assessing cross-ZIP alternatives. This isolates the effect of the ZIP preference.
+
+```{r}
+#| label: compare-same-zip-priority
+compare_term_change_window(licenses_unique, license_pairs, 14,
+                           prefer_same_zip = FALSE) |>
+  mutate(zip_preference = "No priority") ->
+  without_zip_priority
+
+compare_term_change_window(licenses_unique, license_pairs, 14,
+                           prefer_same_zip = TRUE) |>
+  mutate(zip_preference = "Same ZIP first") ->
+  with_zip_priority
+
+bind_rows(without_zip_priority, with_zip_priority) |>
+  select(zip_preference, estimated_dogs, unresolved_links)
 ```
 
 SCOOPER shows why the order matters. Merely adding a correction link to two competing renewals creates three competing links. Resolving its likely term change first leaves one renewal candidate. ALMA has the same pattern. Neither case proves dog identity, and the shared-expiry rule can still combine separate dogs.
@@ -73,7 +92,7 @@ license_gap_summary
 ```
 
 ### Compare alternatives without term-change priority
-For comparison, this older family of rules does not run the term-change step first. These rows are alternatives, not the current preparation rule. Each row below defines a complete alternative, starting from the same eligible licenses. The renewal windows are symmetric around expiry. A correction window means the later issue is within that many days of the earlier issue, in the same ZIP, with a different expiry and unchanged name, sex, birth year and breed. Zero disables correction links. Same-day records with differing values are never automatically ordered as corrections.
+For comparison, this older family of rules does not run the term-change step first or give same-ZIP connections priority. These rows are alternatives, not the current preparation rule. Each row below defines a complete alternative, starting from the same eligible licenses. The renewal windows are symmetric around expiry. A correction window means the later issue is within that many days of the earlier issue, in the same ZIP, with a different expiry and unchanged name, sex, birth year and breed. Zero disables correction links. Same-day records with differing values are never automatically ordered as corrections.
 
 The 7/30/60/90-day windows span practical week/month intervals and the observed concentration of overlaps within 90 days; they are sensitivity choices, not learned thresholds. The narrower cross-ZIP windows require closer timing before accepting a possible move. Neither closeness nor absence of competing matches verifies identity.
 

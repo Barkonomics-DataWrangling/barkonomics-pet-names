@@ -189,6 +189,83 @@ The display joins each selected source row to that same row after formatting. A 
 
 We estimate dogs from license records, without a dog identifier. Name, sex, birth year and breed must match for a renewal candidate. ZIP is evidence rather than an absolute requirement: a renewal can link across ZIPs if its timing fits a narrower window. These assumptions do not prove that two licenses describe the same dog.
 
+### The procedure, in order
+Follow the numbered line downward. The middle column shows the operation; the right column shows what it produces. A rejected connection does not delete either license. Unconnected licenses remain separate estimated dogs.
+
+```{r}
+#| label: visualize-consolidation-procedure
+#| fig-width: 11
+#| fig-height: 10
+# This is an explanatory map of the code, not another consolidation calculation.
+tribble(
+  ~step, ~phase, ~operation, ~description, ~result,
+  1, "Prepare comparisons", "Collapse exact repeats",
+  "Keep one copy of identical identifying fields,\nZIP and license dates.",
+  "Distinct license records",
+  2, "Prepare comparisons", "Make candidate pairs and compare dates",
+  "Match name, sex, birth year and breed.\nKeep B issued after A; calculate date gaps.",
+  "Comparable A–B pairs\nwith dates and ZIPs",
+  3, "Decide connections", "Handle likely term revisions first",
+  "Same ZIP, issues within 14 days, shared expiry\nmonth/day and later expiry year. Resolve competition.",
+  "Save accepted revision links.\nUse revised licenses for matching.",
+  4, "Decide connections", "Assess same-ZIP connections",
+  "Find 5-day correction and 30-day renewal candidates.\nAccept only pairs without competing counterparts.",
+  "Accepted same-ZIP links;\nunresolved alternatives",
+  5, "Decide connections", "Assess cross-ZIP connections",
+  "Find 7-day renewal candidates. Honor accepted\nsame-ZIP links, then check remaining competition.",
+  "Accepted cross-ZIP links;\nunresolved alternatives",
+  6, "Build dog groups", "Collect connected licenses into groups",
+  "Combine accepted links, including term revisions.\nRepeat group updates until nothing changes.",
+  "One group per estimated dog;\nunlinked licenses keep own groups",
+  7, "Build dog groups", "Keep the earliest observed license",
+  "Use its name, ZIP and other retained fields.\nPreserve a separate link back to all source records.",
+  "Prepared estimated dogs\nand source correspondence"
+) |>
+  mutate(position = 8 - step) ->
+  consolidation_procedure
+
+consolidation_procedure |>
+  filter(step < 7) ->
+  procedure_arrows
+
+ggplot(consolidation_procedure, aes(y = position)) +
+  geom_segment(data = procedure_arrows,
+               aes(x = 0.45, xend = 0.45,
+                   y = position - 0.18, yend = position - 0.8),
+               color = "#6C7885", linewidth = 0.7,
+               arrow = grid::arrow(length = grid::unit(0.10, "inches"))) +
+  geom_point(aes(x = 0.45, color = phase), size = 9) +
+  geom_text(aes(x = 0.45, label = step), color = "white", fontface = "bold", size = 4) +
+  geom_text(aes(x = 1, y = position + 0.16, label = operation),
+            hjust = 0, fontface = "bold", size = 3.8) +
+  geom_text(aes(x = 1, y = position - 0.16, label = description),
+            hjust = 0, size = 3.2, lineheight = 1.2) +
+  geom_tile(aes(x = 8.9, fill = phase), width = 4.1, height = 0.72, alpha = 0.12) +
+  geom_text(aes(x = 8.9, label = result), size = 3.3, lineheight = 1.2) +
+  scale_color_manual(values = c("Prepare comparisons" = "#35658B",
+                                "Decide connections" = "#21765D",
+                                "Build dog groups" = "#795795"),
+                     breaks = c("Prepare comparisons", "Decide connections", "Build dog groups")) +
+  scale_fill_manual(values = c("Prepare comparisons" = "#35658B",
+                               "Decide connections" = "#21765D",
+                               "Build dog groups" = "#795795"), guide = "none") +
+  scale_x_continuous(limits = c(0, 11.1)) +
+  scale_y_continuous(limits = c(0.4, 7.6)) +
+  labs(title = "From eligible licenses to estimated dogs",
+       subtitle = "Follow the steps downward: operation on the left, result on the right.",
+       color = NULL,
+       caption = "The matching rules decide connections in steps 3–5. The loop in step 6 only assembles those connections.") +
+  theme_void() +
+  theme(plot.background = element_rect(fill = "white", color = NA),
+        plot.title = element_text(size = 17, face = "bold"),
+        plot.subtitle = element_text(size = 11, margin = margin(b = 8)),
+        plot.caption = element_text(size = 10, hjust = 0),
+        legend.position = "top", legend.text = element_text(size = 10))
+```
+
+The focused figures below illustrate individual decisions. A combined decision diagram at the end brings those examples together.
+
+### Collapse exact repeated licenses
 First, keep one copy of licenses with identical prepared identity fields and license dates. In this saved snapshot, the 793 additional copies also have identical values in all eight original source columns. Keep the first source row for each repeated record.
 
 ```{r}
@@ -386,7 +463,7 @@ license_date_gaps |>
   possible_term_changes
 ```
 
-Keep only term-change links with one possible replacement in each direction. This applies the competition check to term changes themselves, before ordinary renewals can introduce competing links.
+Keep a term-change link only when A has one possible replacement and B has one possible original record. This applies the competition check to term changes themselves, before ordinary renewals can introduce competing links.
 
 ```{r}
 #| label: keep-unambiguous-license-term-changes
@@ -399,6 +476,9 @@ possible_term_changes |>
   ungroup() |>
   filter(possible_replacements == 1, possible_originals == 1) ->
   accepted_term_changes
+
+accepted_term_changes |>
+  summarise(term_change_pairs = n())
 ```
 
 In this snapshot, this finds 62 separate pairs. For SCOOPER, the December 19, 2023 license expires January 13, 2027; the January 1, 2024 license extends expiry to January 13, 2029. Retain the January 1 license for renewal matching. That leaves one candidate renewal of the older SCOOPER license instead of two competing candidates. ALMA has the same pattern with issues ten days apart.
@@ -425,135 +505,313 @@ license_date_gaps |>
   license_pairs_after_term_changes
 ```
 
-### Choose the renewal window for each pair
-The chosen settings are 30 days on either side of expiry within a ZIP, seven days across ZIPs, and five days between issues for a possible expiry correction. They are practical assumptions, not proof of identity. The [sensitivity appendix](appendices/license-consolidation-sensitivity.qmd) compares alternatives without changing this preparation run.
+### Draw the matching examples
+This display function reuses the same card layout for the focused examples and the final overview. It selects and draws the calculated decisions passed to it; it does not accept connections or change license groups.
 
 ```{r}
-#| label: set-license-windows
-renewal_window_days <- 30
-moving_window_days <- 7
+#| label: prepare-license-decision-graphics
+# Select examples for display only; this table does not make matching decisions.
+tribble(
+  ~source_row_id_a, ~source_row_id_b, ~display_order, ~explanation,
+  52219, 54311, 1, "1. TERM REVISION\nIssues 13 days apart; same expiry month/day.\nLater expiry year; no competing replacement.",
+  5954, 54311, 2, "2. SAME-ZIP RENEWAL\nIssued 12 days before the old expiry.\nWithin 30 days; no competing connection.",
+  16660, 93369, 3, "2. SAME-ZIP PRIORITY — KHLOE\nIssued 19 days after the old expiry.\nThis same-ZIP connection is unambiguous.",
+  18727, 20185, 4, "2. POSSIBLE CORRECTION — MORKIE\nIssues 5 days apart; changed expiry.\nA also has a possible renewal to 58705.",
+  18727, 58705, 5, "2. COMPETING RENEWAL — MORKIE\nIssued 25 days after the old expiry.\nB has two possible previous licenses.",
+  20185, 58705, 6, "2. COMPETING RENEWAL — MORKIE\nIssued 20 days after the old expiry.\nThe same B is claimed by both candidates.",
+  1513, 93369, 7, "3. CROSS-ZIP ALTERNATIVE — KHLOE\nTiming fits: 6 days before expiry.\nB already has an accepted same-ZIP connection.",
+  156, 73735, 8, "3. CROSS-ZIP RENEWAL — OLLIE\nIssued 4 days after expiry; ZIP changes.\nWithin 7 days; no competing connection."
+) ->
+  connection_display_examples
+
+plot_license_connections <- function(connections, example_steps) {
+  connections |>
+    inner_join(connection_display_examples,
+               by = c("source_row_id_a", "source_row_id_b")) |>
+    filter(display_order %in% example_steps) |>
+    arrange(display_order) |>
+    mutate(
+      display_row = n() - row_number() + 1,
+      record_a = str_c(name, " · row ", source_row_id_a, " · ZIP ", zipcode_a,
+                       "\nIssued ", format(license_issue_date_a, "%Y-%m-%d"),
+                       "\nExpires ", format(license_expiry_date_a, "%Y-%m-%d")),
+      record_b = str_c(name, " · row ", source_row_id_b, " · ZIP ", zipcode_b,
+                       "\nIssued ", format(license_issue_date_b, "%Y-%m-%d"),
+                       "\nExpires ", format(license_expiry_date_b, "%Y-%m-%d")),
+      outcome = case_when(
+        link_accepted ~ "CONNECT",
+        .default = "LEAVE UNRESOLVED"
+      )
+    ) ->
+    connection_display
+
+  ggplot(connection_display, aes(y = display_row)) +
+    geom_tile(aes(x = 1.6), width = 3, height = 0.8, fill = "#EDF2F6") +
+    geom_tile(aes(x = 5.4), width = 3, height = 0.8, fill = "#EDF2F6") +
+    geom_text(aes(x = 1.6, label = record_a), size = 3.1, lineheight = 1.2) +
+    geom_text(aes(x = 5.4, label = record_b), size = 3.1, lineheight = 1.2) +
+    geom_segment(aes(x = 3.2, xend = 3.8, yend = display_row,
+                     color = outcome, linetype = outcome),
+                 linewidth = 0.8, arrow = grid::arrow(length = grid::unit(0.12, "inches"))) +
+    geom_text(aes(x = 7.2, y = display_row + 0.33, label = outcome, color = outcome),
+              hjust = 0, size = 3.2, fontface = "bold") +
+    geom_text(aes(x = 7.2, y = display_row - 0.08, label = explanation),
+              hjust = 0, size = 2.9, lineheight = 1.15) +
+    scale_color_manual(values = c("CONNECT" = "#176B52", "LEAVE UNRESOLVED" = "#996016")) +
+    scale_linetype_manual(values = c("CONNECT" = "solid", "LEAVE UNRESOLVED" = "dashed")) +
+    scale_x_continuous(limits = c(0, 12)) +
+    scale_y_continuous(expand = expansion(add = 0.65)) +
+    labs(title = "Which licenses do our rules connect?",
+         subtitle = "Actual pairs, in preparation order. Green solid arrow = accepted; amber dashed arrow = unresolved.",
+         caption = "These are rule-based estimates, not verified identities. No license is discarded because a pair is unresolved.") +
+    theme_void() +
+    theme(legend.position = "none",
+          plot.background = element_rect(fill = "white", color = NA),
+          plot.title = element_text(size = 17, face = "bold"),
+          plot.subtitle = element_text(size = 11, margin = margin(b = 12)),
+          plot.caption = element_text(size = 10, hjust = 0))
+}
+```
+
+### See the accepted term revision
+SCOOPER's two records illustrate the shared-expiry rule. This connection is accepted before renewal matching uses the revised license.
+
+```{r}
+#| label: plot-term-revision-example
+#| fig-width: 12
+#| fig-height: 2.5
+accepted_term_changes |>
+  mutate(link_accepted = TRUE) |>
+  plot_license_connections(example_steps = 1)
+```
+
+### Find other possible expiry corrections
+Accepted term revisions have already been handled. This separate rule considers other changed expiry dates: the same ZIP and issues at most five days apart. The expiry can shorten or lengthen. Name, sex, birth year and breed already match. B is already known to have been issued after A, so this window covers issues one through five days apart. These are candidates, not accepted connections yet.
+
+```{r}
+#| label: find-other-expiry-corrections
 correction_window_days <- 5
 
 license_pairs_after_term_changes |>
-  mutate(same_zipcode = zipcode_a == zipcode_b) ->
-  license_zip_comparison
+  filter(zipcode_a == zipcode_b,
+         days_between_issues <= correction_window_days,
+         license_expiry_date_b != license_expiry_date_a) |>
+  mutate(link_reason = "possible expiry correction") ->
+  possible_expiry_corrections
 
-license_zip_comparison |>
-  mutate(allowed_renewal_gap_days = case_when(
-    same_zipcode ~ renewal_window_days,
-    .default = moving_window_days
-  )) ->
-  license_pairs_with_windows
+possible_expiry_corrections |>
+  select(name, days_between_issues, license_expiry_date_a, license_expiry_date_b) |>
+  preview()
 ```
 
-Read `condition ~ result` as “if this condition matches, use this result.” Here, a matching ZIP gets 30 days; otherwise use seven. The setting and the resulting column have different names.
-
-### Identify possible renewals
-License B was issued after license A because of the date-order filter. A renewal also needs B to expire after A and a gap within the selected window. `case_when()` checks each condition in order: these first three cases rule a pair out; otherwise it qualifies. TRUE and FALSE are the answers to that decision, not replacement dates.
+### Find renewals within the same ZIP
+Look for a later-issued license whose expiry extends beyond the earlier license, with an issue date within thirty days before or after the earlier expiry. A negative gap is overlap; a positive gap is time without an overlapping license. Small overlap can fit early renewal, so overlap alone is not a reason to exclude a pair.
 
 ```{r}
-#| label: identify-possible-renewals
-license_pairs_with_windows |>
-  mutate(possible_renewal = case_when(
-    license_expiry_date_b <= license_expiry_date_a ~ FALSE,
-    days_from_expiry < -allowed_renewal_gap_days ~ FALSE,
-    days_from_expiry > allowed_renewal_gap_days ~ FALSE,
-    .default = TRUE
-  )) ->
-  license_renewal_decisions
+#| label: find-same-zip-renewals
+renewal_window_days <- 30
+
+license_pairs_after_term_changes |>
+  filter(zipcode_a == zipcode_b,
+         license_expiry_date_b > license_expiry_date_a,
+         days_from_expiry >= -renewal_window_days,
+         days_from_expiry <= renewal_window_days) |>
+  mutate(link_reason = "renewal in same ZIP") ->
+  possible_same_zip_renewals
+
+possible_same_zip_renewals |>
+  select(name, zipcode_a, days_from_expiry,
+         license_expiry_date_a, license_issue_date_b) |>
+  preview()
 ```
 
-### Identify possible expiry corrections
-A possible correction needs the same ZIP, issues no more than five days apart, and a changed expiry. Name, sex, birth year and breed already match because they were join fields. A correction can shorten or lengthen the period; we do not change identity fields or combine different names.
+### Resolve competing connections within a ZIP
+Bring together the two types of same-ZIP candidate. If a pair meets both rules, keep it once with the renewal explanation. Count connections leaving each A license (`possible_successors`), then connections arriving at each B license (`possible_predecessors`). Accept a pair only when each count is one. Multiple same-ZIP candidates remain unresolved; we do not pick the closest date.
 
 ```{r}
-#| label: identify-possible-expiry-corrections
-license_renewal_decisions |>
-  mutate(possible_correction = case_when(
-    !same_zipcode ~ FALSE,
-    days_between_issues > correction_window_days ~ FALSE,
-    license_expiry_date_b == license_expiry_date_a ~ FALSE,
-    .default = TRUE
-  )) ->
-  license_pair_decisions
+#| label: combine-same-zip-candidates
+bind_rows(possible_same_zip_renewals, possible_expiry_corrections) |>
+  distinct(source_row_id_a, source_row_id_b, .keep_all = TRUE) ->
+  same_zip_candidates
 ```
 
-Keep pairs satisfying either rule. The `|` means “or.” Assign a reason for inspection; where a pair qualifies as both, the renewal description takes precedence.
-
 ```{r}
-#| label: keep-candidate-license-links
-license_pair_decisions |>
-  filter(possible_renewal | possible_correction) ->
-  candidate_links
-
-candidate_links |>
-  mutate(link_reason = case_when(
-    possible_renewal & same_zipcode ~ "renewal in same ZIP",
-    possible_renewal ~ "renewal across ZIPs",
-    .default = "possible expiry correction"
-  )) ->
-  candidate_links_with_reasons
-```
-
-### Count competing continuations
-For each license on side A, count how many licenses on side B could continue it. `n()` counts rows in the group; `mutate()` puts that count beside each candidate pair. `ungroup()` ends this grouping before we count in the other direction.
-
-```{r}
-#| label: count-possible-license-successors
-candidate_links_with_reasons |>
+#| label: count-same-zip-successors
+same_zip_candidates |>
   group_by(source_row_id_a) |>
   mutate(possible_successors = n()) |>
   ungroup() ->
-  links_with_successor_counts
+  same_zip_successor_counts
 ```
 
-For each license on side B, count how many licenses on side A could precede it:
-
 ```{r}
-#| label: count-possible-license-predecessors
-links_with_successor_counts |>
+#| label: review-same-zip-competition
+same_zip_successor_counts |>
   group_by(source_row_id_b) |>
   mutate(possible_predecessors = n()) |>
-  ungroup() ->
-  links_with_both_counts
-```
-
-For example, A → D and B → D give D two possible predecessors. We leave both links unresolved. C → E can be accepted if neither C nor E has another candidate in the relevant direction.
-
-```{r}
-#| label: decide-unambiguous-license-links
-links_with_both_counts |>
+  ungroup() |>
   mutate(link_accepted = case_when(
     possible_successors > 1 ~ FALSE,
     possible_predecessors > 1 ~ FALSE,
     .default = TRUE
   )) ->
+  same_zip_links
+
+same_zip_links |>
+  count(link_reason, link_accepted, name = "candidate_pairs")
+
+same_zip_links |>
+  filter(link_accepted) ->
+  accepted_same_zip_links
+```
+
+### See the renewal and competition decisions
+SCOOPER has one accepted same-ZIP renewal. MORKIE has competing correction and renewal candidates; the three MORKIE connections remain unresolved. These figures follow the competition check so they show its actual outcomes.
+
+```{r}
+#| label: plot-same-zip-renewal-example
+#| fig-width: 12
+#| fig-height: 2.5
+same_zip_links |>
+  plot_license_connections(example_steps = 2)
+```
+
+```{r}
+#| label: plot-competing-license-examples
+#| fig-width: 12
+#| fig-height: 5
+same_zip_links |>
+  plot_license_connections(example_steps = 4:6)
+```
+
+### Find renewals across different ZIPs
+A ZIP change is allowed. Use a narrower seven-day window around expiry and the same requirement for a later expiry date. Calculate these candidates separately so their evidence is visible.
+
+```{r}
+#| label: find-cross-zip-renewals
+moving_window_days <- 7
+
+license_pairs_after_term_changes |>
+  filter(zipcode_a != zipcode_b,
+         license_expiry_date_b > license_expiry_date_a,
+         days_from_expiry >= -moving_window_days,
+         days_from_expiry <= moving_window_days) |>
+  mutate(link_reason = "renewal across ZIPs") ->
+  possible_cross_zip_renewals
+
+possible_cross_zip_renewals |>
+  select(name, zipcode_a, zipcode_b, days_from_expiry) |>
+  preview()
+```
+
+### Give accepted same-ZIP connections priority
+Do not replace an accepted same-ZIP connection with a cross-ZIP alternative. Check each direction separately: A must not already have an accepted successor, and B must not already have an accepted predecessor. A license may still have a predecessor and a successor, allowing several renewals to form a chain. These are matching assumptions; different recorded ZIPs do not prove a move.
+
+```{r}
+#| label: prioritize-same-zip-connections
+licenses_with_same_zip_successors <- accepted_same_zip_links$source_row_id_a
+licenses_with_same_zip_predecessors <- accepted_same_zip_links$source_row_id_b
+
+possible_cross_zip_renewals |>
+  mutate(same_zip_connection_takes_priority = case_when(
+    source_row_id_a %in% licenses_with_same_zip_successors ~ TRUE,
+    source_row_id_b %in% licenses_with_same_zip_predecessors ~ TRUE,
+    .default = FALSE
+  )) ->
+  cross_zip_priority_review
+
+cross_zip_priority_review |>
+  count(same_zip_connection_takes_priority, name = "candidate_pairs")
+
+cross_zip_priority_review |>
+  filter(!same_zip_connection_takes_priority) ->
+  remaining_cross_zip_candidates
+```
+
+### Resolve competing cross-ZIP connections
+Apply the same one-connection-in-each-direction test to the remaining cross-ZIP candidates. A cross-ZIP candidate is not accepted merely because it survived the priority step.
+
+```{r}
+#| label: count-cross-zip-successors
+remaining_cross_zip_candidates |>
+  group_by(source_row_id_a) |>
+  mutate(possible_successors = n()) |>
+  ungroup() ->
+  cross_zip_successor_counts
+```
+
+```{r}
+#| label: review-cross-zip-competition
+cross_zip_successor_counts |>
+  group_by(source_row_id_b) |>
+  mutate(possible_predecessors = n()) |>
+  ungroup() |>
+  mutate(link_accepted = case_when(
+    possible_successors > 1 ~ FALSE,
+    possible_predecessors > 1 ~ FALSE,
+    .default = TRUE
+  )) ->
+  cross_zip_links
+
+cross_zip_links |>
+  count(link_accepted, name = "candidate_pairs")
+```
+
+### Collect accepted connections before grouping dogs
+Keep a record of every candidate's outcome, including cross-ZIP alternatives set aside for accepted same-ZIP connections. Grouping starts only after these decisions; it does not choose which licenses match.
+
+```{r}
+#| label: collect-license-link-decisions
+cross_zip_priority_review |>
+  filter(same_zip_connection_takes_priority) |>
+  mutate(link_accepted = FALSE) ->
+  cross_zip_links_set_aside
+
+bind_rows(same_zip_links, cross_zip_links, cross_zip_links_set_aside) |>
+  mutate(same_zipcode = zipcode_a == zipcode_b) ->
   license_links
 
 license_links |>
   filter(link_accepted) |>
   arrange(license_issue_date_b, source_row_id_b) ->
   accepted_license_links
+
+accepted_license_links |>
+  count(link_reason, name = "accepted_pairs")
 ```
 
-The rejected links remain in `license_links` for inspection. They are not proof of different dogs; they are cases where this rule cannot choose a unique match.
+The [sensitivity appendix](appendices/license-consolidation-sensitivity.qmd) compares other windows and the alternative without ZIP priority. Unaccepted links remain available for inspection. They are not proof of different dogs.
+
+### See ZIP priority and an accepted cross-ZIP renewal
+Keep KHLOE's two alternatives together: record 93369 gets an accepted same-ZIP predecessor, so its cross-ZIP alternative is set aside. OLLIE shows that a ZIP change can still be accepted when it fits the timing rule and has no competing connection.
+
+```{r}
+#| label: plot-cross-zip-decision-examples
+#| fig-width: 12
+#| fig-height: 5
+license_links |>
+  plot_license_connections(example_steps = c(3, 7, 8))
+```
+
+## Assemble estimated dogs from the accepted connections
+The matching decisions are complete. The following table updates only collect connected records into groups, including the source records replaced during term revision. A shared group number means one estimated dog under our rules; it is not a ZIP code or a verified dog identifier.
 
 ### Record where each license gets its group
-For an accepted renewal, license B receives license A’s group. For a term change, the replaced license A receives its replacement B’s group. Keep both instructions in a table: `source_row_id` is the license receiving the group; `group_source_row` identifies the license supplying it. These are source-record numbers, not ZIP codes.
+For an accepted renewal or five-day expiry correction, license B receives license A’s group. For a fourteen-day term revision, the replaced license A receives its replacement B’s group. Keep both instructions in a table: `source_row_id` is the license receiving the group; `group_source_row` identifies the license supplying it. These are source-record numbers, not ZIP codes.
 
 ```{r}
 #| label: record-license-group-assignments
 accepted_license_links |>
   select(group_source_row = source_row_id_a,
          source_row_id = source_row_id_b) ->
-  renewal_assignments
+  continuation_assignments
 
 accepted_term_changes |>
   select(group_source_row = source_row_id_b,
          source_row_id = source_row_id_a) ->
   replacement_assignments
 
-bind_rows(renewal_assignments, replacement_assignments) ->
+bind_rows(continuation_assignments, replacement_assignments) ->
   group_assignments
 ```
 
@@ -664,6 +922,78 @@ license_groups_table |>
   filter(source_row_id %in% scooper_source_rows)
 ```
 
+### Inspect SCOOPER’s source records
+These recorded dates and ZIPs identify the three licenses shown in the group-update diagram below.
+
+```{r}
+#| label: show-scooper-source-records
+licenses_unique |>
+  filter(source_row_id %in% scooper_source_rows) |>
+  select(source_row_id, zipcode, license_issue_date, license_expiry_date) |>
+  arrange(license_issue_date) ->
+  scooper_records
+
+scooper_records
+```
+
+### Watch the groups come together
+Each tile is one source license. Within each panel, tiles with the same color belong to the same estimated group. Every record stays visible, including the replaced license. This figure explains group assignments; choosing the representative record comes next.
+
+```{r}
+#| label: show-scooper-consolidation-stages
+#| fig-width: 10
+#| fig-height: 4
+scooper_records |>
+  mutate(stage = "1. Start with three licenses",
+         example_group = source_row_id) ->
+  scooper_before_connections
+
+scooper_records |>
+  left_join(group_assignments, by = "source_row_id") |>
+  mutate(stage = "2. First update round",
+         example_group = case_when(
+           is.na(group_source_row) ~ source_row_id,
+           .default = group_source_row
+         )) ->
+  scooper_after_first_round
+
+scooper_records |>
+  left_join(license_groups_table, by = "source_row_id") |>
+  mutate(stage = "3. Second update round",
+         example_group = license_group) ->
+  scooper_after_second_round
+
+bind_rows(scooper_before_connections,
+          scooper_after_first_round,
+          scooper_after_second_round) |>
+  mutate(
+    license_label = str_c("Source row ", source_row_id),
+    tile_label = str_c("Group ", example_group),
+    group_color = factor(example_group)
+  ) ->
+  scooper_group_stages
+
+ggplot(scooper_group_stages, aes(x = 1, y = license_label)) +
+  geom_tile(aes(fill = group_color), width = 0.95, height = 0.8) +
+  geom_text(aes(label = tile_label), size = 3.3) +
+  facet_wrap(~stage, nrow = 1) +
+  scale_fill_manual(values = c("5954" = "#B9DCD5",
+                               "52219" = "#F1D3A0",
+                               "54311" = "#C9D2EC")) +
+  scale_y_discrete(limits = c("Source row 54311", "Source row 52219", "Source row 5954")) +
+  labs(x = NULL, y = NULL,
+       title = "SCOOPER: three license records become one estimated dog",
+       subtitle = "Group assignments: 54311 receives from 5954; 52219 receives from 54311.",
+       caption = "A further round changes nothing: the loop stops. Representative selection is a separate step.") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        panel.grid = element_blank(),
+        axis.text.x = element_blank(),
+        strip.text = element_text(face = "bold"))
+```
+
+In the first round, 54311 receives group 5954, while 52219 receives 54311’s starting group. On the second round, 52219 receives group 5954 too. The last panel shows the completed group table for these three licenses. A further round changes nothing, so the loop stops. This illustrates how accepted connections combine records; it adds no matching decisions.
+
 Attach the completed group table to the original distinct licenses. This includes replaced licenses, so we can recover their recorded fields and trace every source record without returning them to renewal matching.
 
 ```{r}
@@ -687,6 +1017,15 @@ licenses_grouped |>
   dogs_consolidated
 ```
 
+For SCOOPER, this selects source row 5954, issued in 2021. The later records remain in its group, but do not supply the final ZIP or other retained fields.
+
+```{r}
+#| label: show-earliest-scooper-license
+dogs_consolidated |>
+  filter(source_row_id %in% scooper_source_rows) |>
+  select(source_row_id, name, zipcode, license_issue_date)
+```
+
 Keep a separate in-memory correspondence table so every eligible source license, including repeated copies, can be traced to its assigned group:
 
 ```{r}
@@ -705,6 +1044,21 @@ licenses_with_matching_names |>
 ```
 
 The left join preserves every eligible source row. Its matching fields identify the unique prepared license created above. Group numbers and decision fields stay out of `dogs_prepared`; no CSV is written.
+
+## Review the connection decisions together
+These are the same examples shown beside their rules, collected in preparation order. Read across each row: license A → license B → the rule and its outcome. Every pair matches name, sex, birth year and breed. Dates are year-month-day. This recap shows matching decisions; the grouping figure above explains how accepted connections become groups.
+
+```{r}
+#| label: visualize-license-connection-decisions
+#| fig-width: 12
+#| fig-height: 11
+accepted_term_changes |>
+  mutate(link_accepted = TRUE) ->
+  term_change_display_decisions
+
+bind_rows(term_change_display_decisions, license_links) |>
+  plot_license_connections(example_steps = 1:8)
+```
 
 ## Keep the dog fields
 
@@ -773,10 +1127,7 @@ dogs_consolidated |>
   )
 ```
 
-Different dogs can share identifying fields, and a dog's recorded details can change. These remain estimates of individual dogs, with alternative assumptions compared in the appendix.
-
-
 ## Why keep a sensitivity appendix?
-Sixteen licenses record TEDDY, male, born in 2022, Shih Tzu Crossbreed. Our chosen renewal windows give 14 estimated dogs. Wider windows can reveal competing matches: 60/14-day windows leave 16 estimates, while 90/30-day windows give 14 by accepting different links. The five-day correction setting does not affect this example.
+Sixteen licenses record TEDDY, male, born in 2022, Shih Tzu Crossbreed. Our chosen renewal windows give 14 estimated dogs. Wider windows can reveal competing matches: 60/14-day windows leave 16 estimates, while 90/30-day windows give 14 by accepting different links. Those alternative runs omit both the preliminary term-change step and same-ZIP priority; they illustrate sensitivity rather than isolate a single setting. The five-day correction setting does not affect this example.
 
 Timing is a useful heuristic, not a dog identifier. These differences show how the estimate depends on our assumptions; they do not establish the true number of dogs or a confidence interval. The [sensitivity appendix](appendices/license-consolidation-sensitivity.qmd) contains the alternative runs, possible-correction inspection and aligned license timelines for discussion. They are separate from this notebook’s single preparation rule.

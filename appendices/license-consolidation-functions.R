@@ -33,7 +33,7 @@ find_license_pairs <- function(licenses) {
 }
 
 # Windows are assumptions to compare, not measured probabilities of identity.
-choose_license_links <- function(license_pairs, renewal_days, moving_days, correction_days = 0) {
+choose_license_links <- function(license_pairs, renewal_days, moving_days, correction_days = 0, prefer_same_zip = FALSE) {
   license_pairs |>
     mutate(
       renewal_window = if_else(same_zipcode, renewal_days, moving_days),
@@ -50,6 +50,40 @@ choose_license_links <- function(license_pairs, renewal_days, moving_days, corre
       .default = "possible expiry correction"
     )) ->
     candidate_links
+
+  if (prefer_same_zip) {
+    candidate_links |>
+      filter(same_zipcode) |>
+      add_count(earlier_source_row, name = "possible_successors") |>
+      add_count(later_source_row, name = "possible_predecessors") |>
+      mutate(link_accepted = possible_successors == 1 & possible_predecessors == 1) ->
+      same_zip_links
+
+    same_zip_links |>
+      filter(link_accepted) ->
+      accepted_same_zip_links
+
+    candidate_links |>
+      filter(!same_zipcode) |>
+      mutate(same_zip_connection_takes_priority =
+        earlier_source_row %in% accepted_same_zip_links$earlier_source_row |
+        later_source_row %in% accepted_same_zip_links$later_source_row) ->
+      cross_zip_review
+
+    cross_zip_review |>
+      filter(!same_zip_connection_takes_priority) |>
+      add_count(earlier_source_row, name = "possible_successors") |>
+      add_count(later_source_row, name = "possible_predecessors") |>
+      mutate(link_accepted = possible_successors == 1 & possible_predecessors == 1) ->
+      cross_zip_links
+
+    cross_zip_review |>
+      filter(same_zip_connection_takes_priority) |>
+      mutate(link_accepted = FALSE) ->
+      cross_zip_links_set_aside
+
+    return(bind_rows(same_zip_links, cross_zip_links, cross_zip_links_set_aside))
+  }
 
   candidate_links |>
     add_count(earlier_source_row, name = "possible_successors") |>
@@ -125,7 +159,7 @@ find_changed_field_pairs <- function(licenses, matching_fields, changed_field, r
 }
 
 # Optional appendix experiment: prioritize unambiguous shared-expiry term changes before ordinary matching.
-compare_term_change_window <- function(licenses, pairs, term_change_days) {
+compare_term_change_window <- function(licenses, pairs, term_change_days, prefer_same_zip = TRUE) {
   pairs |>
     mutate(expiry_month_a = month(earlier_expiry),
            expiry_month_b = month(later_expiry),
@@ -154,7 +188,8 @@ compare_term_change_window <- function(licenses, pairs, term_change_days) {
     retained_pairs
 
   choose_license_links(retained_pairs, renewal_days = 30,
-                       moving_days = 7, correction_days = 5) ->
+                       moving_days = 7, correction_days = 5,
+                       prefer_same_zip = prefer_same_zip) ->
     renewal_links
   assign_license_groups(retained_licenses, renewal_links) ->
     retained_groups
