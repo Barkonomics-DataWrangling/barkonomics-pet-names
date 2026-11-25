@@ -1,5 +1,9 @@
 ---
-title: "Dog names and baby-name generations"
+title: "Barkonomics: Dog Names and Neighborhood Income"
+subtitle: "Working project draft"
+author:
+  - Aslan French
+  - Shweta Mayur Goradia
 format:
   html:
     embed-resources: true
@@ -10,16 +14,45 @@ execute:
   message: false
 ---
 
-Prepare the 2024 dog-license records, the top 100 baby names for each complete decade from 1880–2019, and the list of all recorded SSA names in those years. Matching is awaiting review and is not executed. Neighborhood-income work is deferred to a separate collaboration step.
+# Project description
+Do dogs in different-income New York City neighborhoods have different names? We also want to compare those names with names given to babies in different decades. The wrangling involves preparing license records, combining annual baby-name files and relating postal ZIP codes to Census income areas. Area income describes a neighborhood, not an individual dog owner's income.
 
-# Prepare dog names
+This draft runs the dog and baby-name preparation in R. Geography and income preparation remain in a separate contribution under review. Matching, income comparisons and the other three technical approaches are unfinished.
 
-{{< include dog-names.qmd >}}
+<!-- Report structure adapted from https://howisonlab.github.io/datawrangling/current/project_examples/final_project_template.html. -->
 
-# Prepare baby names
+# Data sources
+| Dataset | Organization | Format | What one source row represents |
+| --- | --- | --- | --- |
+| [NYC dog licenses, 2024 extract](https://data.cityofnewyork.us/Health/NYC-Dog-Licensing-Dataset/nu7n-tubp) | NYC Department of Health and Mental Hygiene | CSV | One license record, which may be a renewal or another registration for a dog. |
+| [National baby names, 1880–2019](https://www.ssa.gov/oact/babynames/limits.html) | Social Security Administration | Annual comma-separated text files | One name, sex and birth year, with its published birth count. |
+| [ZIP-to-ZCTA crosswalk](https://data.hrsa.gov/DataDownload/GeoCareNavigator/ZIPCodetoZCTACrosswalk2024UDS.xlsx) | Health Resources and Services Administration | Excel workbook | One postal ZIP and its assigned Census area. |
+| [ACS 2024 five-year household income](https://api.census.gov/data/2024/acs/acs5/groups/B19013.html) | U.S. Census Bureau | JSON | One Census area, with a median household income estimate and margin of error. |
 
-{{< include baby-names.qmd >}}
+TODO: Add readable screenshots of the input headers and a few rows, with the reading issues they illustrate. Dog and SSA snapshots are saved in this branch. The crosswalk and Census snapshots belong to the separate income contribution and are not read by this draft.
 
-# Match dog and baby names
+# Workflow
+The R preparation sections below execute once, in order, using in-memory tables. Each section shows the code and its output. Python pandas, DuckDB SQL and Excel Power Query implementations remain to be written. As those are added, organize equivalent operations into step-level tabs following the [course template](https://howisonlab.github.io/datawrangling/current/project_examples/final_project_template.html).
 
+TODO: Incorporate the template's supplied course-setup chunks when assembling the four-framework report. The current preparation notebooks load the R packages they use.
+
+## Prepare and match dog and baby names
 {{< include dog-baby-analysis.qmd >}}
+
+## Prepare geography and income
+TODO: Review and integrate the agreed income preparation. The proposed output is one ZIP-to-income lookup retaining the Census area that supplies each estimate.
+
+## Attach income to dogs
+DECISION: Review the geographic join after agreeing the two contributions. No income join executes in this draft.
+
+## Compare naming patterns
+DECISION: Agree on the questions, comparison population, income groups and summaries before implementing the analysis.
+
+# Results
+TODO: Add results from the agreed analysis and compare the outputs across technical approaches. The current preparation counts are shown beside the transformations above; they are not findings about income.
+
+# A challenge we are proud to have solved
+TODO: Choose a resolved wrangling problem and explain it using the relevant before-and-after data. Dog identity remains an open question and should not be presented as solved.
+
+# Learning new tools
+TODO: Write the collaborators' own account of the tools they learned, where they found help and what was difficult.
