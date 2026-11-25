@@ -2,9 +2,9 @@
 id: READABLE-R
 type: operational
 scope: "Agent-authored R analysis and validation code in Barkonomics."
-status: proposed
-authority: "Proposed following Aslan's 2026-11-05 request to consider encoding the project's R readability requirements."
-revised: "2026-11-05"
+status: adopted
+authority: "Aslan explicitly directed use of these R readability preferences throughout the project and confirmed adoption on 2026-11-25, including str_glue text templates and separate date formatting."
+revised: "2026-11-25"
 depends_on: []
 related_to: []
 ---
@@ -25,3 +25,6 @@ Name variables, intermediate tables, loop indices and arguments for their conten
 
 ## Keep the implementation explainable
 Prefer straightforward operations to unnecessary helper abstractions. Explain unfamiliar operations briefly where they occur. Straightforward `for` loops and base R functions are allowed; do not replace them solely to eliminate loops or force every expression into a pipe. Preserve agreed research rules and output contracts during readability changes.
+
+## Construct text with readable templates
+Prefer `str_glue()` over `str_c()` when inserting values into filenames, labels or other text templates. Keep the full text pattern visible, with descriptive variable or column names inside braces. Prepare dates and other transformed values in a preceding step rather than nesting transformations inside the template. Preserve intentional line breaks and check that generated text stays the same when replacing existing construction code. Combining several values into one string is a separate operation; this preference does not require using `str_glue()` for that purpose. Preserve quoted source code when documenting someone else's implementation.
