@@ -1,0 +1,68 @@
+schema_version = 1
+
+# Read this only for the collection adopted by the current project, never to infer a project from a global skill install.
+[project]
+name = "Barkonomics"
+root = ".."
+
+# Resolve document locations against the project root. Existing project instructions can override these seed defaults.
+[documents]
+readme = "README.md"
+instructions = "AGENTS.md"
+index = "TODO.md"
+catalog = "docs/docs.index.md"
+active_spikes = "docs/active-spikes"
+scratch = "docs/scratch"
+archive = "docs/archive"
+agent_policies = "docs/agent-policies" # Agent-only opt-in index: policy.index.md; availability is not adoption.
+
+# Adoption fills these with public-safe source metadata. The parent gitlink, not these fields, records the adopted commit.
+[adoption]
+upstream_url = "https://github.com/jcklpe/project-workflows.git"
+upstream_branch = "main"
+mode = "shared"
+
+# Optional collaboration selection. Local use needs no forge, platform tooling or credentials.
+[coordination]
+mode = "forge"
+repository = "https://github.com/Barkonomics-DataWrangling/barkonomics-pet-names"
+# Optional project-owned reference naming setup/use skills and source/version. Empty allows human platform steps.
+# Never store a command or secret here.
+tooling = "Agent Hands"
+
+[coordination.tooling_source]
+repository = "https://github.com/jcklpe/agent-hands"
+revision = "d119a914acb0826a0b3e320d811369e59b077d55"
+skills = ["setup-github", "use-github-issues", "use-github-pull-requests", "use-github-projects"]
+guide = "docs/github-tooling.md"
+
+[coordination.branch_prefixes]
+aslan = "aslan/"
+
+# Optional documented checks; inspect them and project instructions before running commands.
+[validation]
+commands = []
+
+# Optional shared lookup paths, relative to this file. Keep private values in the ignored sibling.
+[references]
+# context = "project-context.md"
+# github_tooling = "/absolute/path/to/external/github-only-bundle"
+
+# project-workflows-assets:start
+[assets.".github/ISSUE_TEMPLATE/contribution.md"]
+source = "setup-project-workflows/assets/templates/github/ISSUE_TEMPLATE/contribution.md.template"
+revision = "9b5d885ae13a1113bcdcb98a6cc6b3801a0a7153"
+
+[assets.".github/PULL_REQUEST_TEMPLATE.md"]
+source = "setup-project-workflows/assets/templates/github/PULL_REQUEST_TEMPLATE.md.template"
+revision = "9b5d885ae13a1113bcdcb98a6cc6b3801a0a7153"
+
+[assets.".github/project-workflows/lifecycle.cjs"]
+source = "setup-project-workflows/assets/templates/github/lifecycle.cjs"
+revision = "465287073d579f662ec21d87fa0504304c86ccbd"
+
+[assets.".github/workflows/project-lifecycle.yml"]
+source = "setup-project-workflows/assets/templates/github/project-lifecycle.yml.template"
+revision = "465287073d579f662ec21d87fa0504304c86ccbd"
+
+# project-workflows-assets:end
