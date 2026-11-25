@@ -1,7 +1,6 @@
 Count and exclude licenses with missing names or implausible age estimates, then prepare one row per estimated dog from the 2024 NYC licenses.
 
 ## Packages and helpers
-
 ```{r}
 #| label: dog-preparation-setup
 library(tidyverse)
@@ -9,8 +8,7 @@ source("helpers.R")
 ```
 
 ## Read the license records
-
-Read ZIP codes as text because they are identifiers. Let `read_csv()` infer the other column types: birth and extract years become numbers, and license dates become date-times. `read_csv()` normally reads empty fields and the text "NA" as missing values and trims surrounding spaces. We convert the remaining missing-name labels in a separate step below.
+Read ZIP codes as text because they are identifiers. Let `read_csv()` infer the other column types: birth and extract years become numbers, and license dates become date-times. `read_csv()` normally reads empty fields and the text "NA" as missing values and trims surrounding spaces. We count and exclude the remaining missing-name labels below.
 
 Keep ZIP strings as supplied. Geographic matching belongs to the later income work.
 
@@ -26,7 +24,6 @@ dogs_raw |>
 ```
 
 ## Number the source records
-
 Number the licenses before filtering or sorting. `source_row_id` lets us find each recorded license in the saved CSV after later transformations. `row_number()` assigns 1, 2, 3 and so on in the current row order.
 
 ```{r}
@@ -40,7 +37,6 @@ licenses_numbered |>
 ```
 
 ## Give the license fields clear names
-
 Give the city's columns clear working names. This changes the headings without changing their values.
 
 ```{r}
@@ -60,40 +56,22 @@ licenses_renamed |>
   preview()
 ```
 
-## Normalize missing-name labels
+## Count missing names by ZIP
+The city uses six text labels when a name is not recorded. Import has already read "NA" and empty fields as missing values; the other labels remain text. Count both kinds together: `is.na(name)` identifies existing missing values, and `name %in% missing_name_labels` identifies names in our exclusion list. The `|` means either condition is enough. `sum()` counts those records without adding a flag column or changing their names.
 
-The city uses six text labels when a name is not recorded. Import has already converted "NA" to a missing value. `is.element()` checks each name against the full list so we can convert the remaining labels. `case_when()` replaces a matching label with a missing text value (`NA_character_`). Its final `TRUE ~ name` line keeps every other name unchanged. This changes the name values; it does not remove license rows.
+Group by the recorded ZIP to count all source licenses and the licenses without usable names, then divide to get the missing-name share. This shows whether some areas have less complete name information.
 
 ```{r}
-#| label: normalize-missing-names
+#| label: summarize-missingness-by-zip
 missing_name_labels <- c(
   "UNKNOWN", "NAME NOT PROVIDED", "NONE", "NA", ".", "NONAME"
 )
 
 licenses_renamed |>
-  mutate(
-    name = case_when(
-      is.element(name, missing_name_labels) ~ NA_character_,
-      TRUE ~ name
-    )
-  ) ->
-  licenses
-
-licenses |>
-  preview()
-```
-
-## Report missing names by ZIP
-
-After import and the preceding cleanup step, all six source labels are missing values; their license rows are still present. `group_by(zipcode)` makes the following counts separately for each ZIP. `summarise()` produces one row per ZIP: `n()` counts all licenses, and `sum(is.na(name))` counts licenses with a missing name. Divide the missing count by the total to get the missing-name share. This report lets us see whether some areas have less complete name information. It does not remove licenses.
-
-```{r}
-#| label: summarize-missingness-by-zip
-licenses |>
   group_by(zipcode) |>
   summarise(
     source_license_records = n(),
-    missing_name_records = sum(is.na(name))
+    missing_name_records = sum(is.na(name) | name %in% missing_name_labels)
   ) |>
   mutate(
     missing_name_share = missing_name_records / source_license_records
@@ -101,17 +79,21 @@ licenses |>
   missing_by_zip
 
 missing_by_zip |>
+  filter(missing_name_records > 0) |>
+  arrange(desc(missing_name_share)) |>
   preview()
 ```
 
-## Exclude licenses without names
+The preview shows the six ZIPs with the largest missing-name shares; `missing_by_zip` retains every ZIP, including those with no missing names.
 
-Keep licenses with recorded names for the remaining preparation. `drop_na(name)` removes rows whose name is missing.
+## Exclude licenses without names
+`drop_na(name)` removes existing missing values. The following filter removes names in the exclusion list. `!` means "not": keep a name only when it is not one of those labels. No recoding is needed.
 
 ```{r}
 #| label: exclude-missing-names
-licenses |>
-  drop_na(name) ->
+licenses_renamed |>
+  drop_na(name) |>
+  filter(!name %in% missing_name_labels) ->
   named_licenses
 
 named_licenses |>
@@ -171,13 +153,17 @@ usable_licenses |>
   ) ->
   licenses_for_formatting
 
+# These examples show an internal space, an internal hyphen and a trailing hyphen.
+example_dog_names <- c("LADY SMITH", "WALL-E", "CHLOE-")
+
 licenses_for_formatting |>
-  preview()
+  filter(name %in% example_dog_names) |>
+  distinct(name, compound_name)
 ```
 
 ## Format names for matching
 
-Uppercase the whole name, then remove spaces and hyphens. These are the spelling differences we agreed to ignore when matching. For example, `WALL-E` becomes `WALLE`. The compound-name report field already records whether the unmodified name contained separators.
+Uppercase the whole name, then remove all whitespace and ASCII hyphens, including trailing hyphens. For example, `WALL-E` becomes `WALLE` and `CHLOE-` becomes `CHLOE`. The compound-name report counts internal separators; it does not control which hyphens are removed.
 
 ```{r}
 #| label: format-names
@@ -186,27 +172,539 @@ licenses_for_formatting |>
   mutate(name = str_remove_all(name, "[\\s-]")) ->
   licenses_with_matching_names
 
-licenses_with_matching_names |>
-  preview()
+# Compare the selected recorded names with their actual formatted values.
+licenses_for_formatting |>
+  filter(name %in% example_dog_names) |>
+  select(source_row_id, recorded_name = name) ->
+  name_formatting_examples
+
+name_formatting_examples |>
+  left_join(licenses_with_matching_names, by = "source_row_id") |>
+  distinct(recorded_name, name)
 ```
 
-## Estimate individual dogs
+The display joins each selected source row to that same row after formatting. A left join keeps every selected example; `source_row_id` identifies the corresponding license. `distinct()` shows each before-and-after spelling once. This comparison is only a display and does not change the preparation tables.
 
-We treat licenses with the same full name after formatting, sex, birth year, breed and ZIP as one estimated dog. The license dates were read as date-times during import, so they are ready to sort. Within each group, sort the newest issue date first. If issue dates tie, keep the first license in source-file order. `.by_group = TRUE` puts each dog group together before sorting its licenses by issue date. `slice_head(n = 1)` keeps the first license in each sorted group. For example, the two matching TOTORO licenses were issued in 2019 and 2024. The 2024 row represents both.
+## Consolidate repeated licenses and likely renewals
+
+We estimate dogs from license records, without a dog identifier. Name, sex, birth year and breed must match for a renewal candidate. ZIP is evidence rather than an absolute requirement: a renewal can link across ZIPs if its timing fits a narrower window. These assumptions do not prove that two licenses describe the same dog.
+
+First, keep one copy of licenses with identical prepared identity fields and license dates. In this saved snapshot, the 793 additional copies also have identical values in all eight original source columns. Keep the first source row for each repeated record.
+
+```{r}
+#| label: remove-repeated-license-records
+licenses_with_matching_names |>
+  distinct(name, sex, birth_year, breed, zipcode,
+           license_issue_date, license_expiry_date, .keep_all = TRUE) ->
+  licenses_unique
+```
+
+### Put two licenses side by side
+Prepare the fields needed to compare licenses, keeping their existing names. Use the same records for both sides, called A and B. These letters identify the sides of the comparison; they do not yet say which license was issued first. `license_records_b <- license_records_a` gives B the whole table held in A, not a single record. Both sides contain the same licenses; nothing is saved to disk.
+
+```{r}
+#| label: prepare-license-pair-columns
+licenses_unique |>
+  select(name, sex, birth_year, breed,
+         source_row_id, zipcode,
+         license_issue_date, license_expiry_date) ->
+  license_records_a
+
+license_records_b <- license_records_a
+```
+
+For the walkthrough, follow two actual DEXTER licenses through these steps. The source row numbers select this display example only; they do not restrict the matching pipeline. `print(width = Inf)` shows all selected columns instead of hiding some when the console is narrow.
+
+```{r}
+#| label: preview-two-license-records
+example_license_rows <- c(19296, 56815)
+
+license_records_a |>
+  filter(source_row_id %in% example_license_rows) |>
+  select(source_row_id, name, sex, birth_year, breed, zipcode,
+         license_issue_date, license_expiry_date) |>
+  print(width = Inf)
+```
+
+Join records whose name, sex, birth year and breed match. The join keeps these four matching columns once. For the other columns, `suffix = c("_a", "_b")` adds the side to the existing name: for example, `license_issue_date_a` and `license_issue_date_b`. Each license still has both an issue date and an expiry date. ZIP is not a join requirement because a dog may have moved.
+
+```{r}
+#| label: pair-matching-licenses
+license_records_a |>
+  inner_join(
+    license_records_b,
+    by = c("name", "sex", "birth_year", "breed"),
+    suffix = c("_a", "_b"),
+    relationship = "many-to-many"
+  ) ->
+  license_pairs
+```
+
+An inner join keeps every matching combination. `relationship = "many-to-many"` acknowledges that several licenses on either side can share these fields. The pairs are candidates for comparison, not established matches to the same dog.
+
+These two records produce four combinations: each record with itself, and the two directions of the comparison. Show their source rows and issue dates side by side.
+
+```{r}
+#| label: preview-license-pair-combinations
+license_pairs |>
+  filter(source_row_id_a %in% example_license_rows,
+         source_row_id_b %in% example_license_rows) |>
+  select(source_row_id_a, source_row_id_b,
+         license_issue_date_a, license_issue_date_b) |>
+  print(width = Inf)
+```
+
+### Put each pair in date order
+Keep pairs where license B was issued after license A. This removes self-matches, reverse copies of a pair and same-day pairs. It establishes the direction of the comparison; the renewal and correction rules below decide whether a pair qualifies for linking.
+
+```{r}
+#| label: order-license-pairs
+license_pairs |>
+  filter(license_issue_date_b > license_issue_date_a) ->
+  license_pairs_in_date_order
+```
+
+Only the forward comparison remains for these two DEXTER licenses: source row 19296 → 56815. Their expiry dates have not been compared yet.
+
+```{r}
+#| label: preview-license-pairs-in-date-order
+license_pairs_in_date_order |>
+  filter(source_row_id_a %in% example_license_rows,
+         source_row_id_b %in% example_license_rows) |>
+  select(source_row_id_a, source_row_id_b,
+         license_issue_date_a, license_issue_date_b) |>
+  print(width = Inf)
+```
+
+### Subtract the license dates
+Subtract license A’s expiry date from license B’s issue date to measure the gap or overlap. Separately, subtract A’s issue date from B’s issue date to measure how close together the licenses were issued.
+
+```{r}
+#| label: subtract-license-dates
+license_pairs_in_date_order |>
+  mutate(
+    time_from_expiry = license_issue_date_b - license_expiry_date_a,
+    time_between_issues = license_issue_date_b - license_issue_date_a
+  ) ->
+  license_time_differences
+```
+
+R gives these differences a time-difference type. Convert them to numeric days so we can compare them with the day windows below. `as.numeric()` is a type conversion; `units = "days"` tells it which unit to use. Without that argument a date-time difference may be expressed in seconds. Negative `days_from_expiry` means overlap; positive means a gap.
+
+```{r}
+#| label: express-license-gaps-in-days
+license_time_differences |>
+  mutate(
+    days_from_expiry = as.numeric(time_from_expiry, units = "days"),
+    days_between_issues = as.numeric(time_between_issues, units = "days")
+  ) |>
+  select(-time_from_expiry, -time_between_issues) ->
+  license_date_gaps
+```
+
+For the same DEXTER pair, B was issued four days before A expired, so the expiry difference is −4 days. Their issue dates are 377 days apart. These answer different questions: proximity to expiry suggests a renewal, while proximity between issue dates can suggest a correction.
+
+```{r}
+#| label: preview-license-date-gaps
+license_date_gaps |>
+  filter(source_row_id_a %in% example_license_rows,
+         source_row_id_b %in% example_license_rows) |>
+  select(license_issue_date_a, license_expiry_date_a,
+         license_issue_date_b, license_expiry_date_b,
+         days_from_expiry, days_between_issues) |>
+  print(width = Inf)
+```
+
+### See the license periods overlap
+Each line runs from the recorded issue date (circle) to the expiry date (triangle). These are the same two DEXTER records shown above. This display does not decide whether they belong to one dog.
+
+```{r}
+#| label: plot-example-license-periods
+#| fig-width: 9
+#| fig-height: 3
+license_records_a |>
+  filter(source_row_id %in% example_license_rows) |>
+  mutate(license = case_when(
+    source_row_id == 19296 ~ "License A",
+    source_row_id == 56815 ~ "License B"
+  )) ->
+  example_license_periods
+
+license_timeline <- ggplot(example_license_periods, aes(y = license, color = license)) +
+  geom_segment(aes(x = license_issue_date, xend = license_expiry_date,
+                   yend = license), linewidth = 2) +
+  geom_point(aes(x = license_issue_date), shape = 16, size = 3) +
+  geom_point(aes(x = license_expiry_date), shape = 17, size = 3) +
+  scale_y_discrete(limits = c("License B", "License A")) +
+  scale_color_manual(values = c("License A" = "#007C83", "License B" = "#B35C00")) +
+  labs(x = "Recorded license date", y = NULL,
+       title = "DEXTER: two recorded license periods",
+       caption = "Circle = issued; triangle = expires. Both licenses record ZIP 10467.") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+license_timeline
+```
+
+The overlap is short compared with the full license periods. Zoom into January 2024 to see it: B begins on January 17, while A does not expire until January 21. Both lines cover those four days. B’s issue date minus A’s expiry date is therefore −4 days. A positive difference would mean B starts after A ends, leaving a gap; zero means the two dates coincide.
+
+```{r}
+#| label: plot-example-license-overlap
+#| fig-width: 9
+#| fig-height: 3
+# These limits zoom the example display; they do not filter the license data.
+example_zoom_dates <- ymd(c("2024-01-12", "2024-01-26"), tz = "UTC")
+
+license_timeline +
+  coord_cartesian(xlim = example_zoom_dates) +
+  scale_x_datetime(date_breaks = "2 days", date_labels = "%b %d") +
+  labs(title = "Close-up: B starts four days before A expires",
+       caption = "January 17–21: overlapping license periods. The lines continue beyond this close-up.")
+```
+
+### Consolidate likely license-term changes
+Some licenses are reissued shortly afterward with the same expiry month and day but a later expiry year. Treat these as likely term changes before looking for renewals. Name, sex, birth year and breed already match. Also require the same ZIP and issue dates no more than fourteen days apart. Fourteen days is a judgment call, not a proven boundary. Unknown breeds provide weaker identifying evidence.
+
+```{r}
+#| label: find-likely-license-term-changes
+term_change_window_days <- 14
+
+license_date_gaps |>
+  mutate(
+    expiry_month_a = month(license_expiry_date_a),
+    expiry_month_b = month(license_expiry_date_b),
+    expiry_day_a = day(license_expiry_date_a),
+    expiry_day_b = day(license_expiry_date_b),
+    expiry_year_a = year(license_expiry_date_a),
+    expiry_year_b = year(license_expiry_date_b)
+  ) |>
+  filter(zipcode_a == zipcode_b,
+         days_between_issues <= term_change_window_days,
+         expiry_month_a == expiry_month_b,
+         expiry_day_a == expiry_day_b,
+         expiry_year_b > expiry_year_a) ->
+  possible_term_changes
+```
+
+Keep only term-change links with one possible replacement in each direction. This applies the competition check to term changes themselves, before ordinary renewals can introduce competing links.
+
+```{r}
+#| label: keep-unambiguous-license-term-changes
+possible_term_changes |>
+  group_by(source_row_id_a) |>
+  mutate(possible_replacements = n()) |>
+  ungroup() |>
+  group_by(source_row_id_b) |>
+  mutate(possible_originals = n()) |>
+  ungroup() |>
+  filter(possible_replacements == 1, possible_originals == 1) ->
+  accepted_term_changes
+```
+
+In this snapshot, this finds 62 separate pairs. For SCOOPER, the December 19, 2023 license expires January 13, 2027; the January 1, 2024 license extends expiry to January 13, 2029. Retain the January 1 license for renewal matching. That leaves one candidate renewal of the older SCOOPER license instead of two competing candidates. ALMA has the same pattern with issues ten days apart.
+
+```{r}
+#| label: preview-license-term-changes
+accepted_term_changes |>
+  filter(name %in% c("SCOOPER", "ALMA")) |>
+  select(name, source_row_id_a, source_row_id_b,
+         license_issue_date_a, license_issue_date_b,
+         license_expiry_date_a, license_expiry_date_b) |>
+  print(width = Inf)
+```
+
+Remove the replaced licenses from subsequent comparisons. Keep the term-change links so those source records can later receive the same dog group as their replacements. This does not discard their source correspondence.
+
+```{r}
+#| label: use-replacement-licenses-for-renewals
+replaced_license_rows <- accepted_term_changes$source_row_id_a
+
+license_date_gaps |>
+  filter(!source_row_id_a %in% replaced_license_rows,
+         !source_row_id_b %in% replaced_license_rows) ->
+  license_pairs_after_term_changes
+```
+
+### Choose the renewal window for each pair
+The chosen settings are 30 days on either side of expiry within a ZIP, seven days across ZIPs, and five days between issues for a possible expiry correction. They are practical assumptions, not proof of identity. The [sensitivity appendix](appendices/license-consolidation-sensitivity.qmd) compares alternatives without changing this preparation run.
+
+```{r}
+#| label: set-license-windows
+renewal_window_days <- 30
+moving_window_days <- 7
+correction_window_days <- 5
+
+license_pairs_after_term_changes |>
+  mutate(same_zipcode = zipcode_a == zipcode_b) ->
+  license_zip_comparison
+
+license_zip_comparison |>
+  mutate(allowed_renewal_gap_days = case_when(
+    same_zipcode ~ renewal_window_days,
+    .default = moving_window_days
+  )) ->
+  license_pairs_with_windows
+```
+
+Read `condition ~ result` as “if this condition matches, use this result.” Here, a matching ZIP gets 30 days; otherwise use seven. The setting and the resulting column have different names.
+
+### Identify possible renewals
+License B was issued after license A because of the date-order filter. A renewal also needs B to expire after A and a gap within the selected window. `case_when()` checks each condition in order: these first three cases rule a pair out; otherwise it qualifies. TRUE and FALSE are the answers to that decision, not replacement dates.
+
+```{r}
+#| label: identify-possible-renewals
+license_pairs_with_windows |>
+  mutate(possible_renewal = case_when(
+    license_expiry_date_b <= license_expiry_date_a ~ FALSE,
+    days_from_expiry < -allowed_renewal_gap_days ~ FALSE,
+    days_from_expiry > allowed_renewal_gap_days ~ FALSE,
+    .default = TRUE
+  )) ->
+  license_renewal_decisions
+```
+
+### Identify possible expiry corrections
+A possible correction needs the same ZIP, issues no more than five days apart, and a changed expiry. Name, sex, birth year and breed already match because they were join fields. A correction can shorten or lengthen the period; we do not change identity fields or combine different names.
+
+```{r}
+#| label: identify-possible-expiry-corrections
+license_renewal_decisions |>
+  mutate(possible_correction = case_when(
+    !same_zipcode ~ FALSE,
+    days_between_issues > correction_window_days ~ FALSE,
+    license_expiry_date_b == license_expiry_date_a ~ FALSE,
+    .default = TRUE
+  )) ->
+  license_pair_decisions
+```
+
+Keep pairs satisfying either rule. The `|` means “or.” Assign a reason for inspection; where a pair qualifies as both, the renewal description takes precedence.
+
+```{r}
+#| label: keep-candidate-license-links
+license_pair_decisions |>
+  filter(possible_renewal | possible_correction) ->
+  candidate_links
+
+candidate_links |>
+  mutate(link_reason = case_when(
+    possible_renewal & same_zipcode ~ "renewal in same ZIP",
+    possible_renewal ~ "renewal across ZIPs",
+    .default = "possible expiry correction"
+  )) ->
+  candidate_links_with_reasons
+```
+
+### Count competing continuations
+For each license on side A, count how many licenses on side B could continue it. `n()` counts rows in the group; `mutate()` puts that count beside each candidate pair. `ungroup()` ends this grouping before we count in the other direction.
+
+```{r}
+#| label: count-possible-license-successors
+candidate_links_with_reasons |>
+  group_by(source_row_id_a) |>
+  mutate(possible_successors = n()) |>
+  ungroup() ->
+  links_with_successor_counts
+```
+
+For each license on side B, count how many licenses on side A could precede it:
+
+```{r}
+#| label: count-possible-license-predecessors
+links_with_successor_counts |>
+  group_by(source_row_id_b) |>
+  mutate(possible_predecessors = n()) |>
+  ungroup() ->
+  links_with_both_counts
+```
+
+For example, A → D and B → D give D two possible predecessors. We leave both links unresolved. C → E can be accepted if neither C nor E has another candidate in the relevant direction.
+
+```{r}
+#| label: decide-unambiguous-license-links
+links_with_both_counts |>
+  mutate(link_accepted = case_when(
+    possible_successors > 1 ~ FALSE,
+    possible_predecessors > 1 ~ FALSE,
+    .default = TRUE
+  )) ->
+  license_links
+
+license_links |>
+  filter(link_accepted) |>
+  arrange(license_issue_date_b, source_row_id_b) ->
+  accepted_license_links
+```
+
+The rejected links remain in `license_links` for inspection. They are not proof of different dogs; they are cases where this rule cannot choose a unique match.
+
+### Record where each license gets its group
+For an accepted renewal, license B receives license A’s group. For a term change, the replaced license A receives its replacement B’s group. Keep both instructions in a table: `source_row_id` is the license receiving the group; `group_source_row` identifies the license supplying it. These are source-record numbers, not ZIP codes.
+
+```{r}
+#| label: record-license-group-assignments
+accepted_license_links |>
+  select(group_source_row = source_row_id_a,
+         source_row_id = source_row_id_b) ->
+  renewal_assignments
+
+accepted_term_changes |>
+  select(group_source_row = source_row_id_b,
+         source_row_id = source_row_id_a) ->
+  replacement_assignments
+
+bind_rows(renewal_assignments, replacement_assignments) ->
+  group_assignments
+```
+
+`bind_rows()` stacks the two sets of instructions. Follow SCOOPER’s three source records in the displays below: the revised renewal 54311 takes the original license 5954’s group, and the replaced renewal 52219 takes 54311’s group.
+
+```{r}
+#| label: preview-scooper-group-assignments
+scooper_source_rows <- c(5954, 52219, 54311)
+
+group_assignments |>
+  filter(source_row_id %in% scooper_source_rows)
+```
+
+### Start with one group per license
+Initially each license’s group is its own source-row number. The number is a bookkeeping label for an estimated dog, not a verified dog identifier.
+
+```{r}
+#| label: start-license-groups
+licenses_unique |>
+  select(source_row_id) |>
+  mutate(license_group = source_row_id) ->
+  license_groups_table
+
+license_groups_table |>
+  filter(source_row_id %in% scooper_source_rows)
+```
+
+### Look up the proposed groups
+Look up the current group of the license supplying each assignment. The left join keeps every assignment and matches its `group_source_row` against the group table’s `source_row_id`.
+
+```{r}
+#| label: look-up-license-group-updates
+group_assignments |>
+  left_join(license_groups_table,
+            by = c("group_source_row" = "source_row_id")) |>
+  select(source_row_id, proposed_group = license_group) ->
+  group_updates
+
+group_updates |>
+  filter(source_row_id %in% scooper_source_rows)
+```
+
+### Apply one round of updates
+Attach the proposed groups to the full table. This left join retains every license, including those with no assignment. When there is no proposed group, keep the existing group; otherwise use the proposed value. Display the old and next groups together before replacing the working table.
+
+```{r}
+#| label: apply-one-license-group-round
+license_groups_table |>
+  left_join(group_updates, by = "source_row_id") |>
+  mutate(next_group = case_when(
+    is.na(proposed_group) ~ license_group,
+    .default = proposed_group
+  )) ->
+  groups_reviewed
+
+groups_reviewed |>
+  filter(source_row_id %in% scooper_source_rows) |>
+  select(source_row_id, license_group, proposed_group, next_group)
+```
+
+Count the changed assignments, then use the next groups as the working table. This count controls repetition; it is not a data-quality guard.
+
+```{r}
+#| label: keep-updated-license-groups
+groups_reviewed |>
+  summarise(changed_records = sum(next_group != license_group)) ->
+  group_change_count
+
+changed_records <- group_change_count$changed_records
+
+groups_reviewed |>
+  select(source_row_id, license_group = next_group) ->
+  license_groups_table
+```
+
+### Repeat until the groups stop changing
+One round moves group numbers one connection along. SCOOPER’s revised renewal receives group 5954 in the first round, but its replaced renewal needs a second round to receive that group. Repeat the same lookups and updates until no assignments change. `while` means “repeat this block while the condition is true.” The loop is an additional programming construct; the transformations inside are the table operations shown above.
+
+```{r}
+#| label: repeat-license-group-updates
+while (changed_records > 0) {
+  group_assignments |>
+    left_join(license_groups_table,
+              by = c("group_source_row" = "source_row_id")) |>
+    select(source_row_id, proposed_group = license_group) ->
+    group_updates
+
+  license_groups_table |>
+    left_join(group_updates, by = "source_row_id") |>
+    mutate(next_group = case_when(
+      is.na(proposed_group) ~ license_group,
+      .default = proposed_group
+    )) ->
+    groups_reviewed
+
+  groups_reviewed |>
+    summarise(changed_records = sum(next_group != license_group)) ->
+    group_change_count
+
+  changed_records <- group_change_count$changed_records
+
+  groups_reviewed |>
+    select(source_row_id, license_group = next_group) ->
+    license_groups_table
+}
+
+license_groups_table |>
+  filter(source_row_id %in% scooper_source_rows)
+```
+
+Attach the completed group table to the original distinct licenses. This includes replaced licenses, so we can recover their recorded fields and trace every source record without returning them to renewal matching.
+
+```{r}
+#| label: attach-license-groups
+licenses_unique |>
+  left_join(license_groups_table, by = "source_row_id") ->
+  licenses_grouped
+```
+
+### Keep the earliest observed license in each group
+Use the earliest observed license to supply the dog’s ZIP and other recorded fields. We are interested in location around naming, so the earliest available location is a more relevant proxy than the most recent one. It is not necessarily the dog’s first license or where it was named: this single extract can omit earlier records, and ownership may have changed. Neighborhood income also does not establish the owner’s income.
+
+Term-change matching still uses the revised license’s dates. Once the group is established, this selection considers all its source licenses, including the replaced records. In this snapshot there are no tied earliest issue dates among the distinct licenses in a group. Unlinked licenses remain separate estimates; mistaken merges and missed renewals remain possible.
 
 ```{r}
 #| label: estimate-individual-dogs
-licenses_with_matching_names |>
-  group_by(name, sex, birth_year, breed, zipcode) |>
-  arrange(desc(license_issue_date), .by_group = TRUE) |>
-  slice_head(n = 1) |>
+licenses_grouped |>
+  group_by(license_group) |>
+  slice_min(order_by = license_issue_date, n = 1, with_ties = FALSE) |>
   ungroup() ->
   dogs_consolidated
-
-dogs_consolidated |>
-  select(source_row_id, name, license_issue_date) |>
-  preview()
 ```
+
+Keep a separate in-memory correspondence table so every eligible source license, including repeated copies, can be traced to its assigned group:
+
+```{r}
+#| label: record-license-membership
+licenses_grouped |>
+  select(name, sex, birth_year, breed, zipcode,
+         license_issue_date, license_expiry_date, license_group) ->
+  unique_license_groups
+
+licenses_with_matching_names |>
+  left_join(unique_license_groups,
+            by = c("name", "sex", "birth_year", "breed", "zipcode",
+                   "license_issue_date", "license_expiry_date")) |>
+  select(source_row_id, license_group) ->
+  license_membership
+```
+
+The left join preserves every eligible source row. Its matching fields identify the unique prepared license created above. Group numbers and decision fields stay out of `dogs_prepared`; no CSV is written.
 
 ## Keep the dog fields
 
@@ -275,4 +773,10 @@ dogs_consolidated |>
   )
 ```
 
-Different dogs can share all five identifying fields. A change in a dog's recorded details can also split its licenses into several groups. These are estimates of individual dogs.
+Different dogs can share identifying fields, and a dog's recorded details can change. These remain estimates of individual dogs, with alternative assumptions compared in the appendix.
+
+
+## Why keep a sensitivity appendix?
+Sixteen licenses record TEDDY, male, born in 2022, Shih Tzu Crossbreed. Our chosen renewal windows give 14 estimated dogs. Wider windows can reveal competing matches: 60/14-day windows leave 16 estimates, while 90/30-day windows give 14 by accepting different links. The five-day correction setting does not affect this example.
+
+Timing is a useful heuristic, not a dog identifier. These differences show how the estimate depends on our assumptions; they do not establish the true number of dogs or a confidence interval. The [sensitivity appendix](appendices/license-consolidation-sensitivity.qmd) contains the alternative runs, possible-correction inspection and aligned license timelines for discussion. They are separate from this notebook’s single preparation rule.

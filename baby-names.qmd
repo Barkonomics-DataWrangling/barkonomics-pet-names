@@ -34,8 +34,10 @@ ssa_raw |>
   select(name, sex, year, decade, births) ->
   ssa_with_decades
 
+# Show the decade boundary and the ends of the selected period.
 ssa_with_decades |>
-  preview()
+  distinct(year, decade) |>
+  filter(year %in% c(1880, 1889, 1890, 2019))
 ```
 
 ## Give names the same matching format as the dogs
@@ -66,14 +68,13 @@ ssa_decade_counts |>
 ```
 
 ## Rank names within each decade
-Within each decade, put the largest birth counts first, breaking ties alphabetically. `.by_group = TRUE` keeps each decade together while sorting. `row_number()` numbers the sorted names starting at 1 for each decade. Mark ranks 1 through 100 as TRUE in `top100` and the remaining ranks as FALSE. Keep the full ranked table for inspection; the next step selects its top-100 rows. The final display shows the first five names per decade.
+Within each decade, put the largest birth counts first, breaking ties alphabetically. `.by_group = TRUE` keeps each decade together while sorting. `row_number()` numbers the sorted names starting at 1 for each decade. Keep the full ranked table for inspection; the next step selects ranks 1 through 100. The final display shows the first five names per decade.
 ```{r}
 #| label: rank-baby-names
 ssa_decade_counts |>
   group_by(decade) |>
   arrange(desc(births), name, .by_group = TRUE) |>
   mutate(rank = row_number()) |>
-  mutate(top100 = rank <= 100) |>
   ungroup() ->
   ssa_decades
 
@@ -82,11 +83,11 @@ ssa_decades |>
 ```
 
 ## Keep the top 100 names for each decade
-Keep the rows marked TRUE in `top100`, then keep just the decade and name. This gives 100 names for each of the 14 decades: 1,400 rows in all. A name can appear in more than one decade's list.
+Keep rows with a rank of 100 or less, then keep just the decade and name. This gives 100 names for each of the 14 decades: 1,400 rows in all. A name can appear in more than one decade's list.
 ```{r}
 #| label: select-top-100-names
 ssa_decades |>
-  filter(top100) |>
+  filter(rank <= 100) |>
   select(decade, name) ->
   ssa_top100_names
 
@@ -95,16 +96,14 @@ ssa_top100_names |>
 ```
 
 ## Make a list of all recorded SSA names
-Use the formatted annual records so this list includes names outside the top 100. `distinct(name)` keeps each name once. `pull(name)` takes that column out of the table as a character vector: a list of name strings. This is the list for checking whether a dog name appears anywhere in the selected 1880–2019 SSA records.
+Use the formatted annual records so this table includes names outside the top 100. `distinct(name)` keeps one column, with each name appearing once. This is the reference for names appearing anywhere in the selected 1880–2019 SSA records.
 ```{r}
 #| label: list-all-ssa-names
 ssa_yearly |>
-  distinct(name) |>
-  pull(name) ->
+  distinct(name) ->
   ssa_all_names
 
-# Display a few names as a table.
-tibble(name = ssa_all_names) |>
+ssa_all_names |>
   preview()
 ```
 
