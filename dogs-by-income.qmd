@@ -1,0 +1,206 @@
+::: why
+**Why this part:** our questions compare richer and poorer areas, so every estimated dog needs an area and an income, its name needs to be matched to the baby names, and areas need to be grouped by income so the groups can be compared.
+
+**Transforms:** changing columns, lookup (left join), aggregates, longer, grouping, excluding rows after grouping, windowing, nesting and unnesting.
+:::
+
+## Give every dog an area and an income
+`dogs_prepared` keeps each ZIP as recorded. Some ZIPs have only four digits because the leading zero was lost when someone treated the ZIP as a number, so we add a separate 5-digit `zip5` column and put the zero back. Then two lookups run in a row: ZIP → area (with its borough), and area → income.
+
+We use **left joins** so every dog is kept even when a lookup finds nothing. A dog with no area or no income gets missing values instead of disappearing, which lets us count exactly how many dogs each step loses.
+```{r}
+#| label: locate-dogs
+dogs_located <- dogs_prepared |>
+  mutate(zip5 = case_when(
+    str_length(zipcode) == 5 ~ zipcode,
+    str_length(zipcode) == 4 ~ str_c("0", zipcode),   # restore the lost leading zero
+    .default = NA
+  )) |>
+  left_join(zip_areas |> select(zip5, zcta, borough, in_nyc), by = "zip5") |>
+  left_join(area_income |> select(zcta, income, income_reliability), by = "zcta") |>
+  mutate(in_nyc = replace_na(in_nyc, FALSE))          # ZIP not in the crosswalk: not NYC
+```
+
+Test: each dog (one `source_row_id`) must still appear exactly once after the two joins.
+```{r}
+#| label: test-dogs-located
+dogs_located |>
+  count(source_row_id) |>
+  summarize(dogs = n(), most_rows_for_one_dog = max(n))
+```
+
+Where did the dogs go? We **aggregate** each reason a dog cannot be compared, then go **longer** so the counts read as a list.
+```{r}
+#| label: summarize-dog-locations
+location_summary <- dogs_located |>
+  summarize(
+    estimated_dogs = n(),
+    zip_zero_restored = sum(str_length(zipcode) == 4, na.rm = TRUE),
+    zip_unusable = sum(is.na(zip5)),
+    outside_nyc = sum(!is.na(zip5) & !in_nyc),
+    nyc_area_without_income = sum(in_nyc & is.na(income)),
+    dogs_compared = sum(in_nyc & !is.na(income))
+  ) |>
+  pivot_longer(everything(), names_to = "check", values_to = "estimated_dogs")
+
+location_summary
+
+dogs_in_nyc_areas <- dogs_located |>
+  filter(in_nyc, !is.na(income))
+```
+
+```{r}
+#| label: location-facts
+#| include: false
+location_count <- function(check_name) {
+  location_summary |>
+    filter(check == check_name) |>
+    summarize(value = sum(estimated_dogs)) |>
+    unlist()
+}
+```
+
+::: takeaway
+`r fmt_n(location_count("dogs_compared"))` of `r fmt_n(location_count("estimated_dogs"))` estimated dogs (`r fmt_pct(location_count("dogs_compared") / location_count("estimated_dogs"))`) now have a NYC area and an income. The restored zeros all belong to New Jersey ZIPs, which the NYC rule then leaves out together with the other dogs outside the city.
+:::
+
+## Match each dog's name to the baby names
+We match in **long** form, one table per question, using only joins and grouping:
+
+- **Is the name a human name?** Group the yearly SSA records by name and add up births. A left join attaches each dog's total; a dog whose name never appears gets 0 births. A name in the SSA records at all (5+ births in some year) counts as *recognized*.
+- **Which generations?** `ssa_top100_names` has one row per decade and top-100 name. Joining it to the dogs gives one row per dog *per decade* in which its name was a top-100 name, so one dog can appear in several decades.
+```{r}
+#| label: match-names
+ssa_name_totals <- ssa_yearly |>
+  group_by(name) |>
+  summarize(
+    total_births = sum(births),
+    namesake_year = sum(year * births) / sum(births)   # average birth year of everyone with the name
+  )
+
+dogs_matched <- dogs_in_nyc_areas |>
+  left_join(ssa_name_totals, by = "name") |>
+  mutate(total_births = replace_na(total_births, 0)) |>
+  mutate(recognized = total_births > 0)
+
+dog_decades <- dogs_matched |>
+  select(source_row_id, zcta, name) |>
+  inner_join(ssa_top100_names, by = "name", relationship = "many-to-many")
+
+dog_decades |>
+  filter(name == "DOROTHY") |>
+  preview()
+```
+
+Here an **inner join** is the right choice: a dog whose name was never a top-100 name has no decade to report, so it should not appear in this table. It still counts in the denominator below, because we divide by all dogs in the group.
+
+## Group areas into five income groups
+**Grouping** by area combines every ZIP that shares it. Areas with fewer than 50 dogs are dropped *after* grouping, because a handful of dogs makes a share too noisy.
+
+To make five income groups of equal size we use a **window**: sort the areas by income, number them with `row_number()`, and recode each number into a fifth with `case_when()`.
+```{r}
+#| label: make-income-groups
+areas_with_groups <- dogs_matched |>
+  group_by(zcta) |>
+  summarize(
+    dogs = n(),
+    zips_combined = n_distinct(zip5),
+    median_income = first(income),
+    recognized_share = mean(recognized)
+  ) |>
+  filter(dogs >= 50) |>
+  arrange(median_income, zcta) |>
+  mutate(income_rank = row_number(), areas = n()) |>
+  mutate(income_group = case_when(
+    income_rank <= areas * 0.2 ~ "Q1 lowest income",
+    income_rank <= areas * 0.4 ~ "Q2",
+    income_rank <= areas * 0.6 ~ "Q3",
+    income_rank <= areas * 0.8 ~ "Q4",
+    .default = "Q5 highest income"
+  ))
+
+dogs_by_income_group <- dogs_matched |>
+  inner_join(areas_with_groups |> select(zcta, income_group), by = "zcta")
+
+areas_with_groups |>
+  count(income_group, name = "areas_in_group")
+```
+
+## Compare the five income groups (Q1)
+One row per income group. We work from the dogs, not the areas, so every dog counts once.
+```{r}
+#| label: compare-income-groups
+income_group_summary <- dogs_by_income_group |>
+  group_by(income_group) |>
+  summarize(
+    areas = n_distinct(zcta),
+    dogs = n(),
+    lowest_income = min(income),
+    highest_income = max(income),
+    recognized_share = mean(recognized)
+  )
+
+income_group_summary
+```
+
+```{r}
+#| label: group-facts
+#| include: false
+q1 <- income_group_summary |> filter(income_group == "Q1 lowest income")
+q5 <- income_group_summary |> filter(income_group == "Q5 highest income")
+```
+
+::: takeaway
+From the poorest to the richest fifth of areas, the share of dogs whose name appears in the SSA records goes from `r fmt_pct(q1$recognized_share)` to `r fmt_pct(q5$recognized_share)`.
+:::
+
+## Which generations' names do dogs carry? (Q2)
+The long table makes this a plain count: dogs per income group and decade, divided by all dogs in the group. No wide decade columns are needed.
+```{r}
+#| label: generation-profile
+#| fig-width: 9
+#| fig-height: 5
+generation_profile <- dog_decades |>
+  inner_join(areas_with_groups |> select(zcta, income_group), by = "zcta") |>
+  count(income_group, decade, name = "dogs_with_top100_name") |>
+  left_join(income_group_summary |> select(income_group, dogs), by = "income_group") |>
+  mutate(share = dogs_with_top100_name / dogs)
+
+generation_profile |>
+  ggplot(aes(x = decade, y = share, colour = income_group)) +
+  geom_line(linewidth = 1) +
+  geom_point() +
+  scale_y_continuous(labels = scales::label_percent()) +
+  scale_colour_viridis_d(end = 0.9) +
+  labs(
+    title = "Share of dogs whose name was a top-100 baby name in each decade",
+    subtitle = "NYC estimated dogs, 2024, by area income group",
+    x = "Decade the name was a top-100 baby name", y = "Share of dogs", colour = NULL
+  ) +
+  theme_minimal()
+```
+
+::: takeaway
+If richer areas favour older names, their lines sit higher on the left and lower on the right. One name can be a top-100 name in several decades, so the next part builds a single measure of how old a name is.
+:::
+
+## The most common names in each group
+A **window** ranks the names within each income group, and we keep the top five. **Nesting** puts the five names into one cell per group, and **unnesting** them again with `separate_longer_delim()` gives back one row per name.
+```{r}
+#| label: top-names
+top_names_nested <- dogs_by_income_group |>
+  count(income_group, name) |>
+  group_by(income_group) |>
+  slice_max(n = 5, order_by = n, with_ties = FALSE) |>
+  summarize(top_names = str_c(name, collapse = ", "))
+
+top_names_nested
+
+top_names_nested |>
+  separate_longer_delim(top_names, delim = ", ") |>
+  count(income_group, name = "names_after_unnesting")
+```
+
+::: takeaway
+The favourites overlap a lot across groups, so popularity alone hides the differences. Part 6 looks at the names that are *over-represented* in one group instead.
+:::

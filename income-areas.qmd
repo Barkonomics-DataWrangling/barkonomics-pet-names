@@ -1,0 +1,188 @@
+::: why
+**Why this part:** a dog license tells us where a dog lives only through its ZIP code, but the Census reports income for ZIP Code Tabulation Areas (ZCTAs). To give a dog an income, every ZIP must first be translated into a Census area.
+
+**Transforms:** extracting, lookup (left join), recoding, combining columns, grouping and counting (as checks).
+:::
+
+## Read the ZIP-to-area crosswalk
+The HRSA workbook has one row per postal ZIP code and the Census area (ZCTA) it belongs to. We read every column as text so ZIP codes such as `00501` keep their leading zeros, and give the columns short working names.
+```{r}
+#| label: read-zip-crosswalk
+zip_crosswalk <- readxl::read_excel(
+  "data/raw/ZIPCodetoZCTACrosswalk2024UDS.xlsx",
+  sheet = "ZiptoZCTA",
+  col_types = "text"
+) |>
+  rename(
+    zip5 = ZIP_CODE,
+    post_office = PO_NAME,
+    state = STATE,
+    zcta = ZCTA,
+    zip_join_type = ZIP_JOIN_TYPE
+  )
+
+zip_crosswalk |>
+  preview()
+```
+
+A lookup table must have one row per key; otherwise a join would copy dogs. We test this by counting rows per ZIP: the largest count must be 1.
+```{r}
+#| label: test-crosswalk-key
+zip_crosswalk |>
+  count(zip5) |>
+  summarize(most_rows_for_one_zip = max(n))
+```
+
+## Decide which ZIP codes are New York City
+Some license holders live in New Jersey or on Long Island. NYC ZIP codes can be recognised by their first three digits, so we write a small **lookup table** that turns each NYC prefix into its borough. Two Queens ZIPs (11004 and 11005) sit inside a Long Island range, so they are recoded separately.
+
+To use the lookup we first **extract** the first three characters of each ZIP with `str_sub()`. A **left join** keeps every ZIP in the crosswalk: prefixes that are not in the lookup simply get no borough, which marks them as outside NYC. An inner join would silently drop those rows, and we could no longer count them.
+```{r}
+#| label: flag-nyc-zips
+nyc_prefixes <- tribble(
+  ~zip_prefix, ~borough,
+  "100", "Manhattan",
+  "101", "Manhattan",
+  "102", "Manhattan",
+  "103", "Staten Island",
+  "104", "Bronx",
+  "111", "Queens",
+  "112", "Brooklyn",
+  "113", "Queens",
+  "114", "Queens",
+  "116", "Queens"
+)
+
+zip_areas <- zip_crosswalk |>
+  mutate(zip_prefix = str_sub(zip5, 1, 3)) |>                # characters 1 to 3
+  left_join(nyc_prefixes, by = "zip_prefix") |>
+  mutate(borough = case_when(
+    zip5 == "11004" | zip5 == "11005" ~ "Queens",           # Glen Oaks, Floral Park
+    .default = borough
+  )) |>
+  mutate(in_nyc = !is.na(borough))
+```
+
+To check the rule we group the NYC ZIPs by borough. Every borough should appear, every ZIP should be in New York State and have an area, and the post-office names should belong to that borough.
+```{r}
+#| label: check-nyc-zips
+zip_areas |>
+  filter(in_nyc) |>
+  group_by(borough) |>
+  summarize(
+    zips = n(),
+    areas = n_distinct(zcta),
+    zips_without_area = sum(is.na(zcta)),
+    states = str_c(unique(state), collapse = ", "),
+    example_post_offices = str_c(head(unique(post_office), 4), collapse = ", ")
+  )
+```
+
+```{r}
+#| label: zip-area-facts
+#| include: false
+nyc_zips_per_area <- zip_areas |>
+  filter(in_nyc) |>
+  count(zcta, name = "zips_in_area")
+```
+
+::: takeaway
+The rule picks out `r fmt_n(sum(zip_areas$in_nyc))` NYC ZIP codes, all in New York State and all with a Census area. They fall into `r fmt_n(nrow(nyc_zips_per_area))` areas, and `r fmt_n(sum(nyc_zips_per_area$zips_in_area > 1))` areas combine two or more ZIPs (up to `r max(nyc_zips_per_area$zips_in_area)`).
+
+This is our **synonym handling**: as in the course's Texas / TX example, several postal ZIPs are *alternative names* for one *canonical* area, and the crosswalk maps each alternative to it. It also means dogs must later be grouped by area, not by ZIP.
+:::
+
+## Prepare one row of income per area
+The income data comes from the Census API as JSON. If the saved copy is missing, it is downloaded once (this needs a free Census API key stored as `CENSUS_API_KEY` in `.Renviron`).
+```{r}
+#| label: get-census-income
+acs_path <- "data/raw/acs5_2024_b19013_zcta.json"
+
+if (!file.exists(acs_path)) {
+  census_key <- Sys.getenv("CENSUS_API_KEY")
+  download.file(
+    str_c("https://api.census.gov/data/2024/acs/acs5",
+          "?get=NAME,B19013_001E,B19013_001M",
+          "&for=zip%20code%20tabulation%20area:*",
+          "&key=", census_key),
+    acs_path, mode = "wb"
+  )
+}
+```
+
+The JSON file is a grid of text whose first row holds the column names, so reading it is a format step: `fromJSON()` gives a grid, we use its first row as the column names and keep the other rows. Every value is still text. Then one pipeline prepares the table:
+
+- **Extract** the area code by splitting text such as `ZCTA5 10001` at the space.
+- **Recode** the Census codes for "no estimate" (negative numbers such as -666666666) to missing, and label the cap 250001, which means "$250,000 or more".
+- Rate how **precise** each estimate is. The coefficient of variation (CV) is the standard error (margin of error ÷ 1.645) divided by the estimate; under 15% is usually called reliable.
+- **Combine** the estimate and its margin of error into one readable label.
+```{r}
+#| label: prepare-area-income
+acs_grid <- jsonlite::fromJSON(acs_path)
+colnames(acs_grid) <- acs_grid[1, ]          # first row = column names
+
+area_income <- as_tibble(acs_grid[-1, ]) |>   # every other row = one area
+  rename(
+    area_name = NAME,
+    income_text = B19013_001E,               # median household income
+    moe_text = B19013_001M,                  # its margin of error
+    zcta_api = `zip code tabulation area`
+  ) |>
+  separate_wider_delim(area_name, delim = " ", names = c("geo_prefix", "zcta")) |>
+  mutate(
+    income_code = as.numeric(income_text),
+    moe_code = as.numeric(moe_text)
+  ) |>
+  mutate(
+    income_status = case_when(
+      income_code < 0 ~ "no estimate",
+      income_code == 250001 ~ "top-coded ($250,000+)",
+      .default = "estimate"
+    ),
+    income = case_when(income_code < 0 ~ NA, .default = income_code),
+    income_moe = case_when(moe_code < 0 ~ NA, .default = moe_code)
+  ) |>
+  mutate(income_cv = (income_moe / 1.645) / income) |>
+  mutate(
+    income_reliability = case_when(
+      is.na(income_cv) ~ "not measured",
+      income_cv < 0.15 ~ "reliable",
+      income_cv < 0.30 ~ "use with care",
+      .default = "unreliable"
+    ),
+    income_label = str_c(income_text, " ± ", moe_text)
+  ) |>
+  select(zcta, income, income_moe, income_cv, income_status, income_reliability,
+         income_label, zcta_api)
+
+area_income |>
+  preview()
+```
+
+Two tests before we use the table: the area code we extracted must equal the API's own code, and each area must appear once.
+```{r}
+#| label: test-area-income
+area_income |>
+  mutate(code_matches = zcta == zcta_api) |>
+  group_by(zcta) |>
+  summarize(rows = n(), code_matches = all(code_matches)) |>
+  summarize(
+    most_rows_for_one_area = max(rows),
+    areas_with_mismatched_code = sum(!code_matches)
+  )
+```
+
+## Check that NYC incomes are reliable
+Look up the income of every NYC area and count the areas by status and precision. A left join keeps NYC areas that have no Census row, so they would show up here instead of disappearing.
+```{r}
+#| label: check-nyc-income
+zip_areas |>
+  filter(in_nyc) |>
+  distinct(zcta) |>
+  left_join(area_income, by = "zcta") |>
+  count(income_status, income_reliability, name = "nyc_areas")
+```
+
+::: takeaway
+Every NYC area appears in the Census table. The few without an estimate are office buildings, airports and similar places with almost no households, and almost all other estimates are reliable. Area income is precise enough to compare neighborhoods. Next, each dog gets one.
+:::
