@@ -3,7 +3,7 @@ id: READABLE-R
 type: operational
 scope: "Agent-authored R analysis and validation code in Barkonomics."
 status: adopted
-authority: "Aslan explicitly directed use of these R readability preferences throughout the project and confirmed adoption on 2026-11-25, including str_glue text templates and separate date formatting."
+authority: "Aslan explicitly directed use of these R readability preferences throughout the project and confirmed adoption on 2026-11-25, including str_glue text templates, separate date formatting and a preference for row-oriented tribble table construction."
 revised: "2026-11-25"
 depends_on: []
 related_to: []
@@ -28,3 +28,6 @@ Prefer straightforward operations to unnecessary helper abstractions. Explain un
 
 ## Construct text with readable templates
 Prefer `str_glue()` over `str_c()` when inserting values into filenames, labels or other text templates. Keep the full text pattern visible, with descriptive variable or column names inside braces. Prepare dates and other transformed values in a preceding step rather than nesting transformations inside the template. Preserve intentional line breaks and check that generated text stays the same when replacing existing construction code. Combining several values into one string is a separate operation; this preference does not require using `str_glue()` for that purpose. Preserve quoted source code when documenting someone else's implementation.
+
+## Present small tables row by row
+Prefer `tribble()` for small explicitly constructed tables and teaching examples so column headings and each row can be read together. Use descriptive column names and preserve the table’s values and types. Keep `tibble()` when assembling existing vectors into columns and a row-oriented rewrite would obscure the operation or require unnecessary iteration. This preference concerns table construction, not replacing tibble objects returned by imports and tidyverse transformations.
