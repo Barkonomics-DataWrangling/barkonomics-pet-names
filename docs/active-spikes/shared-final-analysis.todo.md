@@ -15,3 +15,4 @@ Bring together the published dog–baby preparation and the proposed income look
 ## Done
 - Established a separate issue and branch from the published preparation checkpoint.
 - Imported only the proposed income-preparation notebook and its two saved inputs, preserving source provenance.
+- Added the ZIP left join and coverage examples directly in final-analysis.qmd; all 96,810 dogs and baby-name fields remain. The temporary execution checks unique ZIP keys, preserved rows/fields and reconciled coverage totals. Selected NYC ZIPs: 95,950 ordinary estimates, 379 capped estimates and 18 unavailable estimates; 410 dogs outside the NYC rule and 53 unmatched ZIPs. No exclusions or analysis choices implemented.
