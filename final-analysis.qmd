@@ -17,7 +17,7 @@ execute:
 # Project description
 Do dogs in different-income New York City neighborhoods have different names? We also want to compare those names with names given to babies in different decades. The wrangling involves preparing license records, combining annual baby-name files and relating postal ZIP codes to Census income areas. Area income describes a neighborhood, not an individual dog owner's income.
 
-This draft runs the dog and baby-name preparation in R. Geography and income preparation remain in a separate contribution under review. Matching, income comparisons and the other three technical approaches are unfinished.
+This draft runs the dog and baby-name preparation in R. Geography and income preparation remain in a separate contribution under review. Baby-name recognition and historical name-measure matching execute. Income comparisons and the other three technical approaches are unfinished.
 
 <!-- Report structure adapted from https://howisonlab.github.io/datawrangling/current/project_examples/final_project_template.html. -->
 
@@ -37,7 +37,7 @@ The R preparation sections below execute once, in order, using in-memory tables.
 TODO: Incorporate the template's supplied course-setup chunks when assembling the four-framework report. The current preparation notebooks load the R packages they use.
 
 ## Prepare and match dog and baby names
-{{< include dog-baby-analysis.qmd >}}
+{{< include dog-baby-matching.qmd >}}
 
 ## Prepare geography and income
 TODO: Review and integrate the agreed income preparation. The proposed output is one ZIP-to-income lookup retaining the Census area that supplies each estimate.

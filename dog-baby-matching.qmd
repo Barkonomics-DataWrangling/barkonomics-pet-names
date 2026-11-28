@@ -1,0 +1,156 @@
+## Prepare dog names
+{{< include dog-names.qmd >}}
+
+## Prepare baby names
+{{< include baby-names.qmd >}}
+
+## Mark names recorded in the baby-name reference
+The distinct-name reference has one row per formatted name found in the selected SSA records. Mark those reference names TRUE before looking them up for each dog. This means the name appears somewhere in the published 1880–2019 records; it does not require a top-100 ranking.
+```{r}
+#| label: mark-recorded-baby-names
+all_distinct_baby_names |>
+  mutate(name_appears_in_ssa = TRUE) ->
+  baby_name_recognition_reference
+
+baby_name_recognition_reference |>
+  preview()
+```
+
+## Look up each dog's name
+Join on the formatted name. A left join keeps every prepared dog, including dogs whose names do not appear in the reference. Because the reference has one row per name, this lookup does not multiply dog rows. Dog sex and birth year are not join keys: the reference covers both baby sex categories and the whole selected period.
+```{r}
+#| label: look-up-dog-name-recognition
+dogs_prepared |>
+  left_join(baby_name_recognition_reference, by = "name") ->
+  dogs_with_name_lookup
+```
+
+## Mark names with no reference match
+An unmatched dog has a missing lookup result. `replace_na()` changes those missing answers to FALSE, leaving the matched TRUE answers alone. It comes from tidyr, loaded with tidyverse. FALSE means absent from our selected published records, not proof that nobody has received the name.
+```{r}
+#| label: mark-unmatched-dog-names
+dogs_with_name_lookup |>
+  mutate(name_appears_in_ssa = replace_na(name_appears_in_ssa, FALSE)) ->
+  dogs_with_name_recognition
+
+# Show three examples of each result, where available.
+dogs_with_name_recognition |>
+  select(source_row_id, name, name_appears_in_ssa) |>
+  group_by(name_appears_in_ssa) |>
+  slice_head(n = 3) |>
+  ungroup()
+```
+
+## Collect each name's top-100 decades
+The reference currently has one row per name and qualifying decade. Sort the decades, group by name, and use `list(decade)` to collect each name's decades into one cell. This produces one lookup row per name so attaching it will not repeat dog rows. The values inside the cell remain numbers, not comma-separated text.
+```{r}
+#| label: collect-top100-decades
+baby_names_top100_by_decade_prepared |>
+  arrange(name, decade) |>
+  group_by(name) |>
+  summarise(top100_decades = list(decade)) |>
+  ungroup() ->
+  baby_names_top100_decade_lists
+
+baby_names_top100_decade_lists |>
+  preview()
+```
+
+## Attach the top-100 decades to dogs
+Keep every dog with a left join on name. An unmatched list-cell is NULL, meaning there are no qualifying decades in this reference. A name can appear in SSA while never entering a top-100 list; name recognition and top-100 membership answer different questions.
+```{r}
+#| label: attach-top100-decades
+dogs_with_name_recognition |>
+  left_join(baby_names_top100_decade_lists, by = "name") ->
+  dogs_with_top100_decades
+
+dogs_with_top100_decades |>
+  select(source_row_id, name, name_appears_in_ssa, top100_decades) |>
+  preview()
+```
+
+## Collect each name's peak birth-count decades
+The peak reference retains all tied maxima. Collect those decades into a list so every tied peak remains available without creating extra dog rows. Birth counts remain available in the original baby-name reference.
+```{r}
+#| label: collect-peak-birth-count-decades
+baby_names_peak_birth_count_decade |>
+  arrange(name, peak_birth_count_decade) |>
+  group_by(name) |>
+  summarise(peak_birth_count_decades = list(peak_birth_count_decade)) |>
+  ungroup() ->
+  baby_names_peak_decade_lists
+
+baby_names_peak_decade_lists |>
+  preview()
+```
+
+## Attach the peak birth-count decades
+```{r}
+#| label: attach-peak-birth-count-decades
+dogs_with_top100_decades |>
+  left_join(baby_names_peak_decade_lists, by = "name") ->
+  dogs_with_peak_decades
+
+dogs_with_peak_decades |>
+  select(source_row_id, name, peak_birth_count_decades) |>
+  preview()
+```
+
+## Collect each name's highest-ranked decades
+Collect every decade sharing the name's highest rank (smallest rank number). This is distinct from the peak birth-count measure: ranking compares the name with other names within each decade.
+```{r}
+#| label: collect-best-rank-decades
+baby_names_best_rank_decade |>
+  arrange(name, decade) |>
+  group_by(name) |>
+  summarise(best_rank_decades = list(decade)) |>
+  ungroup() ->
+  baby_names_best_rank_decade_lists
+
+baby_names_best_rank_decade_lists |>
+  preview()
+```
+
+## Attach the highest-ranked decades
+```{r}
+#| label: attach-best-rank-decades
+dogs_with_peak_decades |>
+  left_join(baby_names_best_rank_decade_lists, by = "name") ->
+  dogs_with_ranked_decades
+
+dogs_with_ranked_decades |>
+  select(source_row_id, name, best_rank_decades) |>
+  preview()
+```
+
+## Attach the weighted average baby birth year
+The average-year reference already has one row per name. Rename its value to `average_baby_birth_year` in this lookup to distinguish it from the dog's own `birth_year`.
+```{r}
+#| label: name-average-baby-year-for-matching
+baby_names_average_birth_year |>
+  rename(average_baby_birth_year = average_birth_year) ->
+  baby_name_average_year_reference
+```
+
+```{r}
+#| label: finish-dog-baby-name-measures
+dogs_with_ranked_decades |>
+  left_join(baby_name_average_year_reference, by = "name") ->
+  dogs_with_baby_name_measures
+
+dogs_with_baby_name_measures |>
+  preview()
+```
+
+This is the finished dog–baby table for the final analysis: one row per estimated dog, with the original dog fields, name recognition, three decade lists and weighted average baby birth year. Names absent from the selected SSA records have FALSE recognition, NULL decade lists and an NA average year. NULL lists contain no matches; NA means no average could be supplied. Neither means zero. Income is attached later in the shared final analysis.
+
+## Inspect the contents of a decade list
+For display only, expand the top-100 lists of three matched dogs. `unnest()` repeats the dog's identifiers beside each matching decade. The saved final table remains one row per dog. When analyzing shares later, use the full dog population for denominators rather than just these matching rows; unnesting empty lists normally drops those rows.
+```{r}
+#| label: inspect-matched-decade-values
+dogs_with_baby_name_measures |>
+  filter(name %in% baby_names_top100_decade_lists$name) |>
+  slice_head(n = 3) |>
+  select(source_row_id, name, top100_decades) |>
+  unnest(top100_decades)
+```

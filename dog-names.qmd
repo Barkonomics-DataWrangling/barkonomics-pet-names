@@ -1100,10 +1100,9 @@ dogs_prepared |>
   nrow() ->
   estimated_dog_count
 
-tibble(
-  eligible_license_records = eligible_license_count,
-  estimated_dogs = estimated_dog_count,
-  additional_license_records_consolidated = eligible_license_count - estimated_dog_count
+tribble(
+  ~eligible_license_records, ~estimated_dogs, ~additional_license_records_consolidated,
+  eligible_license_count, estimated_dog_count, eligible_license_count - estimated_dog_count
 ) ->
   consolidation_summary
 

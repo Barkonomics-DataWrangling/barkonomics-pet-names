@@ -8,13 +8,17 @@ source("helpers.R")
 ```
 
 ## Build the list of annual files
-The saved files follow one naming pattern: `yob1880.txt`, `yob1881.txt`, and so on. Create the years first, then use `str_glue()` to insert each year into the filename template. The display shows the first six paths alongside their years.
+The saved files follow one naming pattern: `yob1880.txt`, `yob1881.txt`, and so on. Create the years first, then use `str_glue()` to insert each year into the filename template. For the preview, tribble() places the two sequences into list-cells. Unnest both columns together to pair each year with its path, then show the first six rows.
 ```{r}
 #| label: list-baby-name-files
 ssa_years <- 1880:2019
 ssa_file_paths <- str_glue("data/raw/ssa/yob{ssa_years}.txt")
 
-tibble(year = ssa_years, source_file = ssa_file_paths) |>
+tribble(
+  ~year,     ~source_file,
+  ssa_years, ssa_file_paths
+) |>
+  unnest(c(year, source_file)) |>
   preview()
 ```
 
@@ -123,6 +127,340 @@ baby_names_top100_by_decade_prepared |>
   group_by(decade) |>
   slice_head(n = 3) |>
   ungroup()
+```
+
+### See which decades enter the top 100
+Use ALICE and OLIVER as consistent examples in all four charts. The gray line shows each name's recorded births; blue circles mark decades selected by the top-100 rule. A decade can qualify even when it is far from that name's own peak. Each panel has its own birth-count scale so both histories are readable; compare timing rather than line heights between names.
+```{r}
+#| label: visualize-top100-name-decades
+#| fig-width: 10
+#| fig-height: 4
+name_measure_examples <- c("ALICE", "OLIVER")
+
+baby_names_rank_by_decade_prepared |>
+  filter(name %in% name_measure_examples) ->
+  example_name_decades
+
+example_name_decades |>
+  filter(rank <= 100) ->
+  example_top100_decades
+
+example_name_decades |>
+  ggplot(aes(x = decade, y = births)) +
+  geom_line(color = "gray55") +
+  geom_point(data = example_top100_decades, color = "#0072B2", size = 3) +
+  facet_wrap(~name, scales = "free_y") +
+  scale_x_continuous(breaks = c(1880, 1920, 1960, 2000)) +
+  labs(title = "1. Top-100 decades", subtitle = "Blue circles: rank 100 or better", x = "Decade starting", y = "Recorded births in decade") +
+  theme_minimal(base_size = 12) ->
+  top100_decades_plot
+
+top100_decades_plot
+```
+
+## Find each name's peak birth-count decade
+For each name, keep the decade with the largest published birth count. `with_ties = TRUE` retains every decade sharing that maximum. These references cover all recorded names, not only top-100 names.
+```{r}
+#| label: baby-name-peak-count-decade
+baby_names_rank_by_decade_prepared |>
+  group_by(name) |>
+  slice_max(order_by = births, n = 1, with_ties = TRUE) |>
+  ungroup() |>
+  select(
+    name,
+    peak_birth_count_decade = decade,
+    peak_birth_count = births
+  ) ->
+  baby_names_peak_birth_count_decade
+
+baby_names_peak_birth_count_decade |>
+  preview()
+```
+
+### See the peak birth-count decades
+Keep the same birth-count curves, but now highlight the selected maximum rather than top-100 membership. Orange diamonds show every tied peak if there is more than one.
+```{r}
+#| label: visualize-peak-count-name-decades
+#| fig-width: 10
+#| fig-height: 4
+baby_names_peak_birth_count_decade |>
+  filter(name %in% name_measure_examples) ->
+  example_peak_decades
+
+example_name_decades |>
+  ggplot(aes(x = decade, y = births)) +
+  geom_line(color = "gray55") +
+  geom_point(data = example_peak_decades,
+             aes(x = peak_birth_count_decade, y = peak_birth_count),
+             color = "#D55E00", shape = 18, size = 4) +
+  facet_wrap(~name, scales = "free_y") +
+  scale_x_continuous(breaks = c(1880, 1920, 1960, 2000)) +
+  labs(title = "2. Peak birth-count decades", subtitle = "Orange diamonds: largest birth count for this name", x = "Decade starting", y = "Recorded births in decade") +
+  theme_minimal(base_size = 12) ->
+  peak_count_decades_plot
+
+peak_count_decades_plot
+```
+
+## Find each name's highest-ranked decade
+A smaller rank means a higher position. Keep the smallest rank each name achieved, retaining all decades with that same rank. This uses the existing ranking, which breaks equal birth counts alphabetically within a decade. Peak count and highest rank can differ: the decade with the most births bearing a name need not be the decade when it ranked highest against other names.
+```{r}
+#| label: baby-name-best-rank-decade
+baby_names_rank_by_decade_prepared |>
+  group_by(name) |>
+  slice_min(order_by = rank, n = 1, with_ties = TRUE) |>
+  ungroup() |>
+  select(name, decade, rank) ->
+  baby_names_best_rank_decade
+
+baby_names_best_rank_decade |>
+  preview()
+```
+
+### See the highest-ranked decades
+This chart changes the vertical axis to rank: smaller numbers indicate a higher rank and appear higher on the chart. Green squares mark the name's highest position against other names, retaining ties. The dashed line marks rank 100. The highest rank does not necessarily occur at the name's largest birth count.
+```{r}
+#| label: visualize-best-rank-name-decades
+#| fig-width: 10
+#| fig-height: 4
+baby_names_best_rank_decade |>
+  filter(name %in% name_measure_examples) ->
+  example_best_rank_decades
+
+example_name_decades |>
+  ggplot(aes(x = decade, y = rank)) +
+  geom_line(color = "gray55") +
+  geom_hline(yintercept = 100, linetype = "dashed", color = "gray65") +
+  geom_point(data = example_best_rank_decades, color = "#007F5F", shape = 15, size = 3) +
+  facet_wrap(~name) +
+  scale_y_reverse() +
+  scale_x_continuous(breaks = c(1880, 1920, 1960, 2000)) +
+  labs(title = "3. Highest-ranked decades", subtitle = "Green squares: smallest rank; higher on chart means better", x = "Decade starting", y = "Rank among names") +
+  theme_minimal(base_size = 12) ->
+  best_rank_decades_plot
+
+best_rank_decades_plot
+```
+
+### Put name counts in context
+The overall number of births represented in the files changes over time. A larger name count can reflect a larger birth cohort as well as a change in naming preferences. The chart below shows each name’s percentage of recorded births. The average-year illustrations below overlay total births and name counts, using separately labeled vertical axes. These totals cover published SSA records, not the population alive that year or a complete count of all births; historical coverage and suppressed small counts affect the denominator.
+
+First total the published birth counts across every name and both sex categories for each year.
+```{r}
+#| label: total-recorded-births-by-year
+baby_names_yearly_prepared |>
+  group_by(year) |>
+  summarise(recorded_births_in_year = sum(births)) |>
+  ungroup() ->
+  recorded_birth_totals_by_year
+
+recorded_birth_totals_by_year |>
+  preview()
+```
+
+For the two example names, combine the sex categories within each year. These same annual name counts also supply the average-year illustrations below.
+```{r}
+#| label: prepare-example-annual-name-counts
+baby_names_yearly_prepared |>
+  filter(name %in% name_measure_examples) |>
+  group_by(name, year) |>
+  summarise(births = sum(births)) |>
+  ungroup() ->
+  example_name_years
+
+example_name_years |>
+  preview()
+```
+
+Attach the year's total to each example name's count. The left join matches by year; there is one denominator row per year. Dividing the name count by that total gives its share. These shares are for explaining the measures, not a new column in the dog table or a replacement for the decade ranks.
+```{r}
+#| label: calculate-example-name-shares
+example_name_years |>
+  left_join(recorded_birth_totals_by_year, by = "year") |>
+  mutate(share_of_recorded_births = births / recorded_births_in_year) ->
+  example_name_birth_shares
+
+example_name_birth_shares |>
+  preview()
+```
+
+```{r}
+#| label: build-name-share-plot
+example_name_birth_shares |>
+  ggplot(aes(x = year, y = share_of_recorded_births)) +
+  geom_line(color = "#007F5F", linewidth = 0.7) +
+  facet_wrap(~name, ncol = 1) +
+  scale_x_continuous(breaks = c(1880, 1920, 1960, 2000)) +
+  scale_y_continuous(labels = scales::label_percent(accuracy = 0.1), limits = c(0, NA)) +
+  labs(title = "Share of recorded births", subtitle = "Name count ÷ all recorded births that year", x = "Birth year", y = "Percentage with this name") +
+  theme_minimal(base_size = 12) ->
+  example_name_birth_shares_plot
+```
+
+```{r}
+#| label: show-name-shares
+#| fig-width: 5
+#| fig-height: 6
+#| echo: false
+example_name_birth_shares_plot
+```
+
+A share measures the fraction of recorded births receiving the name. A rank measures its position against other names. Those are different comparisons, and the year of highest share need not match the year of highest count or the highest-ranked decade. The early years also have less complete SSA coverage, so interpret their shares in that context.
+
+## Weight each birth year by its recorded birth count
+Multiply each year by the number of births recorded for that name and sex. For example, 10 births in 1950 contribute 19,500 to the total. A year with more births contributes more to the eventual average.
+```{r}
+#| label: weight-baby-name-years
+baby_names_yearly_prepared |>
+  mutate(birth_year_total = year * births) ->
+  baby_names_weighted_years
+
+baby_names_weighted_years |>
+  select(name, year, births, birth_year_total) |>
+  preview()
+```
+
+## Total the weighted years for each name
+Add the weighted years and birth counts across all selected years and both sex categories.
+```{r}
+#| label: total-weighted-baby-name-years
+baby_names_weighted_years |>
+  group_by(name) |>
+  summarise(
+    birth_year_total = sum(birth_year_total),
+    total_births = sum(births)
+  ) |>
+  ungroup() ->
+  baby_names_year_totals
+
+baby_names_year_totals |>
+  preview()
+```
+
+## Calculate each name's weighted average birth year
+Divide the weighted-year total by the birth count. The result is the average birth year among the published records bearing that name in 1880–2019. It is not the average age of people alive today or necessarily a popularity peak: two separated periods of popularity can place the average between them. Keep fractional years rather than rounding the reference values.
+```{r}
+#| label: average-baby-name-birth-year
+baby_names_year_totals |>
+  mutate(average_birth_year = birth_year_total / total_births) |>
+  select(name, average_birth_year) ->
+  baby_names_average_birth_year
+
+baby_names_average_birth_year |>
+  preview()
+```
+
+### See the weighted average for ALICE and OLIVER
+The gray area shows the name’s annual birth count on the left axis. The blue line shows all recorded SSA births on the blue right axis, repeated in both name panels. Both counts combine the sex categories. For display only, total births are divided by 300; the right axis multiplies those positions back by 300. This same conversion and fixed limits apply throughout the comparison. Line crossings do not mean equal counts. The share chart above shows the actual name-to-total proportion. The purple dashed line marks the weighted average year, with its value rounded only for the display. It summarizes the whole selected history rather than choosing a peak; it can sit in a quieter period between waves of popularity. The horizontal axis here is an individual year, not a decade label.
+```{r}
+#| label: visualize-average-name-year
+#| fig-width: 10
+#| fig-height: 4
+# One fixed display conversion for both names and both average charts.
+total_births_axis_multiplier <- 300
+
+recorded_birth_totals_by_year |>
+  mutate(total_births_plot_height = recorded_births_in_year / total_births_axis_multiplier) ->
+  total_births_overlay
+
+baby_names_average_birth_year |>
+  filter(name %in% name_measure_examples) |>
+  mutate(display_average_year = round(average_birth_year, 1)) |>
+  mutate(average_label = str_glue("Weighted mean: {display_average_year}")) ->
+  example_average_years
+
+example_name_years |>
+  ggplot(aes(x = year, y = births)) +
+  geom_area(fill = "gray80") +
+  geom_line(color = "gray55") +
+  geom_line(data = total_births_overlay,
+            aes(x = year, y = total_births_plot_height), color = "#0072B2", linewidth = 0.8, inherit.aes = FALSE) +
+  geom_vline(data = example_average_years,
+             aes(xintercept = average_birth_year), color = "#8451A1", linetype = "dashed", linewidth = 0.8) +
+  geom_text(data = example_average_years,
+            aes(x = average_birth_year, y = Inf, label = average_label),
+            color = "#8451A1", vjust = 1.5, inherit.aes = FALSE, size = 3.5) +
+  facet_wrap(~name) +
+  scale_x_continuous(breaks = c(1880, 1920, 1960, 2000)) +
+  scale_y_continuous(
+    limits = c(0, 16000), breaks = c(0, 5000, 10000, 15000),
+    labels = scales::label_comma(),
+    sec.axis = sec_axis(~ . * total_births_axis_multiplier,
+                        name = "All recorded SSA births (blue)", labels = scales::label_comma())
+  ) +
+  labs(title = "4. Weighted average baby birth year", subtitle = "Purple line: average weighted by recorded births", x = "Birth year", y = "Births with this name (gray)") +
+  theme_minimal(base_size = 12) +
+  theme(axis.title.y.right = element_text(color = "#0072B2"),
+        axis.text.y.right = element_text(color = "#0072B2"),
+        axis.ticks.y.right = element_line(color = "#0072B2")) ->
+  average_birth_year_plot
+
+average_birth_year_plot
+```
+
+### Compare unweighted and weighted averages for ALICE and OLIVER
+For this explanatory comparison only, give each distinct recorded year equal weight. Annual counts have already been combined across sex, so a year is counted once. This ignores how many babies received the name that year. The weighted panel uses those counts. Read across each name: both panels show the same annual birth-count curve with matching axes, but the average markers differ. Years with more births contribute more to the weighted average; every recorded year contributes equally to the unweighted average. If a name appears in all 140 years, its unweighted mean is simply the midpoint of 1880–2019, regardless of its popularity pattern. This unweighted measure is not added to the dog table.
+```{r}
+#| label: build-unweighted-name-year-comparison
+example_name_years |>
+  group_by(name) |>
+  summarise(unweighted_average_year = mean(year)) |>
+  ungroup() |>
+  mutate(display_average_year = round(unweighted_average_year, 1)) |>
+  mutate(average_label = str_glue("Unweighted mean: {display_average_year}")) ->
+  example_unweighted_years
+
+example_name_years |>
+  ggplot(aes(x = year, y = births)) +
+  geom_area(fill = "gray80") +
+  geom_line(color = "gray55") +
+  geom_line(data = total_births_overlay,
+            aes(x = year, y = total_births_plot_height), color = "#0072B2", linewidth = 0.8, inherit.aes = FALSE) +
+  geom_vline(data = example_unweighted_years,
+             aes(xintercept = unweighted_average_year), color = "#D55E00", linetype = "dashed", linewidth = 0.8) +
+  geom_text(data = example_unweighted_years,
+            aes(x = unweighted_average_year, y = Inf, label = average_label),
+            color = "#D55E00", vjust = 1.5, inherit.aes = FALSE, size = 3.5) +
+  facet_wrap(~name) +
+  scale_x_continuous(breaks = c(1880, 1920, 1960, 2000)) +
+  scale_y_continuous(
+    limits = c(0, 16000), breaks = c(0, 5000, 10000, 15000),
+    labels = scales::label_comma(),
+    sec.axis = sec_axis(~ . * total_births_axis_multiplier,
+                        name = "All recorded SSA births (blue)", labels = scales::label_comma())
+  ) +
+  labs(title = "Unweighted average year", subtitle = "Orange line: each distinct recorded year counts equally", x = "Birth year", y = "Births with this name (gray)") +
+  theme_minimal(base_size = 12) +
+  theme(axis.title.y.right = element_text(color = "#0072B2"),
+        axis.text.y.right = element_text(color = "#0072B2"),
+        axis.ticks.y.right = element_line(color = "#0072B2")) ->
+  unweighted_birth_year_plot
+```
+
+```{r}
+#| label: compare-average-name-years
+#| layout-ncol: 2
+#| fig-width: 7
+#| fig-height: 6
+#| echo: false
+unweighted_birth_year_plot +
+  facet_wrap(~name, ncol = 1)
+average_birth_year_plot +
+  facet_wrap(~name, ncol = 1)
+```
+
+### Compare the four measures together
+These are the same four charts shown beside the calculations, reused without recalculating the references. Read them as four different questions: when was the name in the top 100; when did it have the most births; when did it rank highest; and where is the weighted center of its recorded birth years? The first two use decade birth counts, the third uses rank, and the fourth uses annual birth counts. The heights are not interchangeable across these measures. These examples explain the measures; they are not evidence of an income relationship.
+```{r}
+#| label: compare-name-measure-plots
+#| layout-ncol: 2
+#| fig-width: 10
+#| fig-height: 4
+#| echo: false
+top100_decades_plot
+peak_count_decades_plot
+best_rank_decades_plot
+average_birth_year_plot
 ```
 
 ## Make a list of all recorded SSA names

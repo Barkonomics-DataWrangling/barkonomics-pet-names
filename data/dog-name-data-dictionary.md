@@ -1,5 +1,5 @@
 # Dog-name data dictionary
-These are in-memory objects created by dog-names.qmd, baby-names.qmd and the optional license-consolidation sensitivity appendix; they are not exported CSVs. dogs_prepared contains 96,810 eligible named estimated dogs after early exclusion of missing names and unusable birth years. Baby preparation supplies separate decade and overall name lists. Matching awaits review and is not executed in final-analysis.qmd. There is no geographic or income selection in this pipeline.
+These are in-memory objects created by dog-names.qmd, baby-names.qmd, dog-baby-matching.qmd and the optional license-consolidation sensitivity appendix; they are not exported CSVs. dogs_prepared contains 96,810 eligible named estimated dogs after early exclusion of missing names and unusable birth years. Baby preparation supplies separate decade and overall name lists. Matching produces dogs_with_baby_name_measures with one row per estimated dog, name recognition, decade lists and weighted average baby birth year. There is no geographic or income selection in this pipeline.
 
 The notebook imports ZIP codes as text and infers the other types, using standard missing-value and whitespace handling, numbers source rows, gives fields clear working names, and counts and excludes existing missing values and the agreed missing-name labels without recoding them. It records compound names before formatting. ZIP strings stay as recorded. source_row_id points to the original license in the source CSV. No duplicate original_ columns are carried through the comparison tables.
 ## Dog columns
@@ -17,8 +17,12 @@ The provisional consolidation removes repeated identity/date records, then prior
 | R object | One row represents | Purpose |
 | --- | --- | --- |
 | dogs_prepared | One estimated dog | Cleaned fields before baby-name matching. |
+| dogs_with_baby_name_measures | One estimated dog | Original dog fields plus name_appears_in_ssa, top100_decades, peak_birth_count_decades, best_rank_decades and average_baby_birth_year. Decade columns contain numeric lists; unmatched lists are NULL and unmatched average years are NA. |
 | baby_names_yearly_prepared | One published name/sex/year record | Formatted name, year, decade and published birth count. |
 | baby_names_rank_by_decade_prepared | One name/decade | Combined birth counts and ranks. |
+| baby_names_peak_birth_count_decade | One name and a decade tied for its largest birth count | `peak_birth_count_decade` and `peak_birth_count` across the selected years. |
+| baby_names_best_rank_decade | One name and a decade tied for its highest rank | Highest-ranked decades under the existing alphabetically tie-broken ranking. |
+| baby_names_average_birth_year | One recorded SSA name | Birth-count-weighted average birth year across 1880–2019 and both sex categories. |
 | all_distinct_baby_names | One recorded SSA name | 99,538 distinct formatted names in a one-column table, including names outside the top 100. |
 | baby_names_top100_by_decade_prepared | One name in one decade's top 100 | 1,400 rows containing only decade and name. |
 | excluded_birth_year_licenses | One excluded named license | The 59 excluded licenses, with recorded fields and approximate ages. |
