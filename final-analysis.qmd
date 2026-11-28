@@ -17,7 +17,7 @@ execute:
 # Project description
 Do dogs in different-income New York City neighborhoods have different names? We also want to compare those names with names given to babies in different decades. The wrangling involves preparing license records, combining annual baby-name files and relating postal ZIP codes to Census income areas. Area income describes a neighborhood, not an individual dog owner's income.
 
-This draft runs the dog and baby-name preparation in R. Geography and income preparation remain in a separate contribution under review. Baby-name recognition and historical name-measure matching execute. Income comparisons and the other three technical approaches are unfinished.
+This draft runs dog–baby preparation and the proposed ZIP-to-income preparation in R, then attaches income and reports coverage without excluding dogs. The income preparation is a review proposal derived from Shweta’s contribution; its inclusion here does not imply shared acceptance. Income comparisons and the other three technical approaches are unfinished.
 
 <!-- Report structure adapted from https://howisonlab.github.io/datawrangling/current/project_examples/final_project_template.html. -->
 
@@ -29,7 +29,7 @@ This draft runs the dog and baby-name preparation in R. Geography and income pre
 | [ZIP-to-ZCTA crosswalk](https://data.hrsa.gov/DataDownload/GeoCareNavigator/ZIPCodetoZCTACrosswalk2024UDS.xlsx) | Health Resources and Services Administration | Excel workbook | One postal ZIP and its assigned Census area. |
 | [ACS 2024 five-year household income](https://api.census.gov/data/2024/acs/acs5/groups/B19013.html) | U.S. Census Bureau | JSON | One Census area, with a median household income estimate and margin of error. |
 
-TODO: Add readable screenshots of the input headers and a few rows, with the reading issues they illustrate. Dog and SSA snapshots are saved in this branch. The crosswalk and Census snapshots belong to the separate income contribution and are not read by this draft.
+TODO: Add readable screenshots of the input headers and a few rows, with the reading issues they illustrate. All four source snapshots are saved in this branch. The income sources and preparation retain their contribution provenance in the [shared-analysis work record](docs/active-spikes/shared-final-analysis.md).
 
 # Workflow
 The R preparation sections below execute once, in order, using in-memory tables. Each section shows the code and its output. Python pandas, DuckDB SQL and Excel Power Query implementations remain to be written. As those are added, organize equivalent operations into step-level tabs following the [course template](https://howisonlab.github.io/datawrangling/current/project_examples/final_project_template.html).
@@ -40,10 +40,62 @@ TODO: Incorporate the template's supplied course-setup chunks when assembling th
 {{< include dog-baby-matching.qmd >}}
 
 ## Prepare geography and income
-TODO: Review and integrate the agreed income preparation. The proposed output is one ZIP-to-income lookup retaining the Census area that supplies each estimate.
+{{< include income-areas.qmd >}}
 
-## Attach income to dogs
-DECISION: Review the geographic join after agreeing the two contributions. No income join executes in this draft.
+## Attach income to the prepared dogs
+Each dog has a recorded ZIP. The income preparation supplies one lookup row per ZIP, including its Census area, income estimate and status. A left join keeps every dog and adds the matching lookup fields. The dog’s name and baby-name measures do not participate in this join and remain unchanged.
+
+The lookup uses `zipcode` as its key. Several ZIPs can share a ZCTA and its income, but each ZIP occurs once. No ZIP padding, geographic exclusions or income filtering happen here.
+```{r}
+#| label: attach-income-to-dogs
+dogs_with_baby_name_measures |>
+  left_join(zip_income, by = "zipcode") ->
+  dogs_with_income
+
+dogs_with_income |>
+  select(source_row_id, name, zipcode, zcta, borough, in_nyc, income, income_status) |>
+  preview()
+```
+
+## Describe which dogs have a geographic match
+For this report, distinguish an unmatched ZIP from a ZIP outside the NYC selection rule. The lookup’s `in_nyc` value is TRUE or FALSE for every ZIP it contains. A missing value after this join therefore indicates that the dog’s ZIP was absent from the lookup.
+```{r}
+#| label: describe-dog-geographic-coverage
+dogs_with_income |>
+  mutate(geographic_coverage = case_when(
+    is.na(in_nyc) ~ "ZIP absent from lookup",
+    in_nyc ~ "Selected by NYC rule",
+    .default = "Outside NYC rule"
+  )) ->
+  dogs_for_coverage_report
+```
+
+## Count geographic matches and income availability
+Count dogs, not ZIPs or Census areas. Keep capped estimates separate from unavailable estimates: both have missing numeric income, but their status records different information. A missing `income_status` means no Census status was attached; it is different from a matched Census row explicitly marked “no estimate.” All categories remain in `dogs_with_income`.
+```{r}
+#| label: summarize-dog-income-coverage
+dogs_for_coverage_report |>
+  group_by(geographic_coverage, income_status) |>
+  summarise(estimated_dogs = n()) |>
+  ungroup() ->
+  dog_income_coverage
+
+dog_income_coverage
+```
+
+## Inspect examples from each coverage category
+Show two source licenses per category so the summary can be connected back to actual records. This display does not remove rows from the prepared table. ZIPs remain as recorded on the earliest observed license selected for each estimated dog.
+```{r}
+#| label: inspect-dog-income-coverage
+dogs_for_coverage_report |>
+  arrange(source_row_id) |>
+  group_by(geographic_coverage, income_status) |>
+  slice_head(n = 2) |>
+  ungroup() |>
+  select(source_row_id, name, zipcode, zcta, geographic_coverage, income, income_status)
+```
+
+DECISION: Review these categories before selecting the comparison population. No dogs have been excluded at this join. The treatment of capped estimates, missing estimates, unmatched ZIPs and the NYC selection remains for shared review.
 
 ## Compare naming patterns
 DECISION: Agree on the questions, comparison population, income groups and summaries before implementing the analysis.

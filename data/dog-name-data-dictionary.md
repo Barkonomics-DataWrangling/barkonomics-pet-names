@@ -1,5 +1,5 @@
 # Dog-name data dictionary
-These are in-memory objects created by dog-names.qmd, baby-names.qmd, dog-baby-matching.qmd and the optional license-consolidation sensitivity appendix; they are not exported CSVs. dogs_prepared contains 96,810 eligible named estimated dogs after early exclusion of missing names and unusable birth years. Baby preparation supplies separate decade and overall name lists. Matching produces dogs_with_baby_name_measures with one row per estimated dog, name recognition, decade lists and weighted average baby birth year. There is no geographic or income selection in this pipeline.
+These are in-memory objects created by dog-names.qmd, baby-names.qmd, dog-baby-matching.qmd and the optional license-consolidation sensitivity appendix; they are not exported CSVs. dogs_prepared contains 96,810 eligible named estimated dogs after early exclusion of missing names and unusable birth years. Baby preparation supplies separate decade and overall name lists. Matching produces dogs_with_baby_name_measures with one row per estimated dog, name recognition, decade lists and weighted average baby birth year. The shared report attaches income without geographic or income exclusions.
 
 The notebook imports ZIP codes as text and infers the other types, using standard missing-value and whitespace handling, numbers source rows, gives fields clear working names, and counts and excludes existing missing values and the agreed missing-name labels without recoding them. It records compound names before formatting. ZIP strings stay as recorded. source_row_id points to the original license in the source CSV. No duplicate original_ columns are carried through the comparison tables.
 ## Dog columns
@@ -16,6 +16,9 @@ The provisional consolidation removes repeated identity/date records, then prior
 ## Tables used in the pipeline
 | R object | One row represents | Purpose |
 | --- | --- | --- |
+| dogs_with_income | One estimated dog | All dog–baby fields plus the proposed ZIP lookup fields; every dog is retained. |
+| zip_income | One postal ZIP | Mapped ZCTA, borough, in_nyc, income, income_margin_of_error, income_status, income_cv and income_reliability. |
+| dog_income_coverage | One geographic-coverage and income-status combination | Count of estimated dogs; reporting only, not exclusions. |
 | dogs_prepared | One estimated dog | Cleaned fields before baby-name matching. |
 | dogs_with_baby_name_measures | One estimated dog | Original dog fields plus name_appears_in_ssa, top100_decades, peak_birth_count_decades, best_rank_decades and average_baby_birth_year. Decade columns contain numeric lists; unmatched lists are NULL and unmatched average years are NA. |
 | baby_names_yearly_prepared | One published name/sex/year record | Formatted name, year, decade and published birth count. |

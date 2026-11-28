@@ -1,0 +1,200 @@
+## Prepare geographic and income information
+The HRSA crosswalk assigns postal ZIP codes to Census ZIP Code Tabulation Areas (ZCTAs). The Census table supplies median household income and its margin of error for each ZCTA. We prepare one row per ZIP, retaining the area identifier so the source of each income estimate stays visible.
+
+## Load the packages
+```{r}
+#| label: income-preparation-setup
+library(tidyverse)
+```
+
+## Read the ZIP-to-area crosswalk
+Read the saved workbook as text to preserve identifier formatting, including leading zeros. Give ZIP its working name, `zipcode`, here.
+```{r}
+#| label: read-zip-crosswalk
+zip_crosswalk <- readxl::read_excel(
+  "data/raw/ZIPCodetoZCTACrosswalk2024UDS.xlsx",
+  sheet = "ZiptoZCTA",
+  col_types = "text"
+) |>
+  rename(
+    zipcode = ZIP_CODE,
+    post_office = PO_NAME,
+    state = STATE,
+    zcta = ZCTA,
+    zip_join_type = ZIP_JOIN_TYPE
+  )
+```
+
+## Mark the ZIPs selected by our NYC rule
+The prefix lookup assigns boroughs; 11004 and 11005 are included separately as Queens. This is our existing selection rule, not an exact geographic boundary test. `str_sub()` takes the first three characters. The left join keeps every crosswalk row, including prefixes without a borough. `in_nyc` records the classification without removing rows.
+```{r}
+#| label: flag-nyc-zips
+nyc_prefixes <- tribble(
+  ~zip_prefix, ~borough,
+  "100", "Manhattan",
+  "101", "Manhattan",
+  "102", "Manhattan",
+  "103", "Staten Island",
+  "104", "Bronx",
+  "111", "Queens",
+  "112", "Brooklyn",
+  "113", "Queens",
+  "114", "Queens",
+  "116", "Queens"
+)
+
+zip_crosswalk |>
+  mutate(zip_prefix = str_sub(zipcode, 1, 3)) |>                # characters 1 to 3
+  left_join(nyc_prefixes, by = "zip_prefix") |>
+  mutate(borough = case_when(
+    zipcode == "11004" | zipcode == "11005" ~ "Queens",           # Glen Oaks, Floral Park
+    .default = borough
+  )) |>
+  mutate(in_nyc = !is.na(borough)) ->
+  zip_areas
+```
+
+## Read the saved Census income table
+The JSON file contains a grid of text, with headings in its first row. Assign those headings, remove that first row, and turn the remaining records into a tibble. The empty position after the comma means all columns.
+```{r}
+#| label: read-saved-census-income
+income_raw <- jsonlite::fromJSON("data/raw/acs5_2024_b19013_zcta.json")
+colnames(income_raw) <- income_raw[1, ]
+
+income_raw[-1, ] |>
+  as_tibble() ->
+  income_records
+```
+
+## Select the supplied area identifier and amounts
+The Census supplies the ZCTA identifier directly. Keep it as text and retain the two amounts needed for preparation.
+```{r}
+#| label: select-income-fields
+income_records |>
+  rename(
+    zcta = `zip code tabulation area`,
+    income = B19013_001E,
+    income_margin_of_error = B19013_001M
+  ) |>
+  select(zcta, income, income_margin_of_error) ->
+  income_fields
+```
+
+## Convert the amounts to numbers
+This changes the type of income and margin of error; the next step interprets special codes.
+```{r}
+#| label: convert-income-amounts
+income_fields |>
+  mutate(
+    income = as.numeric(income),
+    income_margin_of_error = as.numeric(income_margin_of_error)
+  ) ->
+  income_numbers
+```
+
+## Handle missing and capped estimates
+Negative Census codes mean that a usable amount is unavailable. The code 250001 means “$250,000 or more,” not an exact estimate of $250,001. Record the status before replacing special values with missing values. `NA_real_` means a missing numeric value, not zero. Keep every area row.
+
+The [Census annotation notes](https://www.census.gov/data/developers/data-sets/acs-1year/data-notes.html) describe these special-value conventions.
+```{r}
+#| label: clean-income-special-values
+income_numbers |>
+  mutate(
+    income_status = case_when(
+      income < 0 ~ "no estimate",
+      income == 250001 ~ "$250,000 or more",
+      .default = "estimate"
+    )
+  ) |>
+  mutate(
+    income = case_when(
+      income_status == "estimate" ~ income,
+      .default = NA_real_
+    ),
+    income_margin_of_error = case_when(
+      income_margin_of_error < 0 ~ NA_real_,
+      .default = income_margin_of_error
+    )
+  ) ->
+  income_clean
+```
+
+## Describe relative sampling uncertainty
+The coefficient of variation compares the standard error with the income estimate. Divide the supplied 90% margin of error by 1.645 to obtain the standard error, then divide by income. For ZCTA 10001, `(25244 / 1.645) / 129852` is about 11.8%. This describes sampling precision, not the accuracy of the ZIP mapping or a probability that the estimate is correct.
+
+DECISION: Confirm the source for the 15% and 30% category boundaries. These match [Housing Assistance Council guidance](https://www.ruraldatacentral.org/Content/DataReliability), a plausible precedent rather than a verified source for this implementation. [PSRC guidance](https://psrc.github.io/psrccensus/articles/calculate-reliability-moe-transformed-acs.html) explains the calculation and similar categories. Retain the existing ordinary labels while reviewing whether lower/moderate/higher relative sampling uncertainty would be clearer. The categories are conventions, not universal divisions between trustworthy and untrustworthy data.
+
+“Cannot calculate” means the calculation lacks an input. `income_status` still distinguishes a capped estimate from no estimate.
+```{r}
+#| label: describe-income-precision
+income_clean |>
+  mutate(income_cv = (income_margin_of_error / 1.645) / income) ->
+  income_with_precision
+
+income_with_precision |>
+  mutate(
+    income_reliability = case_when(
+      is.na(income_cv) ~ "cannot calculate",
+      income_cv < 0.15 ~ "reliable",
+      income_cv < 0.30 ~ "use with care",
+      .default = "unreliable"
+    )
+  ) ->
+  area_income
+```
+
+## Prepare one ZIP-to-income lookup
+For each postal ZIP, the left join attaches the income row with its assigned ZCTA. Keep all ZIPs, including any without a matching income row. Several ZIPs may share one ZCTA and its income estimate. An unmatched Census row would leave `income_status` missing; that differs from a matched row explicitly marked “no estimate.”
+```{r}
+#| label: prepare-zip-income
+zip_areas |>
+  left_join(area_income, by = "zcta") |>
+  select(
+    zipcode,
+    zcta,
+    borough,
+    in_nyc,
+    income,
+    income_margin_of_error,
+    income_status,
+    income_cv,
+    income_reliability
+  ) ->
+  zip_income
+```
+
+## Summarize the selected geography
+Count postal ZIPs and distinct Census areas by the borough assigned by our rule. These counts do not claim that each area lies wholly within that borough.
+```{r}
+#| label: summarize-prepared-boroughs
+zip_income |>
+  filter(in_nyc) |>
+  group_by(borough) |>
+  summarise(
+    zipcodes = n(),
+    census_areas = n_distinct(zcta)
+  )
+```
+
+## Report income availability
+Count each Census area once, even when several ZIPs share it. This counts areas, not dogs.
+```{r}
+#| label: summarize-income-availability
+zip_income |>
+  filter(in_nyc) |>
+  distinct(zcta, income_status) |>
+  count(income_status, name = "census_areas")
+```
+
+## Inspect one mapping for each income status
+Select the first ZIP in each status for display. This does not filter the prepared lookup. The supplied margin of error remains available where reported; capped or unavailable exact incomes remain missing in `income`.
+```{r}
+#| label: show-income-mapping-examples
+zip_income |>
+  filter(in_nyc) |>
+  arrange(zipcode) |>
+  group_by(income_status) |>
+  slice_head(n = 1) |>
+  ungroup() |>
+  select(zipcode, zcta, income, income_margin_of_error, income_status)
+```
