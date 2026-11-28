@@ -1,0 +1,351 @@
+---
+title: "License consolidation: sensitivity and examples"
+execute:
+  echo: true
+  message: false
+---
+
+This optional appendix compares alternatives to the single rule explained in [dog-names.qmd](../dog-names.qmd). It does not select a new rule or alter the main prepared dog table. It is not included in the final report by default and writes no CSV or HTML output when its chunks run.
+
+## Prepare the same inputs in this R session
+Run from the repository root. `knitr::purl()` extracts the preparation notebook’s R chunks into a temporary R file, `source()` runs them in this session, and `unlink()` removes that temporary file. This lets the appendix run in its own Positron session without copying the preparation rules or producing a separate HTML report. The functions below are only for repeating scenarios in this appendix; the main notebook shows its transformations directly.
+
+```{r}
+#| label: sensitivity-preparation-setup
+library(tidyverse)
+preparation_script <- tempfile(fileext = ".R")
+knitr::purl("dog-names.qmd", output = preparation_script, quiet = TRUE)
+source(preparation_script)
+unlink(preparation_script)
+source("appendices/license-consolidation-functions.R")
+
+# Include same-day pairs for inspection; automatic links still require a later issue.
+find_license_pairs(licenses_unique) ->
+  license_pairs
+```
+
+## Compare the license-term-change window
+The main preparation first combines likely term changes: the same name, sex, birth year, breed and ZIP, shared expiry month/day, a later expiry year, and issues within fourteen days. It retains the later license before applying the renewal rules. The table below changes only this first-stage window; the later rules stay at 30 days within a ZIP, seven days across ZIPs and five days for other possible corrections. Accepted same-ZIP connections take priority before cross-ZIP candidates are assessed. These are sensitivity choices, not confidence intervals. Fourteen days is the adopted setting.
+
+```{r}
+#| label: compare-license-term-change-windows
+term_change_windows <- c(7, 14, 21, 30)
+term_change_summaries <- list()
+
+for (window_number in seq_along(term_change_windows)) {
+  window_days <- term_change_windows[window_number]
+  compare_term_change_window(licenses_unique, license_pairs, window_days) ->
+    term_change_summaries[[window_number]]
+}
+
+bind_rows(term_change_summaries) |>
+  select(term_change_days, term_change_pairs, estimated_dogs, unresolved_links) ->
+  term_change_sensitivity
+
+term_change_sensitivity
+```
+
+### Compare whether same-ZIP connections take priority
+Keep the fourteen-day term-change step and all date windows fixed. Change only whether unambiguous same-ZIP connections are accepted before assessing cross-ZIP alternatives. This isolates the effect of the ZIP preference.
+
+```{r}
+#| label: compare-same-zip-priority
+compare_term_change_window(licenses_unique, license_pairs, 14,
+                           prefer_same_zip = FALSE) |>
+  mutate(zip_preference = "No priority") ->
+  without_zip_priority
+
+compare_term_change_window(licenses_unique, license_pairs, 14,
+                           prefer_same_zip = TRUE) |>
+  mutate(zip_preference = "Same ZIP first") ->
+  with_zip_priority
+
+bind_rows(without_zip_priority, with_zip_priority) |>
+  select(zip_preference, estimated_dogs, unresolved_links)
+```
+
+SCOOPER shows why the order matters. Merely adding a correction link to two competing renewals creates three competing links. Resolving its likely term change first leaves one renewal candidate. ALMA has the same pattern. Neither case proves dog identity, and the shared-expiry rule can still combine separate dogs.
+
+## Review timing and consolidation assumptions
+We repeat consolidation with different date windows to see how much the estimated number of dogs changes. This is a sensitivity comparison: it describes dependence on our rules, not a confidence interval or a known range for the true dog count. It concerns preparation only.
+
+### How far apart are the license periods?
+Count candidate pairs by the later issue date's distance from the earlier expiry. Negative gaps indicate overlap. One license can occur in several pairs, so these counts are not counts of dogs or independent evidence of renewals.
+
+```{r}
+#| label: summarize-license-date-gaps
+license_pairs |>
+  mutate(expiry_gap = case_when(
+    days_from_expiry < -90 ~ "1. More than 90 days overlap",
+    days_from_expiry < -30 ~ "2. 31–90 days overlap",
+    days_from_expiry < -7 ~ "3. 8–30 days overlap",
+    days_from_expiry <= 0 ~ "4. 0–7 days overlap",
+    days_from_expiry <= 7 ~ "5. 1–7 days gap",
+    days_from_expiry <= 30 ~ "6. 8–30 days gap",
+    days_from_expiry <= 90 ~ "7. 31–90 days gap",
+    .default = "8. More than 90 days gap"
+  )) |>
+  count(same_zipcode, expiry_gap, name = "candidate_pairs") ->
+  license_gap_summary
+
+license_gap_summary
+```
+
+### Compare alternatives without term-change priority
+For comparison, this older family of rules does not run the term-change step first or give same-ZIP connections priority. These rows are alternatives, not the current preparation rule. Each row below defines a complete alternative, starting from the same eligible licenses. The renewal windows are symmetric around expiry. A correction window means the later issue is within that many days of the earlier issue, in the same ZIP, with a different expiry and unchanged name, sex, birth year and breed. Zero disables correction links. Same-day records with differing values are never automatically ordered as corrections.
+
+The 7/30/60/90-day windows span practical week/month intervals and the observed concentration of overlaps within 90 days; they are sensitivity choices, not learned thresholds. The narrower cross-ZIP windows require closer timing before accepting a possible move. Neither closeness nor absence of competing matches verifies identity.
+
+```{r}
+#| label: compare-consolidation-rules
+consolidation_rules <- tribble(
+  ~rule, ~renewal_days, ~moving_days, ~correction_days,
+  "Narrow", 7, 3, 0,
+  "Renewals only", 30, 7, 0,
+  "No priority: 5-day corrections", 30, 7, 5,
+  "Wider renewals", 60, 14, 0,
+  "Broad renewals", 90, 30, 0,
+  "No priority + 1-day corrections", 30, 7, 1,
+  "No priority + 7-day corrections", 30, 7, 7,
+  "No priority + 14-day corrections", 30, 7, 14
+)
+
+# The timeline examples use these source rows plus the complete selected TEDDY group.
+licenses_unique |>
+  filter(source_row_id %in% c(156, 73735, 621, 474, 7, 77313) |
+           (name == "TEDDY" & birth_year == 2022 & breed == "Shih Tzu Crossbreed")) ->
+  consolidation_examples
+
+rule_summaries <- list()
+rule_example_outcomes <- list()
+
+for (rule_number in seq_len(nrow(consolidation_rules))) {
+  choose_license_links(
+    license_pairs,
+    renewal_days = consolidation_rules$renewal_days[rule_number],
+    moving_days = consolidation_rules$moving_days[rule_number],
+    correction_days = consolidation_rules$correction_days[rule_number]
+  ) ->
+    rule_links
+
+  assign_license_groups(licenses_unique, rule_links) ->
+    rule_licenses
+
+  # Find the earliest observed record for each example’s group, including any counterpart outside the display.
+  rule_licenses |>
+    filter(source_row_id %in% consolidation_examples$source_row_id) |>
+    distinct(license_group) ->
+    example_groups
+
+  rule_licenses |>
+    semi_join(example_groups, by = "license_group") |>
+    group_by(license_group) |>
+    slice_min(license_issue_date, n = 1, with_ties = FALSE) |>
+    ungroup() |>
+    select(license_group, retained_source_row = source_row_id) ->
+    example_retained_records
+
+  rule_licenses |>
+    filter(source_row_id %in% consolidation_examples$source_row_id) |>
+    left_join(example_retained_records, by = "license_group") |>
+    mutate(
+      rule = consolidation_rules$rule[rule_number],
+      record_outcome = if_else(source_row_id == retained_source_row,
+                              "Retained", "Consolidated"),
+      rule_order = rule_number
+    ) ->
+    rule_example_outcomes[[rule_number]]
+
+  rule_links |>
+    filter(possible_successors > 1) |>
+    distinct(earlier_source_row) ->
+    licenses_with_multiple_successors
+
+  rule_links |>
+    filter(possible_predecessors > 1) |>
+    distinct(later_source_row) ->
+    licenses_with_multiple_predecessors
+
+  union(licenses_with_multiple_successors$earlier_source_row,
+        licenses_with_multiple_predecessors$later_source_row) ->
+    ambiguous_source_rows
+
+  rule_licenses |>
+    summarise(estimated_dogs = n_distinct(license_group)) |>
+    mutate(
+      rule = consolidation_rules$rule[rule_number],
+      renewal_days = consolidation_rules$renewal_days[rule_number],
+      moving_days = consolidation_rules$moving_days[rule_number],
+      correction_days = consolidation_rules$correction_days[rule_number],
+      records_consolidated = nrow(licenses_with_matching_names) - estimated_dogs,
+      cross_zip_links = sum(rule_links$link_accepted & !rule_links$same_zipcode),
+      ambiguous_licenses = length(ambiguous_source_rows)
+    ) ->
+    rule_summaries[[rule_number]]
+}
+
+bind_rows(rule_summaries) |>
+  select(rule, renewal_days, moving_days, correction_days,
+         estimated_dogs, records_consolidated, cross_zip_links, ambiguous_licenses) ->
+  consolidation_sensitivity
+
+consolidation_sensitivity
+```
+
+`rule_summaries` holds one summary table for each rule. `bind_rows()` stacks them into a comparison table. `union()` counts each source license once even if it has both competing predecessors and competing successors. These are competing candidate links, not a count of every uncertain identity in the data. Wider windows can create competing matches, so widening a threshold does not necessarily cause every earlier link to remain accepted.
+
+For comparison, the former five-field rule combined every matching name/sex/birth-year/breed/ZIP group without inspecting timing:
+
+```{r}
+#| label: compare-former-consolidation
+licenses_with_matching_names |>
+  distinct(name, sex, birth_year, breed, zipcode) |>
+  summarise(estimated_dogs_under_five_field_rule = n())
+```
+
+### What differs in possible corrections?
+Within 14 days, inspect pairs that differ in exactly one of sex, birth year or breed while the other identity fields, including ZIP, match. This is an inspection window, not a correction rule. The helper joins on the named matching fields, compares the remaining field and returns both values and license dates. The tables contain possible corrections and possible separate dogs; no values are replaced and no extra links are accepted from them. The formatted full name must match in every correction inspection and automatic consolidation rule.
+
+```{r}
+#| label: inspect-possible-identity-corrections
+find_changed_field_pairs(
+  licenses_unique, c("name", "birth_year", "breed", "zipcode"), "sex"
+) -> sex_change_pairs
+
+find_changed_field_pairs(
+  licenses_unique, c("name", "sex", "breed", "zipcode"), "birth_year"
+) -> birth_year_change_pairs
+
+find_changed_field_pairs(
+  licenses_unique, c("name", "sex", "birth_year", "zipcode"), "breed"
+) -> breed_change_pairs
+
+bind_rows(sex_change_pairs, birth_year_change_pairs,
+          breed_change_pairs) ->
+  possible_identity_corrections
+
+possible_identity_corrections |>
+  count(field_changed, name = "candidate_pairs")
+
+possible_identity_corrections |>
+  group_by(field_changed) |>
+  slice_head(n = 2) |>
+  ungroup()
+```
+
+For unchanged name/sex/birth-year/breed, inspect close issue dates and whether ZIP or expiry changes. This also includes same-day differences which the consolidation rule leaves unresolved:
+
+```{r}
+#| label: inspect-possible-license-corrections
+license_pairs |>
+  filter(days_between_issues <= 14) |>
+  mutate(
+    zipcode_changed = !same_zipcode,
+    expiry_changed = later_expiry != earlier_expiry
+  ) ->
+  possible_license_corrections
+
+possible_license_corrections |>
+  count(zipcode_changed, expiry_changed, name = "candidate_pairs")
+```
+
+Different formatted names are not treated as correction candidates. Matching breed, sex, birth year and ZIP does not justify changing one dog’s name into another’s.
+
+### License periods on a common timeline
+Each line runs from issue to expiry. Separate lines are separate source records. Each name panel has its own time axis; compare license positions within that panel. These examples show a cross-ZIP renewal candidate (OLLIE), a same-ZIP renewal candidate (TOTORO), a possible expiry correction combined by the five-day working rule (KIKI), and a group with substantial overlap (TEDDY). Matching appearances on a chart do not establish identity.
+
+```{r}
+#| label: show-license-timelines
+#| fig-width: 11
+#| fig-height: 10
+licenses_unique |>
+  filter(
+    source_row_id %in% c(621, 474) |
+      (name == "TOTORO" & birth_year == 2013) |
+      (name == "TEDDY" & birth_year == 2022 & breed == "Shih Tzu Crossbreed")
+  ) ->
+  other_timeline_records
+
+license_links |>
+  filter(link_accepted, !same_zipcode, name == "OLLIE") |>
+  slice_head(n = 1) ->
+  moving_example
+
+licenses_unique |>
+  filter(source_row_id %in% c(moving_example$earlier_source_row,
+                             moving_example$later_source_row)) |>
+  bind_rows(other_timeline_records) |>
+  arrange(name, license_issue_date) |>
+  mutate(record_outcome = if_else(source_row_id %in% dogs_prepared$source_row_id,
+                                  "Retained", "Consolidated")) |>
+  mutate(license_label = str_glue("{source_row_id} | ZIP {zipcode}")) ->
+  license_timeline_records
+
+license_timeline_records |>
+  ggplot(aes(y = reorder(license_label, license_issue_date), color = record_outcome)) +
+  geom_segment(aes(x = license_issue_date, xend = license_expiry_date,
+                   yend = reorder(license_label, license_issue_date)), linewidth = 1) +
+  geom_point(aes(x = license_issue_date), size = 2) +
+  geom_point(aes(x = license_expiry_date), shape = 4, size = 2) +
+  facet_wrap(~name, ncol = 1, scales = "free") +
+  scale_x_datetime(date_breaks = "1 year", date_labels = "%Y") +
+  scale_color_manual(values = c("Retained" = "#00796B", "Consolidated" = "#A45A18")) +
+  labs(x = "License period: dot = issue; cross = expiry", y = "Source row and ZIP",
+       color = "Working rule") +
+  theme_minimal() ->
+  license_timeline_plot
+
+license_timeline_plot
+```
+
+`license_timeline_records` retains the exact dates behind the chart for inspection. These summaries and examples remain in memory; the notebook does not write additional HTML or CSV files.
+
+
+### Which source record survives under each rule?
+The timeline shows overlaps; this grid shows their consequences. Each row is the same source license across all columns. Green means that source row supplies the estimated dog's values. Gray means it is consolidated into another license. The number in each cell identifies the retained source row, so equal numbers show records assigned to the same dog. Consolidated licenses remain in the source-membership table; they are not discarded as invalid records.
+
+```{r}
+#| label: compare-example-retention
+#| fig-width: 14
+#| fig-height: 10
+bind_rows(rule_example_outcomes) |>
+  arrange(rule_order) |>
+  mutate(rule = fct_inorder(rule),
+         license_label = str_glue("{source_row_id} | ZIP {zipcode}")) ->
+  consolidation_example_outcomes
+
+consolidation_example_outcomes |>
+  ggplot(aes(x = rule, y = reorder(license_label, license_issue_date), fill = record_outcome)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = retained_source_row), size = 3) +
+  facet_grid(name ~ ., scales = "free_y", space = "free_y") +
+  scale_fill_manual(values = c("Retained" = "#A9DDD0", "Consolidated" = "#E2E5E8")) +
+  labs(x = "Rule (windows are listed in the sensitivity table)", y = "Source row and ZIP",
+       fill = "Source record", caption = "Cell number = source row retained for that estimated dog") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 35, hjust = 1)) ->
+  consolidation_outcome_plot
+
+consolidation_outcome_plot
+
+consolidation_example_outcomes |>
+  group_by(name, rule) |>
+  summarise(source_licenses_shown = n(),
+            estimated_dogs = n_distinct(license_group), .groups = "drop") ->
+  consolidation_example_counts
+
+consolidation_example_counts
+```
+
+### TEDDY: why report sensitivity?
+The 16 displayed licenses all record TEDDY, male, born in 2022, Shih Tzu Crossbreed. That combination can describe several dogs. Dates and ZIPs help us estimate renewals, but do not establish identities.
+
+| Same-ZIP / cross-ZIP renewal windows | Estimated dogs from these 16 licenses | What the rule does |
+| --- | ---: | --- |
+| 30 / 7 days, our working windows | 14 | Accepts two links with no competing candidates inside those windows |
+| 60 / 14 days | 16 | Finds extra possible predecessors, so the links become ambiguous and none is accepted |
+| 90 / 30 days | 14 | Accepts two different links; the other possibilities remain ambiguous |
+
+The five-day correction setting does not change this TEDDY example. A wider window can reveal competing candidates and leave more licenses separate. That does not demonstrate that there are more real dogs; it shows that our estimate depends on the matching assumptions. Equally, two rules returning 14 need not have combined the same records.
+
+We keep the rule simple and report those differences. The records do not establish whether the true number is 14, 16 or something else. The retained-source grid lets us see which licenses each rule combines rather than relying on the total alone.
